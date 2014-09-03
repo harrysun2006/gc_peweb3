@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%">
+    <mx:AdvancedDataGrid id="adgInPsn" labelFunction="{CommonUtil.gridLabelFunction}" rowCount="6"
+                         dataProvider="{inPsns}" editable="true" keyDown="keyDownHandler(event)"
+                         sortableColumns="false" horizontalScrollPolicy="auto"
+                         itemEditEnd="onItemEditEnd(event)" itemRenderer="mx.controls.Label">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" editable="false" width="64"
+                                   labelFunction="setNo"/>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_safety','acc.basic.info')}"
+                                        headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="name"/>
+          <mx:AdvancedDataGridColumn dataField="sex" itemEditor="{comboBox}"/>
+          <mx:AdvancedDataGridColumn dataField="age" itemEditor="{numberInput}"
+                                     formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+          <mx:AdvancedDataGridColumn dataField="regAddress" itemEditor="{textArea}"/>
+          <mx:AdvancedDataGridColumn dataField="address" itemEditor="{textArea}"/>
+          <mx:AdvancedDataGridColumn dataField="tel"/>
+          <mx:AdvancedDataGridColumn dataField="duty" dataTipField="duty.name"
+                                     itemEditor="{comboBox}" editorDataField="selectedItem"/>
+          <mx:AdvancedDataGridColumn dataField="desc" itemEditor="{textArea}"/>
+          <mx:AdvancedDataGridColumn dataField="maim" dataTipField="maim.label"
+                                     itemEditor="{comboBox}" editorDataField="selectedItem"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_safety','acc.gua.reparation')}"
+                                        headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="mediFee" itemEditor="{numberInput}"/>
+          <mx:AdvancedDataGridColumn dataField="other1" itemEditor="{numberInput}"/>
+          <mx:AdvancedDataGridColumn dataField="other2" itemEditor="{numberInput}"/>
+          <!--mx:AdvancedDataGridColumn dataField="payDate" itemEditor="{dateField}"
+               editorDataField="selectedDate"/>
+               <mx:AdvancedDataGridColumn dataField="payDesc" itemEditor="{textArea}"/>
+               <mx:AdvancedDataGridColumn dataField="payPsn" dataTipField="payPsn.name"/-->
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <!--mx:HBox id="buttonBox" width="100%" horizontalAlign="center">
+         <mx:Button id="add" label="+" click="addItem(event)" width="55"/>
+         <mx:Button id="del" label="-" click="delItem(event)" width="55"/>
+         <mx:Button id="remove" label="{resourceManager.getString('gcc', 'clear')}"
+         click="removeAll(event)" width="55"/>
+         </mx:HBox-->
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.controls.PopUpTextArea;
+      import com.gc.safety.Events;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import mx.controls.DateField;
+      import mx.rpc.events.ResultEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.collections.IList;
+      import mx.controls.Alert;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.ComboBox;
+      import mx.controls.TextInput;
+      import mx.events.FlexEvent;
+      import mx.controls.Label;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.safety.model.AccInPsn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.ArrayCollection;
+      import mx.events.AdvancedDataGridEvent;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      [Bindable]
+      private var comboBox:AdvancedClassFactory;
+      [Bindable]
+      private var numberInput:AdvancedClassFactory;
+      [Bindable]
+      private var dateField:AdvancedClassFactory;
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+      private var branchId:int;
+      private var lists:Object;
+      [Bindable]
+      public var inPsns:ArrayCollection = new ArrayCollection();
+      private var inPsn:AccInPsn;
+      private var fields:Array;
+      private var inPsnFee:Number = 0;
+
+      private function onPreinitialize():void
+      {
+        branchId = UserController.branchId;
+        comboBox=new AdvancedClassFactory(ComboBox);
+        comboBox.properties={itemRenderer: new ClassFactory(Label)};
+        comboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onComboBoxCreateComplete}
+          , {type: KeyboardEvent.KEY_UP, listener: CommonUtil.keyUp}];
+        numberInput=new AdvancedClassFactory(TextInput);
+        numberInput.properties={restrict: "0-9"};
+        dateField=new AdvancedClassFactory(DateField);
+        dateField.properties={formatString: Constants.DATE_FORMAT, showToday: true, yearNavigationEnabled: true};
+        textArea=new AdvancedClassFactory(PopUpTextArea);
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+//        if ([3,12].indexOf(UserController.safetyLimit) >= 0)
+//        {
+//          fields=["name","sex","age","regAddress","address","tel","duty","desc","maim"
+//            ,"mediFee","other1","other2","payDate","payDesc"];
+//        }
+//        else if ([4].indexOf(UserController.safetyLimit) >= 0)
+//        {
+//          fields=["mediFee","other1","other2","payDate","payDesc"];
+//        }
+//        else
+//        {
+//          fields=[];
+//        }
+        fields=[];
+        lists = {sex: Constants.GENDERS,
+            duty: AccidentController.accDutyList,
+            maim: Constants.MAIMS};
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgInPsn, "gcc_safety", "accinpsn", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+              column.editable=(fields.indexOf(column.dataField) >= 0);
+            }
+          });
+        adgInPsn.percentWidth = 100;
+      }
+
+      private function onComboBoxCreateComplete(event:Event):void
+      {
+        if (event.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=event.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData && cbox.data is AccInPsn)
+          {
+            var listData:AdvancedDataGridListData=cbox.listData as AdvancedDataGridListData;
+            var dataField:String=listData.dataField
+            var list:Object=(lists.hasOwnProperty(dataField) && (lists[dataField] is IList || lists[dataField] is Array)) ? lists[dataField] : null;
+            var p:AccInPsn=cbox.data as AccInPsn;
+            cbox.dataProvider=list;
+            cbox.selectedIndex=(list != null) ? CommonUtil.indexOfKey(list, p[dataField], "label") : -1;
+          }
+        }
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = inPsns.getItemIndex(item) + 1;
+        if (inPsn == null)
+        {
+          inPsn = new AccInPsn();
+        }
+        inPsn.id.no = i;
+        return i;
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+//		        if (newData == "" && CommonUtil.getAccessorValue(data, property) == null)
+//		          event.reason=AdvancedDataGridEventReason.CANCELLED;
+//		        else
+            data[property]=newData;
+            if (data[property] == "")
+              data[property] = null;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          if (data["mediFee"] != null || data["other1"] != null || data["other2"] != null)
+          {
+            inPsnFee = 0;
+            for (var i:int=0; i < inPsns.length; i++)
+            {
+              var fee:Number = inPsns[i]["mediFee"] + inPsns[i]["other1"] + inPsns[i]["other2"];
+              inPsnFee += fee;
+            }
+            dispatchEvent(new Events(Events.ADD_INPSNFEE, inPsnFee));
+          }
+        }
+        if (adgInPsn.errorString != null)
+        {
+          adgInPsn.errorString = null;
+        }
+      }
+
+      public function getInPsns(ips:ArrayCollection):void
+      {
+        inPsns.removeAll();
+        if (ips != null)
+        {
+          if (ips.length > 0)
+          {
+            inPsns = ips;
+            inPsnFee = 0;
+            for (var i:int=0; i < inPsns.length; i++)
+            {
+              if (inPsns[i]["status"] == 0)
+                inPsns[i]["maim"] = Constants.MAIMS[0];
+              inPsns[i]["payPsn"] = UserController.user.person;
+              var fee:Number = inPsns[i]["mediFee"] + inPsns[i]["other1"] + inPsns[i]["other2"];
+              inPsnFee += fee;
+            }
+            dispatchEvent(new Events(Events.ADD_INPSNFEE, inPsnFee));
+          }
+        }
+      }
+
+      private function addItem(event:Event):void
+      {
+        inPsn = new AccInPsn();
+        inPsn.id.branch = UserController.branch;
+        inPsn.mediFee = 0.00;
+        inPsn.other1 = 0.00;
+        inPsn.other2 = 0.00;
+        inPsn.payPsn = UserController.person;
+        inPsns.addItem(inPsn);
+        adgInPsn.selectedItem = inPsn;
+        adgInPsn.editedItemPosition = {rowIndex: adgInPsn.selectedIndex, columnIndex:1};
+      }
+
+      private function delItem(event:Event):void
+      {
+        if (inPsns.length <= 0)
+          return;
+        if (adgInPsn.selectedItem != null)
+        {
+          var k:int=inPsns.getItemIndex(adgInPsn.selectedItem);
+          if (k >= 0)
+          {
+            inPsns.removeItemAt(k);
+            adgInPsn.selectedIndex=(k == inPsns.length) ? inPsns.length - 1 : k;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc','delete.not.null'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (inPsns != null)
+        {
+          if (inPsns.length > 0)
+          {
+            inPsns.removeAll();
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<personal:PersonTreeFilter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                           xmlns:personal="com.gc.hr.view.personal.*" width="100%"
+                           creationComplete="onCreationComplete(formFilter3, tiAllotReason)">
+  <mx:Form id="formFilter3" verticalGap="3">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.allotDate')}:">
+      <gc:DateSelector name="allotDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.allotReason')}:">
+      <mx:TextInput id="tiAllotReason" name="allotReason" text="{qo.allotReason}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.depart.name')}:">
+      <mx:TextInput name="depart.name" text="{qo.depart.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.office')}:">
+      <mx:TextInput name="office" text="{qo.office}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.line.name')}:">
+      <mx:TextInput name="line.name" text="{qo.line.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.bus.authNo')}:">
+      <mx:TextInput name="bus.authNo" text="{qo.bus.authNo}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.controller.PersonalController;
+    ]]>
+  </mx:Script>
+</personal:PersonTreeFilter>

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="违章比例图" preinitialize="onPreinitialize()"
+				layout="absolute" width="400" height="300">
+	<mx:PieChart id="pie" height="100%" width="100%" showDataTips="true" dataProvider="{pieAC}">
+		<mx:series>
+			<mx:PieSeries nameField="label" labelFunction="{displayData}" labelPosition="callout" field="_times"
+						  calloutStroke="{callouts}" radialStroke="{radial}" stroke="{pieborder}">
+				<mx:showDataEffect>
+					<mx:SeriesInterpolate duration="1000" easingFunction="{Elastic.easeOut}"/>
+				</mx:showDataEffect>
+				<mx:filters>
+					<mx:Array/>
+				</mx:filters>
+			</mx:PieSeries>
+		</mx:series>
+	</mx:PieChart>
+	<mx:Legend dataProvider="{pie}"/>
+
+	<!-- This Stroke is used for the callout lines. -->
+	<mx:Stroke id="callouts" weight="2" color="0x999999" alpha=".8" caps="square"/>
+
+	<!-- This Stroke is used to separate the wedges in the pie. -->
+	<mx:Stroke id="radial" weight="1" color="0xFFFFCC" alpha=".3"/>
+
+	<!-- This Stroke is used for the outer border of the pie. -->
+	<mx:Stroke id="pieborder" color="0x000000" weight="2" alpha=".5"/>
+
+	<mx:Script>
+		<![CDATA[
+			import mx.effects.easing.Elastic;
+			import mx.utils.ObjectUtil;
+			import mx.collections.ArrayCollection;
+			import com.gc.CommonEvent;
+		
+			[Bindable]
+			private var pieAC:ArrayCollection = new ArrayCollection();
+			
+			private function onPreinitialize():void
+			{
+				addEventListener(CommonEvent.REFRESH, onRefresh);
+			}
+			
+			private function onRefresh(e:CommonEvent):void
+			{
+				pieAC.removeAll();
+				pieAC = ObjectUtil.copy(e.data) as ArrayCollection;
+				pieAC.removeItemAt(pieAC.length - 1);
+				e.stopImmediatePropagation();
+			}
+			
+			private function displayData(data:Object, field:String, index:Number, percentValue:Number):String
+			{
+				var temp:String=(" " + percentValue).substr(0, 6);
+				return data.label + ": " + '\n' + temp + "%";
+			}
+		
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="444" height="268"
+                creationComplete="onCreationComplete()"
+                title="{resourceManager.getString('gcc_safety','gua.title.onDate.name')}"
+                keyDown="escape(event)">
+  <mx:VBox width="100%" height="100%" horizontalAlign="center">
+    <mx:Label text="{resourceManager.getString('gcc_safety','gua.date.within')}" textAlign="center"
+              width="100%" height="56"/>
+    <mx:HBox width="100%" height="84" id="form">
+      <mx:Label text="{resourceManager.getString('gcc_safety','gua.from')}" width="61"
+                textAlign="center"/>
+      <mx:DateField id="date1" width="130" formatString="{Constants.DATE_FORMAT}"
+                    yearNavigationEnabled="true" editable="true"/>
+      <mx:Label text="{resourceManager.getString('gcc_safety','gua.to')}" width="60"
+                textAlign="center"/>
+      <mx:DateField id="date2" width="130" formatString="{Constants.DATE_FORMAT}"
+                    yearNavigationEnabled="true" editable="true"/>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%">
+      <mx:Button label="{resourceManager.getString('gcc','ok')}" click="submit(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc','cancel')}" click="cancel(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.controls.Alert;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.Events;
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+
+      private var guarInfos:ArrayCollection;
+
+      private function onCreationComplete():void
+      {
+        date1.setFocus();
+      }
+
+      private function submit(event:Event):void
+      {
+//        if (date1.selectedDate == null && date2.selectedDate == null)
+//        {
+//          Alert.show(resourceManager.getString('gcc_safety','gua.select.date'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+//          return;
+//        }
+//        if (date1.selectedDate == null)
+//        {
+//          Alert.show(resourceManager.getString('gcc_safety','gua.select.start.date'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+//          return;
+//        }
+//        if (date2.selectedDate == null)
+//        {
+//          Alert.show(resourceManager.getString('gcc_safety','gua.select.end.date'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+//          return;
+//        }
+        if (!CommonUtil.validateForm(form,["date1","date2"]))
+          return;
+        if (date1.selectedDate > date2.selectedDate)
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.end.before.start'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        GuaranteeController.getMatureGuas(UserController.branchId,date1.selectedDate,date2.selectedDate,successGetM);
+      }
+
+      private function successGetM(event:ResultEvent):void
+      {
+        guarInfos = event.result as ArrayCollection;
+        if (guarInfos != null)
+        {
+          if (guarInfos.length == 0)
+          {
+            Alert.show(resourceManager.getString('gcc_safety','gua.no.gua.within'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.no.gua.within'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        this.dispatchEvent(new Events(Events.GET,guarInfos));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function cancel(event:Event):void
+      {
+        PopUpManager.removePopUp(this);
+        dispatchEvent(new Events(Events.CLOSE));
+      }
+
+      private function escape(event:KeyboardEvent):void
+      {
+        if (event.keyCode == Keyboard.ESCAPE)
+          cancel(event);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

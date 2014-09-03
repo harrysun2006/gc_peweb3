@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adgOutGP" labelFunction="{CommonUtil.gridLabelFunction}" rowCount="6"
+                       dataProvider="{outGuaPays}" keyDown="keyDownHandler(event)"
+                       horizontalScrollPolicy="auto">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="no" editable="false" width="64" labelFunction="setNo"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccOutGua"
+                                 dataTipField="fkAccOutGua.fkGuaReport.id.insurer.name"/>
+      <mx:AdvancedDataGridColumnGroup headerText="理赔信息" headerRenderer="{header}">
+        <mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.appDate"/>
+        <mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.id.refNo"/>
+        <mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.id.no"/>
+        <mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.guaSum"/>
+        <mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.appPsn.name"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup headerText="赔付信息" headerRenderer="{header}">
+        <mx:AdvancedDataGridColumn dataField="payDate"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.refNo"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no"/>
+        <mx:AdvancedDataGridColumn dataField="paySum"/>
+        <mx:AdvancedDataGridColumn dataField="payPsn" dataTipField="payPsn.name"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumn/>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.ArrayCollection;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      [Bindable]
+      private var outGuaPays:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+      }
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgOutGP, "gcc_safety", "accoutguapay", function(obj:Object):void{});
+        adgOutGP.percentWidth = 100;
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = outGuaPays.getItemIndex(item) + 1;
+        return i;
+      }
+
+      public function getOutGuaPays(ogps:ArrayCollection):void
+      {
+        outGuaPays = ogps;
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

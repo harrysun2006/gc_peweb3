@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="480" height="360"
+                preinitialize="onPreinitialize()">
+  <gc:Voucher width="100%" height="100%" autoLayout="true">
+    <mx:AdvancedDataGrid>
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="desc"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.SAVE_SUCCESS, function(e:CommonEvent):void
+          {
+            if (e.data is ArrayCollection) 
+              BaseController.weatherList=e.data as ArrayCollection;
+          });
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

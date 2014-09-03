@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" horizontalAlign="center" width="100%" height="100%"
+         xmlns:claims="com.gc.safety.view.claims.*">
+  <mx:Label id="lTitle" textAlign="center" width="100%" fontSize="16" fontWeight="bold"/>
+  <mx:VBox horizontalAlign="center" width="100%">
+    <mx:Canvas width="1024" height="50">
+      <mx:HBox width="100%">
+        <mx:Label text="{resourceManager.getString('gcc_safety', 'refNo')}" width="70"/>
+        <mx:TextInput id="tiAccno" editable="false" width="110"/>
+        <mx:HBox horizontalAlign="right" width="100%">
+          <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.date')}" width="70"/>
+          <mx:DateField id="df" formatString="{Constants.DATE_FORMAT}" enabled="false" width="110"/>
+        </mx:HBox>
+      </mx:HBox>
+    </mx:Canvas>
+  </mx:VBox>
+  <mx:VBox horizontalAlign="center" width="100%">
+    <mx:Canvas width="1024" height="400">
+      <mx:VBox width="100%" height="100%">
+        <mx:HBox width="100%">
+          <mx:Label text="{resourceManager.getString('gcc_safety', 'insurer.name')}"/>
+          <mx:ComboBox id="cbInsurer" dataProvider="{GuaranteeController.insurerList}"
+                       labelField="name" enabled="false" width="180"/>
+          <mx:HBox horizontalAlign="right" width="100%">
+            <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.type')}" width="70"
+                      x="700"/>
+            <mx:ComboBox id="cbGuaType" dataProvider="{type}" labelField="name" enabled="false"
+                         width="110"/>
+          </mx:HBox>
+        </mx:HBox>
+        <mx:Canvas width="100%" height="100%">
+          <claims:AccOutPayQuery id="adg1" dataProvider="{adg1AC}" height="100%"/>
+          <claims:AccInPayQuery id="adg2" dataProvider="{adg2AC}" height="100%"/>
+        </mx:Canvas>
+      </mx:VBox>
+    </mx:Canvas>
+  </mx:VBox>
+  <mx:Canvas width="1024" height="50">
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.query.desc')}" width="70"/>
+      <mx:TextArea id="taDesc" editable="false" width="100%"/>
+    </mx:HBox>
+  </mx:Canvas>
+  <mx:HBox horizontalAlign="center" width="100%">
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'get')}" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'add')}" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'delete')}" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'reset')}" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'export')}"
+               click="onExportClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'print')}"
+               click="onPrintClickHandler()" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'save')}" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="onCloseClickHandler()"/>
+  </mx:HBox>
+
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.ToolTip;
+      import mx.events.CloseEvent;
+      import mx.managers.PopUpManager;
+      import mx.managers.ToolTipManager;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.safety.model.AccInPsnGuaPay;
+      import com.gc.safety.model.AccOutGuaPay;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.PrintUtil;
+
+      private var queryWin:QueryPayWin;
+
+      [Bindable]
+      private var adg1AC:ArrayCollection = new ArrayCollection();
+      [Bindable]
+      private var adg2AC:ArrayCollection = new ArrayCollection();
+      [Bindable]
+      private var type:Array;
+
+      private function onPreinitialize():void
+      {
+        // 凭证类型 (客伤/三责)
+        type = [resourceManager.getString('gcc', 'claims.type.out'), 
+          resourceManager.getString('gcc', 'claims.type.in')];
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            // 取保险公司数据源
+            GuaranteeController.preloadLists(UserController.branchId, ["insurerList"]);
+            adg1AC.removeAll();
+            adg2AC.removeAll();
+            tiAccno.text = "";
+            df.text = "";
+            cbInsurer.selectedIndex = -1;
+            cbGuaType.selectedIndex = -1;
+            popQueryGuaWin();
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        // 设置title
+        lTitle.text = resourceManager.getString('gcc_safety', 'claims.query.pay');
+      }
+
+      private function popQueryGuaWin():void
+      {
+        queryWin = QueryPayWin(PopUpManager.createPopUp(this, QueryPayWin, true));
+        queryWin.confirmBtn.addEventListener(MouseEvent.CLICK, onQueryWinConfirmHandler);
+        queryWin.cancelBtn.addEventListener(MouseEvent.CLICK, onQueryWinCancelHandler);
+        queryWin.addEventListener(CloseEvent.CLOSE, onQueryWinCancelHandler);
+        PopUpManager.centerPopUp(queryWin);
+        queryWin.tiRefNo.setFocus();
+      }
+
+      private function onQueryWinConfirmHandler(e:MouseEvent):void
+      {
+        // validate
+        if (!CommonUtil.validateForm(queryWin, [{field: "tiRefNo", 
+            error: resourceManager.getString("gcc_safety", "claims.query.condition.refNo.null")}]))
+          return;
+        var refNo:String = queryWin.tiRefNo.text;
+        if (CommonUtil.indexOfKey(queryWin.queryAC, refNo, "refNo") == -1)
+        {
+          var p:Point = queryWin.tiRefNo.localToGlobal(new Point(queryWin.tiRefNo.length, 0));
+          var err:String = resourceManager.getString('gcc_safety', 'claims.refNo.error');
+          var errTip:ToolTip = ToolTipManager.createToolTip(err, p.x, p.y) as ToolTip;
+          errTip.x += queryWin.tiRefNo.width;
+          errTip.setStyle("styleName", "errorTip");
+          queryWin.tiRefNo.setFocus();
+          flash.utils.setTimeout(ToolTipManager.destroyToolTip, 2000, errTip);
+          return;
+        }
+
+        // fulfill
+        adg1.visible = (queryWin.type == type[0]) ? true : false;
+        adg2.visible = (queryWin.type == type[0]) ? false : true;
+        cbGuaType.selectedIndex = (queryWin.type == type[0]) ? 0 : 1;
+        cbInsurer.selectedIndex = CommonUtil.indexOfObject(GuaranteeController.insurerList, queryWin.insurer);
+        tiAccno.text = refNo;
+        df.text = DateField.dateToString(queryWin.payDate, Constants.DATE_FORMAT);
+
+        PopUpManager.removePopUp(queryWin);
+        for each (var item:Object in queryWin.payAC)
+        {
+          var ref:String="";
+          if (item is ArrayCollection)
+          {
+            // 三责凭证
+            ref = ((item as ArrayCollection).getItemAt(0, 0) as AccOutGuaPay).id.refNo;
+          }
+          else if (item is AccInPsnGuaPay)
+          {
+            // 客伤凭证
+            ref = (item as AccInPsnGuaPay).id.refNo
+          }
+          if (ref == refNo)
+          {
+            if (adg1.visible)
+            {
+              adg1AC.addItem((item as ArrayCollection).getItemAt(0, 0));
+            }
+            else
+            {
+              adg2AC.addItem(item);
+            }
+          }
+        }
+      }
+
+      private function onQueryWinCancelHandler(e:Event):void
+      {
+        queryWin.removeAllChildren();
+        PopUpManager.removePopUp(queryWin);
+        parent.dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function onExportClickHandler():void
+      {
+        if (adg2.visible)
+          CommonUtil.export(CommonUtil.getGridData(adg2),CommonUtil.getGridHeaders(adg2),null,"客伤赔付.xls");
+        else if (adg1.visible)
+          CommonUtil.export(CommonUtil.getGridData(adg1),CommonUtil.getGridHeaders(adg1),null,"三责赔付.xls");
+      }
+
+      private function onPrintClickHandler():void
+      {
+        if (adg2.visible)
+          PrintUtil.print(adg2);
+        else if (adg1.visible)
+          PrintUtil.print(adg1);
+      }
+
+      private function onCloseClickHandler():void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

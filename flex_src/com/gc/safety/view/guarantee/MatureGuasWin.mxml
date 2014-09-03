@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="800" height="600"
+                title="{resourceManager.getString('gcc_safety','gua.title.mature.guas')}"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="escape(event)">
+  <mx:AdvancedDataGrid id="adgGua" height="100%" sortableColumns="false"
+                       horizontalScrollPolicy="auto" labelFunction="{CommonUtil.gridLabelFunction}"
+                       itemRenderer="mx.controls.Label" dataProvider="{guarInfos}">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="no" labelFunction="setNo" width="64"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.insurer.name"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.type.name"/>
+      <mx:AdvancedDataGridColumnGroup 
+                                      headerText="{resourceManager.getString('gcc_safety','gua.info')}"
+                                      headerRenderer="{header}">
+        <mx:AdvancedDataGridColumn dataField="guaNo"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="lineNo"/>
+        <mx:AdvancedDataGridColumn dataField="useId"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="sits"/>
+        <mx:AdvancedDataGridColumn dataField="archNo"/>
+        <mx:AdvancedDataGridColumn dataField="powerNo"/>
+        <mx:AdvancedDataGridColumn dataField="guaCost"/>
+        <mx:AdvancedDataGridColumn dataField="fee"/>
+        <mx:AdvancedDataGridColumn dataField="guaDesc"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.onDate"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.downDate"/>
+      <mx:AdvancedDataGridColumn dataField="isSelected"
+                                 headerText="{resourceManager.getString('gcc_safety','gua.isSelected')}">
+        <mx:itemRenderer>
+          <mx:Component>
+            <mx:HBox horizontalAlign="center">
+              <mx:CheckBox id="checkBox" click="data.isSelected = !data.isSelected"
+                           selected="{data.isSelected}"/>
+            </mx:HBox>
+          </mx:Component>
+        </mx:itemRenderer>
+      </mx:AdvancedDataGridColumn>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:Label text="{resourceManager.getString('gcc_safety','gua.select.type.date.equals')}"
+            width="100%"/>
+  <mx:HBox width="100%" horizontalAlign="center" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc','ok')}" click="sure(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc','cancel')}" click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.model.GuarInfo;
+      import mx.collections.ArrayCollection;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      [Bindable]
+      private var guarInfos:ArrayCollection;
+      private var guarInfo:GuarInfo;
+
+      private function onPreinitialize():void
+      {
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        header.properties = {opened: false};
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGua,"gcc_safety","guarInfo",function(obj:Object):void {});
+        adgGua.percentWidth = 100;
+        initDateWin();
+      }
+
+      private function initDateWin():void
+      {
+        var dateWin:DateWin = DateWin(PopUpManager.createPopUp(this.parent,DateWin,true));
+        PopUpManager.centerPopUp(dateWin);
+        dateWin.addEventListener(Events.GET, getDates);
+        dateWin.addEventListener(Events.CLOSE,cancel);
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = guarInfos.getItemIndex(item) + 1;
+        return i;
+      }
+
+      private function getDates(event:Events):void
+      {
+        guarInfos = event.data as ArrayCollection;
+      }
+
+      private function sure(event:Event):void
+      {
+        var tempInfos:ArrayCollection = new ArrayCollection();
+        for (var i:int = 0; i < guarInfos.length; i++)
+        {
+          var item:Object = guarInfos.getItemAt(i);
+          if (item.isSelected == true)
+          {
+            tempInfos.addItem(item);
+          }
+        }
+        if (tempInfos.length == 0)
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.noSelected.guaInfo'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        else
+        {
+          for (var j:int = 0; j < tempInfos.length; j++)
+          {
+            if (j == tempInfos.length - 1)
+            {
+              break;
+            }
+            if (tempInfos.getItemAt(j).fkGuarantee.type.name != tempInfos.getItemAt(j+1).fkGuarantee.type.name)
+            {
+              Alert.show(resourceManager.getString('gcc_safety','gua.type.not.equals'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+            var c:int = ObjectUtil.dateCompare(tempInfos.getItemAt(j).fkGuarantee.downDate,tempInfos.getItemAt(j+1).fkGuarantee.downDate);
+            if (c != 0)
+            {
+              Alert.show(resourceManager.getString('gcc_safety','gua.date.not.equals'), Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          }
+        }
+        this.dispatchEvent(new Events(Events.GET,tempInfos));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function cancel(event:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+
+      private function escape(event:KeyboardEvent):void
+      {
+        if (event.keyCode == Keyboard.ESCAPE)
+          cancel(event);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

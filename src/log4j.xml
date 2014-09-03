@@ -1,0 +1,94 @@
+<?xml version="1.0"?>
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+	<appender name="STDOUT" class="org.apache.log4j.ConsoleAppender">
+		<param name="encoding" value="UTF-8"/>
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern"
+				value="%d{z(Z) yyyy-MM-dd HH:mm:ss}[%c] -- %p -- %m%n"/>
+		</layout>
+		<filter class="org.apache.log4j.varia.LevelRangeFilter">
+			<param name="LevelMin" value="TRACE"/>
+			<param name="LevelMax" value="FATAL"/>
+		</filter>
+	</appender>
+
+	<appender name="DB" class="com.gc.log4j.HibernateAppender">
+		<param name="loggerClass" value="com.gc.log4j.HibernateLoggerImpl"/>
+		<param name="loggingEventClass" value="com.gc.common.po.EventLog"/>
+	</appender>
+
+	<category name="org.apache">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="org.enhydra">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="org.hibernate">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="org.logicalcobwebs">
+		<priority value="INFO"/>
+	</category>
+
+	<category name="org.mortbay">
+		<priority value="INFO"/>
+	</category>
+
+	<category name="org.objectweb">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="org.springframework">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="com.opensymphony">
+		<priority value="ERROR"/>
+	</category>
+
+	<!-- set the level in services-config.xml file!!!
+	<category name="flex">
+		<priority value="DEBUG"/>
+	</category>
+	-->
+
+	<category name="com.gc">
+		<priority value="INFO"/>
+	</category>
+
+	<category name="com.gc.spring.LoggerAdvice">
+		<priority value="INFO"/>
+		<appender-ref ref="STDOUT"/>
+	</category>
+
+	<category name="com.gc.common.dao">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="com.gc.common.service">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="com.gc.hr.dao">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="com.gc.hr.service">
+		<priority value="ERROR"/>
+	</category>
+
+	<category name="com.gc.web">
+		<priority value="ERROR"/>
+	</category>
+
+	<root>
+		<priority value="DEBUG"/>
+		<appender-ref ref="STDOUT"/>
+	</root>
+</log4j:configuration>

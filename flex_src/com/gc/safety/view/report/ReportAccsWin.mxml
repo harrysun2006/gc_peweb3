@@ -1,0 +1,573 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:controls="com.gc.controls.*"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)" layout="vertical" width="800" height="600"
+                verticalGap="10">
+  <mx:ToolBar id="form" width="100%" height="100%">
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.no')}" width="100%">
+      <mx:TextInput id="tiNo" name="no"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.statusStr')}" width="100%">
+      <mx:ComboBox id="cbStatus" name="status" labelField="label"
+                   dataProvider="{Constants.ACCSTATUS}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.dept.name')}" width="100%">
+      <mx:ComboBox id="cbDept" name="dept.id" labelField="name"
+                   dataProvider="{BaseController.departmentList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.date')}" width="100%">
+      <controls:DateSelector name="date" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.driver.workerId')}"
+                 width="100%">
+      <mx:TextInput id="cbWorkId" name="driver.workerId"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.line.name')}" width="100%">
+      <mx:TextInput id="cbLine" name="line.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.bus.authNo')}"
+                 width="100%">
+      <mx:TextInput id="cbAuthNo" name="bus.authNo"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','acc.report.confirm')}">
+      <mx:ComboBox id="cbReport" name="report" labelField="label" dataProvider="{Constants.REPORT}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.maim')}">
+      <mx:ComboBox id="cbMaim" name="maim" labelField="label" dataProvider="{Constants.MAIMSS}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.level.name')}"
+                 width="100%">
+      <mx:ComboBox id="cbLevel" name="level.name" labelField="name"
+                   dataProvider="{AccidentController.accLevelList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.type.name')}" width="100%">
+      <mx:ComboBox id="cbAccType" name="type.name" labelField="name"
+                   dataProvider="{AccidentController.accTypeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.duty.name')}" width="100%">
+      <mx:ComboBox id="cbAccDuty" name="duty.name" labelField="name"
+                   dataProvider="{AccidentController.accDutyList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.weather.name')}"
+                 width="100%">
+      <mx:ComboBox id="cbWeather" name="weather.name" labelField="name"
+                   dataProvider="{BaseController.weatherList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.address')}" width="100%">
+      <mx:TextInput id="tiAddress" name="address"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.roadFacility')}"
+                 width="100%">
+      <mx:TextInput id="tiRoadFacility" name="roadFacility"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc1')}" width="100%">
+      <mx:TextInput id="tiDesc1" name="desc1"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc2')}" width="100%">
+      <mx:TextInput id="tiDesc2" name="desc2"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc3')}" width="100%">
+      <mx:TextInput id="tiDesc3" name="desc3"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.reason')}" width="100%">
+      <mx:TextInput id="taReason" name="reason"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.course')}" width="100%">
+      <mx:TextInput id="taCourse" name="course"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.processInfo')}"
+                 width="100%">
+      <mx:TextInput id="taProcessInfo" name="processInfo"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.processor.name')}"
+                 width="100%">
+      <mx:ComboBox id="cbProcessor" name="processor.name" labelField="name"
+                   dataProvider="{AccidentController.accProcessorList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.policeNo')}" width="100%">
+      <mx:TextInput id="tiPoliceNo" name="policeNo"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.extent.name')}"
+                 width="100%">
+      <mx:ComboBox id="cbExtent" name="extent.name" labelField="name"
+                   dataProvider="{AccidentController.accExtentList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.destroy')}" width="100%">
+      <mx:TextInput id="taDestroy" name="destroy"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initor')}" width="100%">
+      <mx:TextInput id="tiInitor" name="initor.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initDate')}" width="100%">
+      <controls:DateSelector name="initDate" output="{qo}"/>
+    </mx:FormItem>
+    <!--使用这个需要类型转换一下，AccidentDAOHibernate.java 1503，onFilteringQOChanged()方法中lost=0,lost=null
+         mx:FormItem label="{resourceManager.getString('gcc_safety','accident.lost')}" width="100%">
+         <mx:TextInput id="tiLost" name="lost" restrict="0-9."/>
+         </mx:FormItem>
+         <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.billNum')}" width="100%">
+         <mx:TextInput id="tiBillNum" name="billNum" restrict="0-9"/>
+         </mx:FormItem-->
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','acc.deptDesc')}" width="100%"
+                 height="100%">
+      <mx:TextInput id="taDeptDesc" name="deptDesc"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.deptor')}" width="100%">
+      <mx:TextInput id="tiDeptor" name="deptor.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.deptDate')}" width="100%">
+      <controls:DateSelector name="deptDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','acc.compDesc')}" width="100%"
+                 height="100%">
+      <mx:TextInput id="taCompDesc" name="compDesc"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.compor')}" width="100%">
+      <mx:TextInput id="tiCompor" name="compor.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.compDate')}" width="100%">
+      <controls:DateSelector name="compDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.archor')}" width="100%">
+      <mx:TextInput id="tiArchor" name="archor.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.archDate')}" width="100%">
+      <controls:DateSelector name="archDate" output="{qo}"/>
+    </mx:FormItem>
+  </mx:ToolBar>
+  <mx:HBox id="hbox" width="100%" horizontalAlign="center" borderStyle="solid" borderThickness="1"
+           paddingTop="10">
+    <mx:Label text="报表模式"/>
+    <mx:RadioButtonGroup id="rbMode" itemClick="mode_itemClick(event)"/>
+    <mx:RadioButton groupName="rbMode" id="rA" label="A 模式" value="a"/>
+    <mx:RadioButton groupName="rbMode" id="rB" label="B 模式" value="b"/>
+  </mx:HBox>
+  <mx:HBox width="100%" horizontalAlign="center" paddingTop="20" paddingBottom="10"
+           horizontalGap="40">
+    <mx:Button id="btOk" label="确定" click="ok(event)"/>
+    <mx:Button id="btReset" label="重置" click="onReset(event)"/>
+    <mx:Button id="btClose" label="取消" click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.common.model.Department;
+      import com.gc.safety.model.AccOutObj;
+      import com.gc.safety.model.AccOutPsn;
+      import com.gc.safety.model.AccInPsn;
+      import mx.utils.ObjectUtil;
+      import com.gc.safety.model.AccInPsnGuaPay;
+      import com.gc.safety.model.AccOutGuaPay;
+      import com.gc.safety.model.AccInPsnGua;
+      import com.gc.safety.model.AccOutGua;
+      import com.gc.safety.model.AccOutPsnPay;
+      import com.gc.safety.model.AccInPsnPay;
+      import mx.events.ItemClickEvent;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.SecurityLimit;
+      import mx.core.UIComponent;
+      import com.gc.safety.Events;
+      import com.gc.safety.model.Accident;
+      import mx.controls.ComboBase;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.common.controller.BaseController;
+      import mx.managers.PopUpManager;
+      import mx.controls.PopUpButton;
+      import com.gc.Constants;
+      import mx.controls.Label;
+      import mx.events.ListEvent;
+      import mx.containers.FormItem;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import mx.utils.ObjectProxy;
+
+      [Bindable]
+      private var qo:Object=new ObjectProxy();
+      private var itemWidth:int = 160;
+      private var labelItemRenderer:IFactory=new ClassFactory(Label);
+      private var mode:String;
+
+      private function onPreinitialize():void
+      {
+        Accident.init();
+      }
+
+      private function onCreationComplete():void
+      {
+        itemWidth=tiNo.getVisibleRect(form).width;
+        CommonUtil.visit(form,setItem);
+        mode="a";
+        rbMode.selection=rA;
+        btOk.setFocus();
+      }
+
+      protected function updateSearchText(item:Object):void
+      {
+        if (item == null)
+          return;
+        var name:String=item["name"];
+        item=CommonUtil.getItem(item);
+        // var prop:Object={name: name, value: CommonUtil.getItemValue(item), label: CommonUtil.getItemLabel(item)};
+        var prop:Object=new Object();
+        prop[Constants.PROP_NAME_NAME]=name;
+        prop[Constants.PROP_NAME_TYPE]=CommonUtil.getAccessorType(Accident, prop[Constants.PROP_NAME_NAME]);
+        if (prop[Constants.PROP_NAME_TYPE] == "Number")
+          prop[Constants.PROP_NAME_VALUE]=Number(CommonUtil.getItemValue(item));
+        else if (prop[Constants.PROP_NAME_TYPE] == "int")
+          prop[Constants.PROP_NAME_VALUE]=int(Number(CommonUtil.getItemValue(item)));
+        else
+          prop[Constants.PROP_NAME_VALUE]=CommonUtil.getItemValue(item);
+        prop[Constants.PROP_NAME_LABEL]=CommonUtil.getItemLabel(item);
+        prop[Constants.PROP_NAME_SHOW]=true;
+        onFilteringQOChanged([prop]);
+      }
+
+      private function onFilteringQOChanged(arr:Array):void
+      {
+        // trace("onTreeFilteringQOChanged");
+        var items:Array=arr;
+        var oldValue:Object;
+        var qo:Object=Accident.qo;
+        var k:int;
+        for each (var item:Object in items)
+        {
+          if (item == null)
+            continue;
+          oldValue=CommonUtil.getAccessorValue(qo, item[Constants.PROP_NAME_NAME]);
+          // oldValue=qo[item[Constants.PROP_NAME_NAME]];
+//          item[Constants.PROP_NAME_TYPE]=CommonUtil.getAccessorType(Accident, item[Constants.PROP_NAME_NAME]);
+          if (item[Constants.PROP_NAME_TYPE] == "String" || item[Constants.PROP_NAME_LABEL] == "")
+          {
+            if (item[Constants.PROP_NAME_VALUE] == "")
+              item[Constants.PROP_NAME_VALUE]=null;
+            if (item[Constants.PROP_NAME_LABEL] == "")
+              item[Constants.PROP_NAME_LABEL]=null;
+          }
+          if (item[Constants.PROP_NAME_VALUE] != oldValue || item[Constants.PROP_NAME_TYPE] == "Date")
+          {
+            qo[item[Constants.PROP_NAME_NAME]]=item[Constants.PROP_NAME_VALUE];
+          }
+        }
+      }
+
+      protected function onFocusOut(event:Event):void
+      {
+        updateSearchText(event.currentTarget);
+      }
+
+      protected function onChange(event:Event):void
+      {
+        var obj:Object=event.currentTarget;
+        updateSearchText(obj);
+      }
+
+      protected function setItem(comp:Object):void
+      {
+        if (comp is FormItem)
+        {
+          var fi:FormItem=comp as FormItem;
+          fi.styleName="filterLabel";
+        }
+        else if (comp is TextInput)
+        {
+          comp.addEventListener(FocusEvent.FOCUS_OUT, onFocusOut);
+        }
+        else if (comp is ComboBox)
+        {
+          var cbox:ComboBox=comp as ComboBox;
+          if (cbox.editable)
+            cbox.addEventListener(FocusEvent.FOCUS_OUT, onFocusOut);
+          else
+            cbox.addEventListener(ListEvent.CHANGE, onChange);
+          cbox.width=itemWidth;
+          cbox.itemRenderer=labelItemRenderer;
+          cbox.addEventListener(KeyboardEvent.KEY_DOWN, CommonUtil.keyDown);
+          CommonUtil.selectDefaultItem(cbox, CommonUtil.getAccessorValue(qo, cbox.name));
+        }
+        else if (comp is PopUpButton)
+        {
+          var pub:PopUpButton=comp as PopUpButton;
+          pub.width=itemWidth;
+        }
+      }
+
+      public function mode_itemClick(event:ItemClickEvent):void
+      {
+        if (event.label == "A 模式")
+          mode="a";
+        else if (event.label == "B 模式")
+          mode="b";
+      }
+
+      private function ok(event:Event):void
+      {
+        if (qo.hasOwnProperty("date_from") || qo.hasOwnProperty("date_to"))
+        {
+          Accident.qo["date_from"]=qo["date_from"];
+          Accident.qo["date_to"]=qo["date_to"];
+        }
+        if (qo.hasOwnProperty("initDate_from") || qo.hasOwnProperty("initDate_to"))
+        {
+          Accident.qo["initDate_from"]=qo["initDate_from"];
+          Accident.qo["initDate_to"]=qo["initDate_to"];
+        }
+        if (qo.hasOwnProperty("deptDate_from") || qo.hasOwnProperty("deptDate_to"))
+        {
+          Accident.qo["deptDate_from"]=qo["deptDate_from"];
+          Accident.qo["deptDate_to"]=qo["deptDate_to"];
+        }
+        if (qo.hasOwnProperty("compDate_from") || qo.hasOwnProperty("compDate_to"))
+        {
+          Accident.qo["compDate_from"]=qo["compDate_from"];
+          Accident.qo["compDate_to"]=qo["compDate_to"];
+        }
+        if (qo.hasOwnProperty("archDate_from") || qo.hasOwnProperty("archDate_to"))
+        {
+          Accident.qo["archDate_from"]=qo["archDate_from"];
+          Accident.qo["archDate_to"]=qo["archDate_to"];
+        }
+        var win:TitleWindow = this;
+        AccidentController.getAccsByAll(UserController.limit,Accident.qo,function(evt:ResultEvent):void
+          {
+            var list:Object = evt.result as ArrayCollection;
+            var accs:ArrayCollection = list[0] as ArrayCollection;
+            if(accs.length <= 0)
+            {
+              Alert.show("对不起，没有你要查找的事故信息",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+//            var aogs:ArrayCollection = list[1] as ArrayCollection;
+//            var aipgs:ArrayCollection = list[2] as ArrayCollection;
+            var aogps:ArrayCollection = list[1] as ArrayCollection;
+            var aipgps:ArrayCollection = list[2] as ArrayCollection;
+            if(mode == "b")
+              var accidents:ArrayCollection = new ArrayCollection();
+            //合计金额
+            var lostFeeSum:Number=0;
+            var inPsnFeeSum:Number=0;
+            var outPsnFeeSum:Number=0;
+            var outObjFeeSum:Number=0;
+            var paySumASum:Number=0;
+            var lostPayFeeSum:Number=0;
+            var inPsnPayFeeSum:Number=0;
+            var outPsnPayFeeSum:Number=0;
+            var outObjPayFeeSum:Number=0;
+            var paySumCSum:Number=0;
+            var inPsnGuaPayFeeSum:Number=0;
+            var outGuaPayFeeSum:Number=0;
+            for each(var acc:Accident in accs)
+            {
+              //赔偿费用
+              var inPsnPayFee:Number = 0;
+              var outObjPayFee:Number = 0;
+              var outPsnPayFee:Number = 0;
+              var paySum:Number = 0;
+              //保险反馈，三责、客伤赔付
+//              var outGuaFee:Number = 0;
+              var outGuaPayFee:Number = 0;
+//              var inPsnGuaFee:Number = 0;
+              var inPsnGuaPayFee:Number = 0;
+              //客伤赔偿
+              for each (var accInPsn:Object in acc.accInPsns)
+              {
+                for each (var accInPsnPay:AccInPsnPay in accInPsn.accInPsnPays)
+                {
+                  if (accInPsnPay.fkAccInPsn.id.accId == accInPsn.id.accId &&
+                    accInPsnPay.fkAccInPsn.id.no == accInPsn.id.no &&
+                    accInPsnPay.fkAccInPsn.id.branch.id == accInPsn.id.branch.id)
+                    inPsnPayFee += accInPsnPay.mediFee + accInPsnPay.other1 + accInPsnPay.other2;
+                }
+              }
+              //三责赔偿
+              for each (var accOutPsn:Object in acc.accOutPsns)
+              {
+                for each (var accOutPsnPay:AccOutPsnPay in accOutPsn.accOutPsnPays)
+                {
+                  if (accOutPsnPay.fkAccOutPsn.id.accId == accOutPsn.id.accId &&
+                    accOutPsnPay.fkAccOutPsn.id.no == accOutPsn.id.no &&
+                    accOutPsnPay.fkAccOutPsn.id.branch.id == accOutPsn.id.branch.id)
+                    outPsnPayFee += accOutPsnPay.mediFee + accOutPsnPay.other1 + accOutPsnPay.other2;
+                }
+              }
+              for each (var accOutObj:Object in acc.accOutObjs)
+              {
+                outObjPayFee += isNaN(accOutObj.payFee) ? 0 : accOutObj.payFee;
+              }
+              //赔偿小计
+              paySum = acc.lost + inPsnPayFee + outObjPayFee + outPsnPayFee;  
+//              //三责理赔
+//              for each (var accOutGua:AccOutGua in aogs){
+//                if (accOutGua.accident.id.id == acc.id.id)
+//                  outGuaFee += accOutGua.objSum + accOutGua.mediFee + 
+//                    accOutGua.other1 + accOutGua.other2;
+//              }
+//              //客伤理赔
+//              for each (var accInPsnGua:AccInPsnGua in aipgs) {
+//                if(accInPsnGua.accident.id.id == acc.id.id)
+//                  inPsnGuaFee += accInPsnGua.mediFee + accInPsnGua.other1 + accInPsnGua.other2;
+//              }
+              //三责赔付
+              for each (var accOutGuaPay:AccOutGuaPay in aogps)
+              {
+                if (accOutGuaPay.fkAccOutGua.accId == acc.id.id)
+                  outGuaPayFee += accOutGuaPay.objSum + accOutGuaPay.mediFee + accOutGuaPay.other1 + accOutGuaPay.other2;
+              }
+              //客伤赔付
+              for each (var accInPsnGuaPay:AccInPsnGuaPay in aipgps)
+              {
+                if (accInPsnGuaPay.fkAccInPsnGua.accident.id.id == acc.id.id)
+                  inPsnGuaPayFee += accInPsnGuaPay.mediFee + accInPsnGuaPay.other1 + accInPsnGuaPay.other2;
+              }
+              if(acc.status <= 1)
+              {
+                acc["lostFee"] = acc.lost;
+                acc["inPsnFee"] = inPsnPayFee;
+                acc["outObjFee"] = outObjPayFee;
+                acc["outPsnFee"] = outPsnPayFee;
+                acc["paySumA"] = paySum;
+              } else
+              {
+                acc["lostPayFee"] = acc.lost;
+                acc["inPsnPayFee"] = inPsnPayFee;
+                acc["outObjPayFee"]= outObjPayFee;
+                acc["outPsnPayFee"] = outPsnPayFee;
+                acc["paySumC"] = paySum;
+              }
+//              acc.outGuaFee = outGuaFee;
+              acc.outGuaPayFee = outGuaPayFee;
+//              acc.inPsnGuaFee = inPsnGuaFee;
+              acc.inPsnGuaPayFee = inPsnGuaPayFee;
+              //合计金额
+              if(acc.hasOwnProperty("lostFee"))
+              {
+                lostFeeSum += acc["lostFee"];
+                inPsnFeeSum += acc["inPsnFee"];
+                outPsnFeeSum += acc["outPsnFee"];
+                outObjFeeSum += acc["outObjFee"];
+                paySumASum += acc["paySumA"];
+              }
+              if(acc.hasOwnProperty("lostPayFee"))
+              {
+                lostPayFeeSum += acc["lostPayFee"];
+                inPsnPayFeeSum += acc["inPsnPayFee"];
+                outPsnPayFeeSum += acc["outPsnPayFee"];
+                outObjPayFeeSum += acc["outObjPayFee"];
+                paySumCSum += acc["paySumC"];
+              }
+              inPsnGuaPayFeeSum += inPsnGuaPayFee;
+              outGuaPayFeeSum += outGuaPayFee;
+
+              acc.statusStr = acc.status == 0 ? "登记" : acc.status == 1 ? "处理" : acc.status == 2 ? "审核" : "存档";
+              acc.reportStr = acc.report == 0 ? "不上报" : "上报";
+              if(mode == "b")
+              {
+                var accBus:Accident = ObjectUtil.copy(acc) as Accident;
+                accBus["objType"]="车辆自身";
+                accidents.addItem(accBus);
+                for each (var inPsn:AccInPsn in acc.accInPsns)
+                {
+//                  var accidentInPsn:Accident = ObjectUtil.copy(acc) as Accident;
+                  var accidentInPsn:Accident = new Accident();
+                  accidentInPsn["objType"]="客伤";
+                  accidentInPsn["objStatus"]=(inPsn.status == 0) ? "死亡" : "受伤";
+                  accidentInPsn["objName"]=inPsn.name;
+                  accidentInPsn["objSex"]=inPsn.sex;
+                  accidentInPsn["objAge"]=inPsn.age;
+                  accidentInPsn["objAddress"]=inPsn.address;
+                  accidentInPsn["objDuty"]=inPsn.duty.name;
+                  accidents.addItem(accidentInPsn);
+                }
+                for each (var outPsn:AccOutPsn in acc.accOutPsns)
+                {
+//                  var accidentOutPsn:Accident = ObjectUtil.copy(acc) as Accident;
+                  var accidentOutPsn:Accident = new Accident();
+                  accidentOutPsn["objType"]="撞人";
+                  accidentOutPsn["objStatus"]=(outPsn.status == 0) ? "死亡" : "受伤";
+                  accidentOutPsn["objName"]=outPsn.name;
+                  accidentOutPsn["objSex"]=outPsn.sex;
+                  accidentOutPsn["objAge"]=outPsn.age;
+                  accidentOutPsn["objAddress"]=outPsn.address;
+                  accidentOutPsn["objDuty"]=outPsn.duty.name;
+                  accidents.addItem(accidentOutPsn);
+                }
+                for each (var obj:AccOutObj in acc.accOutObjs)
+                {
+//                  var accObj:Accident = ObjectUtil.copy(acc) as Accident;
+                  var accObj:Accident = new Accident();
+                  accObj["objType"]="撞物";
+                  accObj["objName"]=obj.obj.name;
+                  accObj["objAddress"]=obj.address;
+                  accObj["objDuty"]=obj.duty.name;
+                  accidents.addItem(accObj);
+                }
+              }
+            }
+            var total:Accident = new Accident();
+            total.dept = new Department();
+            total.dept.name = "合计";
+            total["lostFee"] = lostFeeSum;
+            total["inPsnFee"] = inPsnFeeSum;
+            total["outObjFee"] = outObjFeeSum;
+            total["outPsnFee"] = outPsnFeeSum;
+            total["paySumA"] = paySumASum;
+            total["lostPayFee"] = lostPayFeeSum;
+            total["inPsnPayFee"] = inPsnPayFeeSum;
+            total["outObjPayFee"]= outObjPayFeeSum;
+            total["outPsnPayFee"] = outPsnPayFeeSum;
+            total["paySumC"] = paySumCSum;
+            total.inPsnGuaPayFee = inPsnGuaPayFeeSum;
+            total.outGuaPayFee = outGuaPayFeeSum;
+            total["color"]="";
+            if(mode == "a")
+            {
+              accs.addItem(total);
+              owner.dispatchEvent(new Events(Events.ACC_REFILTERING,accs,[mode]));
+            }
+            else if(mode == "b")
+            {
+              accidents.addItem(total);
+              owner.dispatchEvent(new Events(Events.ACC_REFILTERING,accidents,[mode]));
+            }
+            PopUpManager.removePopUp(win);
+          });
+      }
+
+      private function onReset(event:Event):void
+      {
+        /**
+         * 关于事件参考
+         * http://www.blogjava.net/usherlight/archive/2006/03/02/33264.html
+         **/
+        // trace("filters::onReset: " + event.eventPhase);
+//        if (event.eventPhase == EventPhase.BUBBLING_PHASE)
+//          return;
+        Accident.init();
+        CommonUtil.empty(qo);
+        CommonUtil.visit(this, clearItem);
+      }
+
+      private function clearItem(comp:Object):void
+      {
+        if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.text=null;
+        }
+        else if (comp is ComboBase)
+        {
+          var cbase:ComboBase=comp as ComboBase;
+          cbase.selectedItem=null;
+          cbase.text=null;
+        }
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

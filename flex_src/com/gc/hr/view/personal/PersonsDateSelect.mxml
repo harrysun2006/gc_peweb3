@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="370" height="200"
+                preinitialize="onPreinitialize()">
+  <mx:Form id="form" width="100%" height="100%">
+    <mx:FormItem id="fiDate" labelWidth="90" horizontalAlign="right" width="100%">
+      <mx:DateField name="date" editable="true" formatString="{Constants.DATE_FORMAT}" width="200"
+                    yearNavigationEnabled="true"/>
+    </mx:FormItem>
+    <mx:FormItem id="fiReason" labelWidth="90" horizontalAlign="right" width="100%">
+      <mx:TextInput name="reason" width="200"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.validators.ValidationResult;
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.validators.Validator;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.validators.ValidatorEx;
+
+      private var op:String;
+      private var persons:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        op=e.args[0] as String;
+        var coll:ArrayCollection=e.args[1] as ArrayCollection;
+        persons=new ArrayCollection(coll.source.filter(function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            if (item.office == null) item.office = "";
+            return (item.downDate >= Constants.MAX_DATE);
+          }));
+        if (persons.length <= 0)
+        {
+          callLater(function():void
+            {
+              close();
+              Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+              return;
+            });
+        }
+        if (op == "allotDepart")
+        {
+          title=resourceManager.getString("gcc_hr", "person.manage.allot.depart");
+          fiDate.label=resourceManager.getString("gcc", "person.allotDate")+":";
+          fiReason.label=resourceManager.getString("gcc", "person.allotReason")+":";
+        }
+        else if (op == "allotLine")
+        {
+          title=resourceManager.getString("gcc_hr", "person.manage.allot.line");
+          fiDate.label=resourceManager.getString("gcc", "person.allotDate")+":";
+          fiReason.label=resourceManager.getString("gcc", "person.allotReason")+":";
+        }
+        else if (op == "updateStatus")
+        {
+          title=resourceManager.getString("gcc_hr", "person.manage.update.status");
+          fiDate.label=resourceManager.getString("gcc", "person.upgradeStatusDate")+":";
+          fiReason.label=resourceManager.getString("gcc", "person.upgradeReason")+":";
+        }
+        else if (op == "updateCert2No")
+        {
+          title=resourceManager.getString("gcc_hr", "menu.person.manage.cert2no");
+          fiDate.label=resourceManager.getString("gcc", "person.allotDate")+":";
+          fiReason.visible=fiReason.includeInLayout=false;
+        }
+      }
+
+      private function open(e:Event):void
+      {
+        var df:Function=function(value:Object, source:Object, property:String, subFields:Array):ValidationResult
+          {
+            var d:Date=DateUtil.parseDate(value.toString());
+            return (d < CommonController.lastCloseDate) ? new ValidationResult(true, null, "error.beyond.closeDate", 
+              resourceManager.getString("gcc_hr", "error.beyond.closeDate", [DateUtil.formatDate(d), DateUtil.formatDate(CommonController.lastCloseDate)])) : null;
+          };
+        var dv:Validator=new ValidatorEx(df);
+        var dvf:Object={field:"date", validator:dv};
+        var vfs:Array=(op == "updateCert2No") ? [dvf] : [dvf, "reason"];
+        if (!CommonUtil.validateForm(form, vfs))
+          return;
+        var obj:Object=new Object();
+        CommonUtil.loadInstance(form, obj, true);
+        var clazz:Class=(op == "allotDepart") ? PersonsAllotDepart
+          : (op == "allotLine") ? PersonsAllotLine
+          : (op == "updateStatus") ? PersonsUpdateStatus
+          : (op == "updateCert2No") ? PersonsCert2No : null;
+        if (clazz)
+        {
+          close();
+          callLater(function():void{CommonUtil.popupWindow(clazz, title, owner, [obj, persons]);});
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,612 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+           verticalScrollPolicy="off" xmlns:controls="com.gc.controls.*">
+  <mx:ToolBar id="form" width="100%" height="100%">
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.dept.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbDept" labelField="name" enabled="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.date')}"
+                       width="100%" horizontalAlign="right">
+            <mx:DateField id="dfDate" name="date" text="{df.format(accident.date)}" enabled="false"
+                          width="180"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.no')}" width="100%"
+                       horizontalAlign="right">
+            <mx:TextInput id="tiNo" name="no" text="{accident.no}" width="180"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem 
+                       label="*{resourceManager.getString('gcc_safety','accident.driver.workerId')}"
+                       width="100%" horizontalAlign="right">
+            <controls:AutoCompleteComboBox id="cbWorkId" close="driverFocuseOut(event)"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.driver.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiName" name="driver.name" text="{accident.driver.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','acc.driver.pid')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiPid" name="driver.cert1No" text="{accident.driver.cert1No}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.line.name')}"
+                       width="100%" horizontalAlign="right">
+            <controls:AutoCompleteComboBox id="cbLine" labelField="name"
+                                           close="lineFocuseOut(event)"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.bus.authNo')}"
+                       width="100%" horizontalAlign="right">
+            <controls:AutoCompleteComboBox id="cbAuthNo" labelField="authNo"
+                                           close="busFocuseOut(event)"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.bus.type.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiEquType" name="bus.type.name" text="{accident.bus.type.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.level.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbLevel" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.type.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbAccType" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.duty.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbAccDuty" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="*{resourceManager.getString('gcc_safety','accident.weather.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbWeather" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.address')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiAddress" name="address" text="{accident.address}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.roadFacility')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiRoadFacility" name="roadFacility" text="{accident.roadFacility}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc1')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc1" name="desc1" text="{accident.desc1}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc2')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc2" name="desc2" text="{accident.desc2}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.desc3')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc3" name="desc3" text="{accident.desc3}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.reason')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextArea id="taReason" name="reason" text="{accident.reason}" width="100%"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.course')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextArea id="taCourse" name="course" text="{accident.course}" width="100%"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.processInfo')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextArea id="taProcessInfo" name="processInfo" text="{accident.processInfo}"
+                         width="100%"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.processor.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbProcessor" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.policeNo')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiPoliceNo" name="policeNo" text="{accident.policeNo}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.extent.name')}"
+                       width="100%" horizontalAlign="right">
+            <mx:ComboBox id="cbExtent" labelField="name" editable="true"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%"/>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.destroy')}"
+                       width="100%" horizontalAlign="right">
+            <mx:TextArea id="taDestroy" name="destroy" text="{accident.destroy}" width="100%"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+  </mx:ToolBar>
+  <mx:DateFormatter id="df" formatString="{Constants.DATETIME_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.util.DateUtil;
+      import mx.utils.ObjectUtil;
+      import com.gc.safety.model.AccDuty;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.safety.Events;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.common.model.Equipment;
+      import com.gc.common.model.Line;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import mx.collections.ArrayCollection;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.Constants;
+      import com.gc.safety.model.Accident;
+      [Bindable]
+      private var accident:Accident;
+      private var user:SecurityUser;
+      private var accDate:Date;
+      private var itemWidth:int = 180;
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(form,setItem);
+      }
+
+      protected function setItem(comp:Object):void
+      {
+        if (comp is FormItem)
+        {
+          var fi:FormItem=comp as FormItem;
+          fi.styleName="filterLabel";
+        }
+        else if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.width=itemWidth;
+        }
+        else if (comp is ComboBox)
+        {
+          var cbox:ComboBox=comp as ComboBox;
+          cbox.width=itemWidth;
+        }
+      }
+
+      private function setEditAble(able:Boolean):void
+      {
+        tiNo.editable = able;
+        cbWorkId.enabled = able;
+        cbLine.enabled = able;
+        cbAuthNo.enabled = able;
+        cbLevel.enabled = able;
+        cbAccType.enabled = able;
+        cbAccDuty.enabled = able;
+        cbWeather.enabled = able;
+        cbProcessor.enabled = able;
+        cbExtent.enabled = able;
+        tiAddress.editable = able;
+        tiDesc1.editable = able;
+        tiDesc2.editable = able;
+        tiDesc3.editable = able;
+        tiRoadFacility.editable = able;
+        taCourse.editable = able;
+        taDestroy.editable = able;
+        taReason.editable = able;
+        taProcessInfo.editable = able;
+        tiPid.editable = able;
+      }
+
+      private function setBaseDate():void
+      {
+        cbAccDuty.dataProvider = AccidentController.accDutyList;
+        cbAccType.dataProvider = AccidentController.accTypeList;
+        cbExtent.dataProvider = AccidentController.accExtentList;
+        cbLevel.dataProvider = AccidentController.accLevelList;
+        cbProcessor.dataProvider = AccidentController.accProcessorList;
+        cbWeather.dataProvider = BaseController.weatherList;
+        cbAccDuty.selectedItem = null;
+        cbAccType.selectedItem = null;
+        cbExtent.selectedItem = null;
+        cbLevel.selectedItem = null;
+        cbProcessor.selectedItem = null;
+        cbWeather.selectedItem = null;
+      }
+
+      /**初始化psnonline*/
+      public function initPsnOnlineList():void
+      {
+        PersonalController.getPsnOnlines(UserController.branchId,accDate,accident.dept.id,successPsnOnline);
+      }
+
+      private function successPsnOnline(evt:ResultEvent):void
+      {
+        selectDept();
+      }
+
+      /**初始化EquOnline*/
+      public function initEquOnlineList():void
+      {
+        BaseController.getEquOnlineList(UserController.branchId,accDate,accident.dept.id);
+      }
+
+      private function selectDept():void
+      {
+        if (cbDept.selectedItem != null && accDate != null)
+        {
+          var personList:ArrayCollection = new ArrayCollection();
+          var list:ArrayCollection = PersonalController.psnOnlineList;
+          for (var i:int = 0; i < PersonalController.psnOnlineList.length; i++)
+          {
+            var person:Person = PersonalController.psnOnlineList.getItemAt(i,0).person as Person;
+            var onDate:Date = PersonalController.psnOnlineList.getItemAt(i,0).onDate;
+            var downDate:Date = PersonalController.psnOnlineList.getItemAt(i,0).downDate;
+            var person1:Person = new Person();
+            if (accDate >= onDate && accDate <= downDate)
+            {
+              person1 = person;
+              personList.addItem(person1);
+            }
+          }
+          if (personList != null)
+          {
+            cbWorkId.dataProvider = personList;
+            cbWorkId.selectedItem = null;
+            tiName.text = "";
+            tiPid.text = "";
+          }
+
+          var lineList1:ArrayCollection = new ArrayCollection();
+          for (var j:int = 0; j < BaseController.lineList.length; j++)
+          {
+            var lines:ArrayCollection = BaseController.lineList;
+            var dept1:Department = BaseController.lineList.getItemAt(j,0).depart as Department;
+            var downDate1:Date = BaseController.lineList.getItemAt(j,0).downDate;
+            var line1:Line = new Line();
+            if (dept1 != null)
+            {
+              if (accDate < downDate1 && dept1.id == (accident.dept as Department).id)
+              {
+                line1 = BaseController.lineList.getItemAt(j,0) as Line;
+                lineList1.addItem(line1);
+              }
+            }
+          }
+          if (lineList1 != null)
+          {
+            cbLine.dataProvider = lineList1;
+            cbLine.selectedItem = null;
+            cbLine.text = "";
+          }
+          cbAuthNo.dataProvider = null;
+          cbAuthNo.text = "";
+          tiEquType.text = "";
+        }
+      }
+      //线路选择后执行车号列表过滤
+      private function selectLine(evt:Event):void
+      {
+        if (cbLine.selectedItem != null)
+        {
+          var equList:ArrayCollection = new ArrayCollection();
+          for (var i:int = 0; i < BaseController.equOnlineList.length; i++)
+          {
+            var equ:Equipment = BaseController.equOnlineList.getItemAt(i,0).equipment as Equipment;
+            var line:Line = BaseController.equOnlineList.getItemAt(i,0).line as Line;
+            var onDate:Date = BaseController.equOnlineList.getItemAt(i,0).onDate;
+            var downDate:Date = BaseController.equOnlineList.getItemAt(i,0).downDate;
+            if (line != null)
+            {
+              if (((accDate >= onDate && accDate <= downDate) || (accDate >= onDate && downDate == null)) && line.id == (cbLine.selectedItem as Line).id)
+              {
+                equList.addItem(equ);
+              }
+            }
+          }
+          if (equList != null)
+          {
+            cbAuthNo.dataProvider = equList;
+            cbAuthNo.selectedItem = null;
+            cbAuthNo.text = "";
+          }
+          tiEquType.text = "";
+        }
+      }
+      //填写线路后enter，光标移出后验证，是否正确
+      private function lineFocuseOut(event:Event):void
+      {
+//        if (cbLine.text != "" && cbLine.dataProvider.length==1 
+//          && (cbLine.dataProvider as ArrayCollection)[0].label.indexOf(cbLine.text)>=0)
+//        {
+//          cbLine.selectedItem = (cbLine.dataProvider as ArrayCollection)[0] as Line;
+//        }
+        selectLine(event);
+      }
+
+      //驾驶员工号选择后执行
+      private function selectWorkerId(evt:Event):void
+      {
+        if (cbWorkId.selectedItem == null)
+        {
+          return;
+        }
+        var driver:Person = cbWorkId.selectedItem as Person;
+        if (driver != null)
+        {
+          tiName.text = driver.name;
+          tiPid.text = driver.cert1No;
+        }
+      }
+      //填写驾驶员后enter，光标移出后验证，是否正确
+      private function driverFocuseOut(event:Event):void
+      {
+//        if (cbWorkId.text != "" && cbWorkId.dataProvider.length==1 
+//          && (cbWorkId.dataProvider as ArrayCollection)[0].label.indexOf(cbWorkId.text)>=0)
+//        {
+//          cbWorkId.selectedItem = (cbWorkId.dataProvider as ArrayCollection)[0] as Person;
+//        }
+        selectWorkerId(event);
+      }
+
+      //车号选择后执行类型填充
+      private function selectUseId(evt:Event):void
+      {
+        if (cbAuthNo.selectedItem == null)
+        {
+          return;
+        }
+        var bus:Equipment = cbAuthNo.selectedItem as Equipment;
+        if (bus != null)
+        {
+          tiEquType.text = bus.type.name;
+        }
+        dispatchEvent(new Events(Events.SELECTED,bus.id));
+      }
+
+      private function busFocuseOut(event:Event):void
+      {
+//        if (cbAuthNo.text != "" && cbAuthNo.dataProvider.length==1 
+//          && (cbAuthNo.dataProvider as ArrayCollection)[0].label.indexOf(cbAuthNo.text)>=0)
+//        {
+//          cbAuthNo.selectedItem = (cbAuthNo.dataProvider as ArrayCollection)[0] as Equipment;
+//        }
+        selectUseId(event);
+      }
+
+      public function getDepartAndDate(accident:Accident):void
+      {
+        this.accident = null;
+        this.accident = accident;
+        cbDept.dataProvider = this.accident.dept;
+//        dfDate.selectedDate = this.accident.date;
+        accDate = null;
+        accDate = DateUtil.parseDate(DateUtil.formatDate(accident.date,Constants.DATE_FORMAT));
+        cbWorkId.text = "";
+        if (isNaN(accident.billNum))
+        {
+          accident.billNum = 0;
+        }
+        if (isNaN(accident.lost))
+        {
+          accident.lost = 0;
+        }
+        if (isNaN(accident.report))
+        {
+          accident.report = 0;
+        }
+        setBaseDate();
+        initPsnOnlineList();
+        initEquOnlineList();
+        tiNo.setFocus();
+      }
+
+      /**初始化psnonline*/
+      public function initPsnOnlineList_3():void
+      {
+        PersonalController.getPsnOnlines(UserController.branchId,accDate,accident.dept.id,successPsnOnline_3);
+      }
+
+      private function successPsnOnline_3(evt:ResultEvent):void
+      {
+        selectedItem();
+      }
+
+      /**初始化EquOnline*/
+      public function initEquOnlineList_3():void
+      {
+        BaseController.getEquOnlineList(UserController.branchId,accDate,accident.dept.id,successLine_3);
+      }
+
+      private function selectedItem():void
+      {
+        if (cbDept.selectedItem != null && accDate != null)
+        {
+          var personList:ArrayCollection = new ArrayCollection();
+          for (var i:int = 0; i < PersonalController.psnOnlineList.length; i++)
+          {
+            var onDate:Date = PersonalController.psnOnlineList.getItemAt(i,0).onDate;
+            var downDate:Date = PersonalController.psnOnlineList.getItemAt(i,0).downDate;
+            var person1:Person = new Person();
+            if (accDate >= onDate && accDate <= downDate)
+            {
+              person1 = PersonalController.psnOnlineList.getItemAt(i,0).person as Person;
+              personList.addItem(person1);
+            }
+          }
+          if (personList != null)
+          {
+            cbWorkId.dataProvider = personList;
+            cbWorkId.selectedItem = null;
+            CommonUtil.selectItem(accident.driver,personList,cbWorkId);
+          }
+
+          var lineList1:ArrayCollection = new ArrayCollection();
+          for (var j:int = 0; j < BaseController.lineList.length; j++)
+          {
+            var lines:ArrayCollection = BaseController.lineList;
+            var dept1:Department = BaseController.lineList.getItemAt(j,0).depart as Department;
+            var downDate1:Date = BaseController.lineList.getItemAt(j,0).downDate;
+            var line1:Line = new Line();
+            if (dept1 != null)
+            {
+              if (accDate < downDate1 && dept1.id == (accident.dept as Department).id)
+              {
+                line1 = BaseController.lineList.getItemAt(j,0) as Line;
+                lineList1.addItem(line1);
+              }
+            }
+          }
+          if (lineList1 != null)
+          {
+            cbLine.dataProvider = lineList1;
+            cbLine.selectedItem = null;
+            CommonUtil.selectItem(accident.line,lineList1,cbLine);
+          }
+        }
+      }
+
+      private function successLine_3(evt:Event):void
+      {
+        if (cbLine.selectedItem != null)
+        {
+          var equList:ArrayCollection = new ArrayCollection();
+          for (var i:int = 0; i < BaseController.equOnlineList.length; i++)
+          {
+            var equ:Equipment = BaseController.equOnlineList.getItemAt(i,0).equipment as Equipment;
+            var line:Line = BaseController.equOnlineList.getItemAt(i,0).line as Line;
+            var onDate:Date = BaseController.equOnlineList.getItemAt(i,0).onDate;
+            var downDate:Date = BaseController.equOnlineList.getItemAt(i,0).downDate;
+            if (line != null)
+            {
+              if (((accDate >= onDate && accDate <= downDate) || (accDate >= onDate && downDate == null)) && line.id == (cbLine.selectedItem as Line).id)
+              {
+                equList.addItem(equ);
+              }
+            }
+          }
+          if (equList != null)
+          {
+            cbAuthNo.dataProvider = equList;
+            cbAuthNo.selectedItem = null;
+            CommonUtil.selectItem(accident.bus,equList,cbAuthNo);
+          }
+//				dispatchEvent(new Events(Events.SELECTED,accident.bus.id));
+        }
+      }
+
+      //车队处理
+      public function getAccident(acc:Accident):void
+      {
+        this.accident = null;
+        this.accident = acc;
+        user = UserController.user;
+        cbDept.dataProvider = accident.dept;
+//        dfDate.selectedDate = accident.date;
+        accDate = null;
+        accDate = DateUtil.parseDate(DateUtil.formatDate(accident.date,Constants.DATE_FORMAT));
+        if (user.limit.safetyLimit == 3 || user.limit.safetyLimit == 12)
+        {
+          setBaseDate();
+          initPsnOnlineList_3();
+          initEquOnlineList_3();
+          CommonUtil.selectItem(accident.level,AccidentController.accLevelList,cbLevel);
+          CommonUtil.selectItem(accident.type,AccidentController.accTypeList,cbAccType);
+          CommonUtil.selectItem(accident.duty,AccidentController.accDutyList,cbAccDuty);
+          CommonUtil.selectItem(accident.weather,BaseController.weatherList,cbWeather);
+          CommonUtil.selectItem(accident.processor,AccidentController.accProcessorList,cbProcessor);
+          CommonUtil.selectItem(accident.extent,AccidentController.accExtentList,cbExtent);
+        }
+        else if (user.limit.safetyLimit == 4)
+        {
+          setEditAble(false);
+          cbWorkId.dataProvider = accident.driver;
+          cbLine.dataProvider = accident.line;
+          cbAuthNo.dataProvider = accident.bus;
+          cbLevel.dataProvider = accident.level;
+          cbAccType.dataProvider = accident.type;
+          cbAccDuty.dataProvider = accident.duty;
+          cbWeather.dataProvider = accident.weather;
+          cbProcessor.dataProvider = accident.processor;
+          cbExtent.dataProvider = accident.extent;
+        }
+//			tiNo.setFocus();
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

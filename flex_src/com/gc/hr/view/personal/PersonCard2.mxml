@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+           backgroundColor="#FFFFFF" backgroundImage="{form}" creationPolicy="all" paddingTop="0"
+           paddingBottom="0" paddingLeft="0" paddingRight="0" width="767" height="1015"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off" fontFamily="SimSun"
+           fontStyle="normal" fontWeight="bold" alpha="100" preinitialize="onPreinitialize()"
+           creationComplete="onCreationComplete()">
+  <mx:Grid styleName="brBorder">
+    <mx:GridRow>
+      <mx:GridItem rowSpan="2">
+        <mx:Label text="A1:"/>
+        <mx:Text text="11"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="B1:"/>
+        <mx:Text text="12"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="C1:"/>
+        <mx:Text text="13"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem colSpan="2">
+        <mx:Label text="B2:"/>
+        <mx:Text text="22"/>
+      </mx:GridItem>
+    </mx:GridRow>
+  </mx:Grid>
+  <gc:ByteArrayImage id="imgPhoto" x="623" y="61" width="113" height="175"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.containers.GridItem;
+      import mx.core.BitmapAsset;
+      import mx.core.ByteArrayAsset;
+
+      import com.gc.Constants;
+      import com.gc.common.model.Person;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var _person:Person;
+      [Bindable]
+      [Embed(source="com/gc/hr/view/personal/PersonCard.png")]
+      private var form:Class;
+      [Bindable]
+      private var f1:String;
+      [Bindable]
+      private var f2:String;
+
+      private function onPreinitialize():void
+      {
+        f1=resourceManager.getString("gcc", "date.format.ym");
+        f2=resourceManager.getString("gcc", "date.format.ymd");
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(this, function(obj:Object):void
+          {
+            if (obj is GridItem) obj.styleName="ltBorder";
+          });
+      }
+
+      override public function set data(value:Object):void
+      {
+        super.data=value;
+        if (value is Person)
+        {
+          _person=value as Person;
+          loadImage(_person.photo);
+        }
+      }
+
+      private function loadImage(bytes:ByteArray):void
+      {
+        imgPhoto.loadBytes(bytes);
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

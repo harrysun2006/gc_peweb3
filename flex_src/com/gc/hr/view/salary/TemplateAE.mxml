@@ -1,0 +1,214 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="600" height="450"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:Form id="form" width="100%">
+    <mx:ToolBar width="100%">
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salTemplate.depart')}:">
+        <mx:ComboBox id="cbDepart" name="depart" width="170"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salTemplate.name')}:">
+        <mx:TextInput name="name" text="{head.name}" width="170" enabled="{a1}"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salTemplate.comment')}:">
+        <mx:TextInput name="comment" text="{head.comment}" width="436" enabled="{a1}"/>
+      </mx:FormItem>
+    </mx:ToolBar>
+    <mx:HBox width="100%">
+      <mx:VBox width="50%">
+        <mx:Label text="{resourceManager.getString('gcc_hr', 'salItems.select')}:" width="100%"/>
+        <mx:List id="l1" dataProvider="{list1$}" labelField="label" width="100%">
+          <mx:itemRenderer>
+            <mx:Component>
+              <mx:HBox width="100%" verticalAlign="middle">
+                <mx:CheckBox click="data.selected=!data.selected" selected="{data.selected}"
+                             enabled="{outerDocument.a1}"/>
+                <mx:Label width="100%" text="{data.label}"/>
+              </mx:HBox>
+            </mx:Component>
+          </mx:itemRenderer>
+        </mx:List>
+      </mx:VBox>
+      <mx:VBox width="50%">
+        <mx:Label text="{resourceManager.getString('gcc_hr', 'linkItems.select')}:" width="100%"/>
+        <mx:List id="l2" dataProvider="{list2$}" labelField="label" width="100%">
+          <mx:itemRenderer>
+            <mx:Component>
+              <mx:HBox width="100%" verticalAlign="middle">
+                <mx:CheckBox click="data.selected=!data.selected;" selected="{data.selected}"
+                             enabled="{data.enabled}"/>
+                <mx:Label width="100%" text="{data.label}"/>
+              </mx:HBox>
+            </mx:Component>
+          </mx:itemRenderer>
+        </mx:List>
+      </mx:VBox>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="6">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="save(event)"
+                 enabled="{UserController.hrSalWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import bee.eval.Ident;
+      import mx.collections.ArrayCollection;
+      import mx.controls.CheckBox;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalItem;
+      import com.gc.hr.model.SalTemplate;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      public var a1:Boolean=false;
+      [Bindable]
+      private var list1$:ArrayCollection; // 全部薪资项目列表(打勾的表示选中的项目)
+      [Bindable]
+      private var list2$:ArrayCollection; // 全部链接项目列表(打勾的表示选中的链接项目)
+      private var op:String; // 操作(add/edit/view)
+      private var items:ArrayCollection; // 模板的项目列表(修改后)
+      [Bindable]
+      private var head:SalTemplate; // 当前add/edit的模板, SalTemplate(fetched: depart)
+      private var _data:ArrayCollection; // 当前edit/view的模板明细[{person:p1, stds:[std11, ..., std1n], sfos:[sfo11, ..., sfo1n]}, ..., {person:pn, stds:[stdn1, ..., stdnn], sfos:[sfon1, ..., sfonn]}]
+      private var items_old:ArrayCollection; // 模板的项目列表(修改前)
+      private var head_old:SalTemplate; // 模板(修改前)
+      private var persons:ArrayCollection; // 部门发薪人员列表
+      private var ix:Array; // 项目的顺序
+
+      private function onPreinitialize():void
+      {
+        list1$=ObjectUtil.copy(SalaryController.salItemList) as ArrayCollection;
+        list2$=Person.LINK_ITEMS;
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        cbDepart.dataProvider=BaseController.departmentList;
+        cbDepart.enabled=UserController.hrHead && a1;
+        CommonUtil.visit(this, function(obj:Object):void{if (obj is FormItem) obj.styleName="filterLabel";});
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        head=e.data.h as SalTemplate;
+        op=e.data.o;
+        a1=(op != Constants.OP_VIEW);
+        var index:int=-1;
+        if (op == Constants.OP_ADD)
+        {
+          title=resourceManager.getString("gcc_hr", "salTemplate.add1");
+          head.branch=UserController.branch;
+          index=CommonUtil.indexOfKey(BaseController.departmentList, UserController.hrDepart);
+        }
+        else if (op == Constants.OP_EDIT)
+        {
+          title=resourceManager.getString("gcc_hr", "salTemplate.edit", [head.departName, head.name]);
+          index=CommonUtil.indexOfKey(BaseController.departmentList, head.depart);
+          SalaryController.getTemplateItems(head, load);
+        }
+        else if (op == Constants.OP_VIEW)
+        {
+          title=resourceManager.getString("gcc_hr", "salTemplate.view", [head.departName, head.name]);
+          index=CommonUtil.indexOfKey(BaseController.departmentList, head.depart);
+          SalaryController.getTemplateItems(head, load);
+        }
+        callLater(function():void{cbDepart.selectedIndex=index;});
+      }
+
+      // Edit模板时载入模板引用的工资项目
+      private function load(e:ResultEvent):void
+      {
+        items_old=e.result.items;
+        head_old=e.result.head;
+        items=ObjectUtil.copy(items_old) as ArrayCollection;
+        head=ObjectUtil.copy(head_old) as SalTemplate;
+        var si:SalItem;
+        var m:Object=new Object();
+        for each (si in items)
+        {
+          m["si#"+si.id]=si;
+        }
+        for each (si in list1$)
+        {
+          if (m["si#"+si.id])
+            si.selected=true;
+        }
+        list1$.refresh();
+      }
+
+      private function filter(list:ArrayCollection, name:String=null):ArrayCollection
+      {
+        var r:ArrayCollection=new ArrayCollection();
+        for each (var obj:Object in list)
+        {
+          if (obj.selected)
+          {
+            if (name == null)
+              r.addItem(obj);
+            else
+              r.addItem(obj[name]);
+          }
+        }
+        return r;
+      }
+
+      private function save(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["depart", "name"]))
+          return;
+        var list1:ArrayCollection=filter(list1$);
+        if (list1.length == 0)
+        {
+          CommonUtil.showError(l1, 2000, resourceManager.getString("gcc", "value.required.error"));
+          return;
+        }
+        CommonUtil.loadInstance(form, head);
+        var list2:ArrayCollection=filter(list2$, "name");
+        if (op == Constants.OP_ADD)
+          SalaryController.createTemplatePersonsAndItems({head:head, items:list1, lis:list2.source}, save1);
+        else
+          SalaryController.getTemplatePersonsAndItems({head:head, items:list1, lis:list2.source}, save1);
+      }
+
+      // 打开TemplateVoucher页面进一步Add/Edit模板
+      private function save1(e:ResultEvent):void
+      {
+        persons=e.result.persons;
+        items=e.result.items;
+        head=e.result.head;
+        _data=e.result.data;
+        ix=e.result.ix;
+        var n:String, s:String="";
+        var rr:Object=SalItem.validate(items, [SalItem.EVALF_ITEMS]);
+        if (!rr.valid)
+        {
+          for (n in rr.error)
+          {
+            s=rr.error[n];
+            break;
+          }
+          CommonUtil.showError(l1, 2000, s);
+          return;
+        }
+        var list2:ArrayCollection=filter(list2$);
+        CommonUtil.popupWindow(TemplateVoucher, "", this.owner, 
+          {ps:persons, "is":items, h:head, d:_data, iso:items_old, ho:head_old, o:op, rr:rr, lis:list2, ix:ix});
+        close();
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

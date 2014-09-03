@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="300" height="200"
+                preinitialize="onPreinitialize()" visible="false">
+  <mx:Form id="form" width="100%" height="100%">
+    <mx:FormItem labelWidth="80" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc', 'item')}:">
+      <mx:ComboBox id="cbItem" name="item" width="130" editable="false"/>
+    </mx:FormItem>
+    <mx:FormItem labelWidth="80" horizontalAlign="right" width="100%" label="其它选项:">
+      <mx:CheckBox id="cbZero" name="zero" label=" 保持0值"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="6" paddingBottom="6">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="dodo(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.managers.PopUpManager;
+
+      import com.gc.hr.model.SalItem;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.ExprUtil;
+
+      private var items:ArrayCollection;
+      private var list0:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        title="重新计算";
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        if (e.data == null || e.data.items == null)
+          return;
+        items=e.data.items as ArrayCollection;
+        list0=new ArrayCollection();
+        for each (var si:SalItem in items)
+        {
+          if (si.editable && si.computable)
+            list0.addItem(si);
+        }
+        cbItem.dataProvider=list0;
+        if (list0.length == 0)
+        {
+          Alert.show("没有需要重新计算的可编辑公式项目!", Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          close();
+        }
+        else
+        {
+          if (list0.length == 1)
+          {
+            cbItem.selectedIndex=0;
+            cbItem.enabled=false;
+          }
+          visible=true;
+        }
+      }
+
+      private function dodo(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["item"]))
+          return;
+        var ii:Object=cbItem.selectedItem;
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, {type:"recalc", item:ii, zero:cbZero.selected}));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function close(e:Event=null):void
+      {
+        owner.dispatchEvent(new CommonEvent(CommonEvent.CLOSED));
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" verticalAlign="top" layout="vertical"
+                width="800" height="600" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:HDividedBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg" width="100%" height="100%" minWidth="100"
+                           labelFunction="{CommonUtil.gridLabelFunction}" change="onChange(event)"
+                           valueCommit="onValueCommit(event)" keyDown="keyDownHandler(event)">
+        <mx:columns>
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="60"
+                                     formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+          <mx:AdvancedDataGridColumn dataField="no" width="50"
+                                     formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+          <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'name')}"
+                                     dataField="label" width="100"/>
+        </mx:columns>
+      </mx:AdvancedDataGrid>
+      <mx:ViewStack id="vsItem" width="100%" height="100%" minWidth="240" creationPolicy="all">
+        <mx:Canvas/>
+        <mx:VBox id="viewItem" width="100%" height="100%" paddingLeft="10" paddingTop="10"
+                 paddingRight="10">
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc_hr', code + '.no')}:"/>
+            <mx:TextInput id="tiNo" name="no" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc_hr', code + '.id.name')}:"/>
+            <mx:TextInput id="tiName" name="id.name" text="{po.id.name}" maxChars="10"/>
+          </mx:GridItem>
+          <mx:GridItem includeInLayout="false" visible="false">
+            <mx:Label text="{resourceManager.getString('gcc_hr', code + '.active')}:"/>
+            <mx:ComboBox name="active" text="{po.active}"/>
+          </mx:GridItem>
+          <mx:GridItem height="100%" includeInLayout="false" visible="false">
+            <mx:Label text="{resourceManager.getString('gcc_hr', code + '.description')}:"/>
+            <mx:TextArea name="description" text="{po.description}" height="100%"/>
+          </mx:GridItem>
+        </mx:VBox>
+      </mx:ViewStack>
+    </mx:HDividedBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10"
+             paddingLeft="10">
+      <mx:Button id="btnAdd" label="{resourceManager.getString('gcc', 'add')}" click="add(event)"/>
+      <mx:Button id="btnDelete" label="{resourceManager.getString('gcc', 'delete')}"
+                 click="_delete(event)"/>
+      <mx:Button id="btnMerge" label="{resourceManager.getString('gcc', 'merge')}"
+                 click="merge(event)" includeInLayout="false" visible="false"/>
+      <mx:Button id="btnSave" label="{resourceManager.getString('gcc', 'save')}" click="save(event)"
+                 enabled="false"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.core.UIComponent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.ArrayHierarchy;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var po:Object;
+      private var npo:Object;
+
+      private var clazz:Class;
+      [Bindable]
+      private var code:String;
+      private var gfunc:Function;
+      private var list:ArrayCollection;
+      private var labelItemRenderer:IFactory=new ClassFactory(Label);
+      private var operation:String;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void 
+          {
+            clazz=e.args[0] as Class;
+            code=e.args[1] as String;
+            gfunc=e.args[2] as Function;
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        loadList(UserController.branchId);
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", code);
+        CommonUtil.visit(viewItem, setItem);
+        CommonUtil.show([btnAdd, btnDelete, btnMerge, btnSave], UserController.hrWrite);
+        this.setFocus();
+      }
+
+      /**
+       * 树的相关方法和事件
+       **/
+      private function loadList(branchId:int):void
+      {
+        gfunc(branchId, function(e:ResultEvent):void
+          {
+            list=e.result as ArrayCollection;
+            buildList(list);
+          });
+      }
+
+      private function buildList(coll:ArrayCollection):void
+      {
+        var _root:Branch=UserController.branch;
+        var count:int=0;
+        for (var i:int=0; i < coll.length; i++)
+        {
+          coll[i][Constants.PROP_NAME_SERIAL]=++count;
+        }
+        _root["children"]=coll;
+        adg.dataProvider=new ArrayHierarchy(_root);
+        adg.validateNow();
+        adg.expandItem(_root, true);
+        callLater(function():void{adg.selectedItem=_root;});
+      }
+
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      private function onValueCommit(event:Event):void
+      {
+        var node:Object=adg.selectedItem;
+        btnAdd.enabled=false;
+        btnDelete.enabled=false;
+        btnMerge.enabled=false;
+        btnSave.enabled=false;
+        po=null;
+        if (node is Branch)
+        {
+          vsItem.selectedIndex=0;
+          btnAdd.enabled=true;
+          tiName.editable=true;
+          operation=Constants.OP_ADD;
+        }
+        else if (node is clazz)
+        {
+          vsItem.selectedIndex=1;
+          btnDelete.enabled=true;
+          btnMerge.enabled=true;
+          tiName.editable=false;
+          tiNo.text=node.no;
+          po=node;
+          if (po != null && po.description != null)
+            po.description=po.description.replace(/\r\n/g, "\n");
+          operation=Constants.OP_EDIT;
+        }
+      }
+
+      /**
+       * 表单的相关方法和事件
+       **/
+      private function setItem(comp:Object):void
+      {
+        if (comp is Label)
+        {
+          comp.width=60;
+          comp.setStyle("textAlign", "right");
+        }
+        else if (comp is TextInput || comp is TextArea)
+        {
+          comp.percentWidth=100;
+          comp.addEventListener(Event.CHANGE, function(event:Event):void
+            {
+              btnSave.enabled=true;
+            });
+        }
+        else if (comp is GridItem)
+        {
+          comp.percentWidth=100;
+        }
+      }
+
+      /**
+       * Add, Delete, Merge, Save, Close
+       **/
+      private function add(event:Event):void
+      {
+        if (adg.selectedItem is Branch)
+        {
+          vsItem.selectedChild=viewItem;
+          tiNo.text="";
+          tiNo.setFocus();
+          var branch:Branch=adg.selectedItem as Branch;
+          po=new clazz(branch);
+          btnSave.enabled=true;
+        }
+      }
+
+      private function _delete(event:Event):void
+      {
+        if (po != null)
+        {
+          BaseController.deleteObject(po, function(event:ResultEvent):void
+            {
+              var k:int=list.getItemIndex(po);
+              if (k >= 0) list.removeItemAt(k);
+              adg.selectedIndex=0;
+            });
+        }
+      }
+
+      private function merge(event:Event):void
+      {
+      }
+
+      private function save(event:Event):void
+      {
+        if (!CommonUtil.validateForm(viewItem, ["no", "id.name"]))
+          return;
+        npo=new clazz(new Branch(po.id.branch.id));
+        CommonUtil.loadInstance(viewItem, npo);
+        if (operation == Constants.OP_ADD)
+          BaseController.addObject(npo, addSuccessHandler);
+        else if (operation == Constants.OP_EDIT)
+          BaseController.updateObject(npo, updateSuccessHandler);
+      }
+
+      private function addSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        list.addItem(npo);
+        // adg.selectedItem=npo;
+        // adg.scrollToIndex(adg.selectedIndex);
+      }
+
+      private function updateSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        CommonUtil.copyProperties(npo, po);
+      }
+
+      private function close(event:Event):void
+      {
+        // dispatchEvent(new CommonEvent(CommonEvent.CLOSE, this));
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

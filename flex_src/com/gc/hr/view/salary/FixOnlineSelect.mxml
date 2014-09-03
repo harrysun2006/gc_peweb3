@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="330" height="200"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:Form id="form" width="100%" height="100%">
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salItem')}:" labelWidth="90"
+                 horizontalAlign="right" width="100%">
+      <mx:ComboBox id="cbItem" labelFunction="labelOfSalItem" width="160"/>
+    </mx:FormItem>
+    <mx:FormItem id="_date" labelWidth="90" horizontalAlign="right" width="100%">
+      <mx:DateField id="date" name="date" editable="true" formatString="{Constants.DATE_FORMAT}"
+                    width="160" yearNavigationEnabled="true"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="confirm(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+      import mx.rpc.events.ResultEvent;
+      import mx.validators.Validator;
+      import mx.validators.ValidationResult;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalFixOnline;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.validators.ValidatorEx;
+
+      private var op:String;
+      private var sfos:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        title=resourceManager.getString("gcc_hr", "salFixOnline.select.item");
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        SalaryController.getAllItems(UserController.branchId, function(e:ResultEvent):void
+          {
+            cbItem.dataProvider=e.result;
+          });
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        op=e.args[0] as String;
+        sfos=e.args[1] as ArrayCollection;
+        _date.label=(op == Constants.OP_ADD) ? resourceManager.getString("gcc_hr", "salFixOnline.add.date") + ":"
+          : (op == Constants.OP_EDIT) ? resourceManager.getString("gcc_hr", "salFixOnline.edit.date") + ":"
+          : (op == Constants.OP_DELETE) ? resourceManager.getString("gcc_hr", "salFixOnline.del.date") + ":" : "";
+      }
+
+      private function labelOfSalItem(item:Object):String
+      {
+        return item.no + "[" + item.name + "]";
+      }
+
+      private function confirm(e:Event):void
+      {
+        var f:Function=function(value:Object, source:Object, property:String, subFields:Array):ValidationResult
+          {
+            var d:Date=DateUtil.parseDate(String(value));
+            var sfo:SalFixOnline;
+            var p:Person;
+            var code:String=null, error:String=null;
+            for each (sfo in sfos)
+            {
+              p=sfo.person;
+              if (op == Constants.OP_ADD && (p.onDate > d || d > p.downDate)) code="salFixOnline.error.add.date";
+              if (op == Constants.OP_EDIT && (p.onDate > d || d > p.downDate)) code="salFixOnline.error.edit.date";
+              if (op == Constants.OP_DELETE && (p.onDate > d || d > p.downDate)) code="salFixOnline.error.del.date";
+              if (code)
+              {
+                error=resourceManager.getString("gcc_hr", code, 
+                  [p.workerId, p.name, DateUtil.formatDate(p.onDate), DateUtil.formatDate(p.downDate), value]);
+                break;
+              }
+            }
+            return error ? new ValidationResult(true, null, code, error) : null;
+          };
+        var dv:Validator=new ValidatorEx(f);
+        if (!CommonUtil.validateForm(form, [{field:"date", validator:dv}]))
+          return;
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, {type:"select.item", item:cbItem.selectedItem, date:DateUtil.parseDate(date.text)}));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function cancel(e:Event):void
+      {
+        owner.dispatchEvent(new CommonEvent(CommonEvent.CLOSED));
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

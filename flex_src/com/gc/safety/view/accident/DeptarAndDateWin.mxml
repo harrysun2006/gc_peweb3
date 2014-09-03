@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)" title="事故日期和部门" width="340" height="250"
+                verticalAlign="middle" xmlns:controls="com.gc.controls.*">
+  <mx:VBox width="100%" height="100%">
+    <mx:Form id="form" width="100%">
+      <mx:FormItem label="部门">
+        <mx:ComboBox id="cbDept" labelField="name" dataProvider="{BaseController.departmentList}"
+                     width="160"/>
+      </mx:FormItem>
+      <mx:FormItem label="日期">
+        <mx:DateField id="dfDate" name="date" width="160" formatString="{Constants.DATE_FORMAT}"
+                      yearNavigationEnabled="true" editable="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="时间">
+        <mx:HBox width="100%">
+          <controls:TimeInput id="tiTime" formatString="{Constants.TIME_FORMAT}" stepSize="0"
+                              jumpSize="60"/>
+          <mx:Label text="格式：00:00:00"/>
+        </mx:HBox>
+      </mx:FormItem>
+    </mx:Form>
+    <mx:HBox width="100%" height="50%" horizontalAlign="center" verticalAlign="middle">
+      <mx:Button id="btOk" label="确定" click="sure(event)"/>
+      <mx:Button id="bClose" label="取消" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.util.DateUtil;
+      import mx.events.ScrollEvent;
+      import mx.utils.ObjectUtil;
+      import mx.validators.Validator;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.model.Person;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import mx.managers.PopUpManager;
+      import com.gc.common.model.Department;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.Constants;
+      import com.gc.safety.controller.AccidentController;
+      import mx.controls.Alert;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.model.Accident;
+
+      [Bindable]
+      private var accident:Accident;
+      private var user:SecurityUser;
+      public var branchId:int;
+      private var closeDate:Date;
+
+      private function onPreinitialize():void
+      {
+        user = UserController.user;
+        branchId = UserController.branchId;
+        closeDate = CommonController.closeDate;
+        accident = new Accident();
+      }
+
+      private function onCreationComplete():void
+      {
+        if (BaseController.departmentList == null)
+        {
+          initDeptList();
+        }
+        else
+        {
+          initDeptItem();
+        }
+        cbDept.setFocus();
+      }
+      /** 初始化部门  */
+      private function initDeptList():void
+      {
+        BaseController.getDepartments(branchId,successDept);
+      }
+
+      private function successDept(event:ResultEvent):void
+      {
+        if (user.limit.safetyLimit == 12)
+        {
+          cbDept.selectedItem = null;
+        }
+        else
+        {
+          for (var i:int = 0; i < BaseController.departmentList.length; i++)
+          {
+            if (user.limit.safetyLimitDepart.id == (BaseController.departmentList.getItemAt(i,0) as Department).id)
+            {
+              cbDept.selectedItem = BaseController.departmentList.getItemAt(i,0) as Department;
+              cbDept.enabled = false;
+              break;
+            }
+          }
+        }
+      }
+
+      private function initDeptItem():void
+      {
+        if (user.limit.safetyLimit == 12)
+        {
+          cbDept.selectedItem = null;
+        }
+        else
+        {
+          for (var i:int = 0; i < BaseController.departmentList.length; i++)
+          {
+            if (user.limit.safetyLimitDepart.id == (BaseController.departmentList.getItemAt(i,0) as Department).id)
+            {
+              cbDept.selectedItem = BaseController.departmentList.getItemAt(i,0) as Department;
+              cbDept.enabled = false;
+              break;
+            }
+          }
+          cbDept.enabled = false;
+        }
+      }
+      private function sure(event:Event):void
+      {
+        // {field:"cbDept",error:"请选择部门"},{field:"date",error:"请选择事故日期"}
+        if (!CommonUtil.validateForm(form,["cbDept","date","tiTime"]))
+          return;
+//        trace("Time text:"+tiTime.text);
+//        trace("Time JNS :"+tiTime.hours.toFixed(2) + tiTime.minutes%tiTime.hours+tiTime.seconds%tiTime.minutes);
+        if (closeDate != null && ObjectUtil.dateCompare(dfDate.selectedDate,closeDate) == -1)
+        {
+          Alert.show("该日期早于结账日期:"+df.format(closeDate), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        CommonUtil.loadInstance(form,accident);
+        if (accident.dept == null)
+        {
+          accident.dept = cbDept.selectedItem as Department;
+        }
+//        trace(accident.date.toString());
+        accident.date = DateUtil.parseDate(DateField.dateToString(dfDate.selectedDate,Constants.DATE_FORMAT)+" "+tiTime.text);
+//        trace(accident.date.toString());
+        accident.initor = user.person;
+        accident.initDate = DateField.stringToDate(df.format(new Date()),df.formatString);
+        dispatchEvent(new Events(Events.GET,accident));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

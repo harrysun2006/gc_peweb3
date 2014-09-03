@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="330" height="540"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)">
+  <mx:Form id="form" percentWidth="100">
+    <mx:FormItem label="事故编号">
+      <mx:TextInput id="tiAccNo" name="fkAccident.no" text="{accOutPsn.fkAccident.no}"/>
+    </mx:FormItem>
+    <mx:FormItem label="序号">
+      <mx:TextInput id="tiNo" name="id.no" text="{accOutPsn.id.no}" restrict="0-9"/>
+    </mx:FormItem>
+    <mx:FormItem label="姓名">
+      <mx:TextInput name="name" text="{accOutPsn.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="性别">
+      <mx:ComboBox id="cbSex" name="sex" dataProvider="{Constants.GENDERS}"
+                   itemRenderer="mx.controls.Label"/>
+    </mx:FormItem>
+    <mx:FormItem label="年龄">
+      <mx:TextInput name="age" text="{accOutPsn.age}" restrict="0-9"/>
+    </mx:FormItem>
+    <mx:FormItem label="户口">
+      <mx:TextArea name="regAddress" text="{accOutPsn.regAddress}"/>
+    </mx:FormItem>
+    <mx:FormItem label="地址及单位">
+      <mx:TextArea name="address" text="{accOutPsn.address}"/>
+    </mx:FormItem>
+    <mx:FormItem label="电话">
+      <mx:TextInput name="tel" text="{accOutPsn.tel}"/>
+    </mx:FormItem>
+    <mx:FormItem label="主体责任">
+      <mx:ComboBox id="cbDuty" labelField="name" dataProvider="{AccidentController.accDutyList}"
+                   itemRenderer="mx.controls.Label"/>
+    </mx:FormItem>
+    <mx:FormItem label="责任描述">
+      <mx:TextArea name="desc" text="{accOutPsn.desc}"/>
+    </mx:FormItem>
+    <mx:FormItem label="状态">
+      <mx:ComboBox id="cbMaim" name="maim" dataProvider="{Constants.MAIMS}"
+                   itemRenderer="mx.controls.Label"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox id="addBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="save(event)"/>
+    <mx:Button id="btCancel" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:HBox id="delBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btDelete" label="{resourceManager.getString('gcc','delete')}" click="del(event)"/>
+    <mx:Button id="btCancel1" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:HBox id="upBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btUpdate" label="{resourceManager.getString('gcc','update')}"
+               click="update(event)"/>
+    <mx:Button id="btCancel2" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.CloseEvent;
+      import com.gc.safety.model.Accident;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.core.IFlexDisplayObject;
+      import com.gc.CommonEvent;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.BaseController;
+      import mx.utils.ObjectUtil;
+      import com.gc.common.controller.UserController;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.Events;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.Constants;
+      import com.gc.safety.model.AccOutPsn;
+
+      [Bindable]
+      private var accOutPsn:AccOutPsn;
+      private var noItem:String;
+      private var oldObject:AccOutPsn;
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(this, setItem);
+        //增加
+        addEventListener(Events.ADD,getObject);
+        //删除
+        addEventListener(Events.DELETE, getDelObject);
+        //更新
+        addEventListener(Events.UPDATE, getUpObject);
+      }
+
+      private function setItem(comp:Object):void
+      {
+        if (comp is ComboBox)
+        {
+          var cb:ComboBox=comp as ComboBox;
+          cb.selectedItem = null;
+          cb.width = tiNo.width;
+        }
+      }
+      // 控制控件的可编辑及按钮的可用性，arr = [add,del,up],都是Boolean
+      private function compManage(textEditable:Boolean,cbEnable:Boolean,arr:Array):void
+      {
+        CommonUtil.visit(form,function(comp:Object):void 
+          {
+            if(comp is TextInput)
+            {
+              var ti:TextInput = comp as TextInput;
+              ti.editable = textEditable;
+            } else if(comp is TextArea)
+            {
+              var ta:TextArea = comp as TextArea;
+              ta.editable = textEditable;
+            } else if(comp is ComboBox)
+            {
+              var cb:ComboBox = comp as ComboBox;
+              cb.enabled = cbEnable;
+            }
+          });
+        addBT.visible = arr[0];
+        addBT.includeInLayout = arr[0];
+        delBT.visible = arr[1];
+        delBT.includeInLayout = arr[1];
+        upBT.visible = arr[2];
+        upBT.includeInLayout = arr[2];
+      }
+
+      private function getSex(item:Object):void
+      {
+        accOutPsn.sex = item.value;
+      }
+
+      private function getObject(event:Events):void
+      {
+        compManage(true,true,[true,false,false]);
+        accOutPsn = event.data as AccOutPsn;
+        noItem = ObjectUtil.copy(accOutPsn.fkAccident.no) as String;
+        if (accOutPsn == null)
+        {
+          tiAccNo.setFocus();
+          return;
+        }
+        else if (accOutPsn.id.no > 0)
+        {
+          var aop:AccOutPsn = ObjectUtil.copy(accOutPsn) as AccOutPsn;
+          accOutPsn = new AccOutPsn();
+          accOutPsn.fkAccident = aop.fkAccident;
+        }
+        tiNo.setFocus();
+        if (accOutPsn.id.no == 0)
+          tiNo.text = null;
+      }
+
+      private function getDelObject(event:Events):void
+      {
+        compManage(false,false,[false,true,false]);
+        accOutPsn = event.data as AccOutPsn;
+        cbSex.selectedIndex = CommonUtil.indexOfKey(Constants.GENDERS,accOutPsn.sex,"label");
+        cbDuty.selectedIndex = CommonUtil.indexOfKey(cbDuty.dataProvider,accOutPsn.duty);
+        if (accOutPsn.status == 0)
+          accOutPsn.maim = Constants.MAIMS[0];
+        cbMaim.selectedIndex = CommonUtil.indexOfKey(Constants.MAIMS,accOutPsn.maim);
+        btDelete.setFocus();
+      }
+
+      private function getUpObject(event:Events):void
+      {
+        compManage(true,true,[false,false,true]);
+        accOutPsn = event.data as AccOutPsn;
+        oldObject = ObjectUtil.copy(accOutPsn) as AccOutPsn;
+        noItem = ObjectUtil.copy(accOutPsn.fkAccident.no) as String;
+        cbSex.selectedIndex = CommonUtil.indexOfKey(Constants.GENDERS,accOutPsn.sex,"label");
+        cbDuty.selectedIndex = CommonUtil.indexOfKey(cbDuty.dataProvider,accOutPsn.duty);
+        if (accOutPsn.status == 0)
+          accOutPsn.maim = Constants.MAIMS[0];
+        cbMaim.selectedIndex = CommonUtil.indexOfKey(Constants.MAIMS,accOutPsn.maim);
+        btUpdate.setFocus();
+      }
+
+      private function save(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,["fkAccident.no","id.no","name","cbDuty","maim"]))
+          return;
+        CommonUtil.loadInstance(form,accOutPsn);
+        CommonUtil.loadInstance({"duty": cbDuty.selectedItem},accOutPsn);
+        if (cbSex.selectedItem != null)
+          CommonUtil.loadInstance({"sex": cbSex.selectedItem.value},accOutPsn);
+        accOutPsn.id.branch = UserController.branch;
+        if (tiAccNo.text != noItem)
+        {
+          AccidentController.getAccidentByNo(UserController.branchId, tiAccNo.text,function(e:ResultEvent):void 
+            {
+              var accs:ArrayCollection = e.result as ArrayCollection;
+              if(accs.length > 0)
+              {
+                if(accs[0].status == 0 || accs[0].status == 1)
+                {
+                  accOutPsn.fkAccident = accs[0] as Accident;
+                  accOutPsn.id.accId = accOutPsn.fkAccident.id.id;
+                  AccidentController.addAccOutPsn(accOutPsn,function(evt:ResultEvent):void {
+                      dispatchEvent(new Events(Events.SAVE_SUCCESS));
+                    });
+                }else
+                {
+                  dispatchEvent(new Events(Events.REFRESH));
+                  Alert.show('请您填写未审核过的事故编号',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);	
+                }
+              }else
+              {
+                dispatchEvent(new Events(Events.REFRESH));
+                Alert.show('请填写正确的事故编号',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              }
+            });
+        }
+        else
+        {
+          accOutPsn.id.accId = accOutPsn.fkAccident.id.id;
+          AccidentController.addAccOutPsn(accOutPsn,function(evt:ResultEvent):void {
+              dispatchEvent(new Events(Events.SAVE_SUCCESS));
+            });
+        }
+      }
+
+      private function del(event:Event):void
+      {
+        Alert.show('确定要删除吗',Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO)
+              return;
+            AccidentController.delAccOutPsn(accOutPsn, function(e:ResultEvent):void {
+                dispatchEvent(new Events(Events.DEL_SUCCESS));
+              })
+          },Constants.ICON32_QUESTION);
+      }
+
+      private function update(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,["fkAccident.no","id.no","name","cbDuty","maim"]))
+          return;
+        CommonUtil.loadInstance(form,accOutPsn);
+        CommonUtil.loadInstance({"duty": cbDuty.selectedItem},accOutPsn);
+        if (cbSex.selectedItem != null)
+          CommonUtil.loadInstance({"sex": cbSex.selectedItem.value},accOutPsn);
+        if (tiAccNo.text != noItem)
+        {
+          AccidentController.getAccidentByNo(UserController.branchId, tiAccNo.text,function(e:ResultEvent):void 
+            {
+              var accs:ArrayCollection = e.result as ArrayCollection;
+              if(accs.length > 0)
+              {
+                if(accs[0].status == 0 || accs[0].status == 1)
+                {
+                  accOutPsn.fkAccident = accs[0] as Accident;
+                  accOutPsn.id.accId = accOutPsn.fkAccident.id.id;
+                  AccidentController.saveAccOutPsn(accOutPsn,function(evt:ResultEvent):void {
+                      dispatchEvent(new Events(Events.UPDATE_SUCCESS));
+                    });
+                }else
+                {
+                  dispatchEvent(new Events(Events.REFRESH));
+                  Alert.show('请您填写未审核过的事故编号',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);	
+                }
+              }else
+              {
+                dispatchEvent(new Events(Events.REFRESH));
+                Alert.show('请填写正确的事故编号',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              }
+            });
+        }
+        else
+        {
+          accOutPsn.id.accId = accOutPsn.fkAccident.id.id;
+          AccidentController.saveAccOutPsn(accOutPsn,function(evt:ResultEvent):void {
+              dispatchEvent(new Events(Events.UPDATE_SUCCESS));
+            });
+        }
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(new Events(Events.REFRESH));
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

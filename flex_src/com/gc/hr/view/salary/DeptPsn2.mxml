@@ -1,0 +1,664 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+         xmlns:salary="com.gc.hr.view.salary.*" width="100%" height="100%"
+         horizontalScrollPolicy="off" horizontalAlign="center" verticalGap="0"
+         preinitialize="onPreinitialize()">
+  <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" visible="false" lockedColumnCount="4"
+                       horizontalScrollPolicy="auto" labelFunction="{CommonUtil.gridLabelFunction}"
+                       dataProvider="{list1}" resizableColumns="false" allowMultipleSelection="true"
+                       allowDragSelection="true" creationComplete="onCreationComplete1()"
+                       scroll="onScroll(event)">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.depart.name"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.person.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="person#name" dataTipField="id.person.name"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.person.onDate"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.person.downDate"/>
+      <mx:AdvancedDataGridColumn dataField="bank"/>
+      <mx:AdvancedDataGridColumn dataField="bankCard"/>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page2')}">
+        <mx:AdvancedDataGridColumn dataTipField="id.person.depart.name"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.office"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.allotDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page3')}">
+        <mx:AdvancedDataGridColumn dataTipField="id.person.fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.type"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.grade"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.upgradeDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <gc:StyledDataGrid id="adg2" width="100%" height="24" visible="false" showHeaders="false"
+                     editable="false" horizontalScrollPolicy="auto" verticalScrollPolicy="on"
+                     lockedColumnCount="4" resizableColumns="false" sortableColumns="false"
+                     dataProvider="{list2}" creationComplete="onCreationComplete2()"
+                     labelFunction="{CommonUtil.gridLabelFunction}">
+    <gc:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center">
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center">
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+      </mx:AdvancedDataGridColumnGroup>
+    </gc:groupedColumns>
+  </gc:StyledDataGrid>
+  <mx:ToolBar width="100%" paddingTop="6" paddingLeft="6" paddingBottom="6">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.depart.name')}:">
+      <mx:ComboBox id="cbDepart" width="120" itemRenderer="mx.controls.Label"
+                   change="onDepartChange(event)"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.fkPosition.name')}:">
+      <mx:ComboBox id="cbPosition" width="120" itemRenderer="mx.controls.Label"
+                   change="onPositionChange(event)"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'search')}:">
+      <mx:TextInput id="tiSearch" width="120" change="onSearchChange(event)"/>
+    </mx:FormItem>
+    <mx:PopUpButton id="pub0" label="{resourceManager.getString('gcc', 'select')}"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="refresh(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+    <mx:PopUpButton id="pub1" label="{resourceManager.getString('gcc_hr', 'salDeptPsn')}"/>
+    <mx:PopUpButton id="pub2" label="{resourceManager.getString('gcc_hr', 'salFixOnline')}"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:ToolBar>
+  <mx:HBox horizontalAlign="left" width="100%" paddingBottom="6" paddingLeft="6">
+    <mx:Label color="0x0000FF" id="note"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.Position;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.hr.model.SalFixOnline;
+      import com.gc.hr.model.SalItem;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.HanZiUtil;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+
+      private static const D0:Object={id:0};
+
+      private var d1:Object;
+      private var d2:Object;
+      private var created1:Boolean;
+      private var created2:Boolean;
+      private var columns1:Array;
+      private var columns2:Array;
+      private var groupedColumns1:Array;
+      private var groupedColumns2:Array;
+      private var items:ArrayCollection;
+      private var list0:ArrayCollection; // 所有部门发薪人员
+      [Bindable]
+      private var list1:ArrayCollection; // 筛选的部门发薪人员
+      [Bindable]
+      private var list2:ArrayCollection; // 合计项
+      private var list3:ArrayCollection; // 保存选中的部门发薪人员
+      private var map1:Object; // SalDeptPsn
+      private var map2:Object; // SalFixOnline
+
+      private function onPreinitialize():void
+      {
+        d1=null;
+        d2=D0;
+        list0=new ArrayCollection();
+        list1=new ArrayCollection();
+        list2=new ArrayCollection();
+        list3=new ArrayCollection();
+        map1=new Object();
+        map2=new Object();
+        header=new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        label=resourceManager.getString("gcc_hr", "salDeptPsn.page2a");
+        created1=created2=false;
+        addEventListener(CommonEvent.CHANGED, onChanged);
+        addEventListener(Events.SEL_SALDEPTPSN, onSelSalDeptPsn);
+        addEventListener(Events.ADD_SALDEPTPSN, onAddSalDeptPsn);
+        addEventListener(Events.EDIT_SALDEPTPSN, onEditSalDeptPsn);
+        addEventListener(Events.DEL_SALDEPTPSN, onDelSalDeptPsn);
+        addEventListener(Events.ADD_SALFIXONLINE, onAddSalFixOnline);
+        addEventListener(Events.EDIT_SALFIXONLINE, onEditSalFixOnline);
+        addEventListener(Events.DEL_SALFIXONLINE, onDelSalFixOnline);
+      }
+
+      private function onCreationComplete1():void
+      {
+        created1=true;
+        columns1=adg1.columns;
+        groupedColumns1=adg1.groupedColumns;
+        if (created1 && created2)
+          onCreationAll();
+        var sfs:Object={
+            "id.person.workerId":Person.SC_WORKERID,
+            "id.person.name":null, //Person.SC_NAME,
+            "id.person.onDate":Person.SC_ONDATE,
+            "id.person.downDate":Person.SC_DOWNDATE,
+            "id.person.depart.name":Person.SC_DEPART_NAME,
+            "id.person.fkPosition.name":Person.SC_POSITION_NAME
+          };
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "salDeptPsn", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              obj.sortable=sfs.hasOwnProperty(obj.dataTipField);
+              obj.sortCompareFunction=obj.sortable ? sfs[obj.dataTipField] : null;
+            }
+          });
+      }
+
+      private function onCreationComplete2():void
+      {
+        created2=true;
+        columns2=adg2.columns;
+        groupedColumns2=adg2.groupedColumns;
+        if (created1 && created2)
+          onCreationAll();
+      }
+
+      private function onCreationAll():void
+      {
+        adg1.visible=adg2.visible=true;
+        var departs:ArrayCollection=ObjectUtil.copy(BaseController.departmentList) as ArrayCollection;
+        departs.addItemAt(new Department(0, UserController.branch, resourceManager.getString("gcc", "depart.all")), 0);
+        cbDepart.dataProvider=departs;
+        cbDepart.selectedIndex=-1;
+        var positions:ArrayCollection=ObjectUtil.copy(PersonalController.positionList) as ArrayCollection;
+        positions.addItemAt(new Position(UserController.branch, null, resourceManager.getString("gcc", "position.all")), 0);
+        cbPosition.dataProvider=positions;
+        cbPosition.selectedIndex=-1;
+        if (UserController.hrSub)
+        {
+          cbDepart.enabled=false;
+          cbDepart.selectedIndex=CommonUtil.indexOfKey(departs, UserController.hrDepart);
+        }
+        var access1:Boolean=UserController.hrHead && UserController.hrSalWrite;
+        var access2:Boolean=UserController.hrSalWrite;
+        var menu:Object={
+            "select":[{label:resourceManager.getString("gcc", "select.all"), click:selectAll},
+              {label:resourceManager.getString("gcc", "select.none"), click:selectNone},
+              {label:resourceManager.getString("gcc", "select.reverse"), click:selectReverse},],
+            "salDeptPsn":[{label:resourceManager.getString("gcc_hr", "salDeptPsn.add"), click:addSalDeptPsn},
+              {label:resourceManager.getString("gcc_hr", "salDeptPsn.edit"), click:editSalDeptPsn},
+              {label:resourceManager.getString("gcc_hr", "salDeptPsn.del"), click:delSalDeptPsn},],
+            "salFixOnline":[{label:resourceManager.getString("gcc_hr", "salFixOnline.add"), click:addSalFixOnline},
+              {label:resourceManager.getString("gcc_hr", "salFixOnline.edit"), click:editSalFixOnline},
+              {label:resourceManager.getString("gcc_hr", "salFixOnline.del"), click:delSalFixOnline},]
+          };
+        CommonUtil.createPopUpMenu(pub0, menu.select);
+        CommonUtil.createPopUpMenu(pub1, menu.salDeptPsn);
+        CommonUtil.createPopUpMenu(pub2, menu.salFixOnline);
+        // 发薪部门、人员及固定项目的维护权限仅限于总公司人事劳资, 分公司可以通过模板方式维护人员的"固定项目"
+        pub1.visible=pub1.includeInLayout=access1;
+        pub2.visible=pub2.includeInLayout=access1;
+        if (!d1)
+        {
+          d1=d2;
+          load(d1);
+        }
+      }
+
+      private function load(d1:Object):void
+      {
+        var did:int=d1 ? d1.id : 0;
+        SalaryController.getDeptPsnListB({"branch.id": UserController.branchId, "depart.id": did}, function(e1:ResultEvent):void
+          {
+            // 返回对象格式为: {items:items, data:[{sdp:sdp, sfos:[sfo1, ..., sfon]}], time:time}
+            var r:Object=e1.result;
+            var data:ArrayCollection=r.data as ArrayCollection;
+            var time:Date=r.time as Date;
+            var sdp:SalDeptPsn;
+            var sfos:ArrayCollection;
+            var sfo:SalFixOnline;
+            var si:SalItem;
+            var obj:Object;
+            var cc:AdvancedDataGridColumn;
+            var r1:SuperDataGridHeaderRenderer, r2:SuperDataGridHeaderRenderer;
+            items=r.items as ArrayCollection;
+            note.text=resourceManager.getString("gcc_hr", "salFixOnline.note", [DateUtil.formatDate(time)]);
+
+            // 保留之前的选择项
+            var ss:Object={};
+            for each (sdp in adg1.selectedItems)
+              ss[sdp.branchId+"#"+sdp.departId+"#"+sdp.personId]=true;
+
+            list0.removeAll();
+            list3.removeAll();
+            for each (obj in data)
+            {
+              sdp=obj.sdp as SalDeptPsn;
+              sfos=obj.sfos as ArrayCollection;
+              if (ss[sdp.branchId+"#"+sdp.departId+"#"+sdp.personId]) list3.addItem(sdp);
+              sdp["person#name"]=HanZiUtil.pinyin(sdp.person.name);
+              /*
+                 sdp["person#workerId"]=sdp.person.workerId;
+                 sdp["person#name"]=HanZiUtil.pinyin(sdp.person.name);
+                 sdp["person#departName"]=sdp.person.departName;
+                 sdp["person#positionName"]=sdp.person.positionName;
+                 sdp["person#onDate"]=DateUtil.formatDate(sdp.person.onDate);
+                 sdp["person#downDate"]=DateUtil.formatDate(sdp.person.downDate);
+               */
+              map1["sdp#"+sdp.departId+"#"+sdp.personId]=sdp;
+              list0.addItem(sdp);
+              for each (sfo in sfos)
+              {
+                si=sfo.item;
+                map2["sfo#"+sfo.departId+"#"+sfo.personId+"#"+sfo.itemId]=sfo;
+                sdp["si#"+si.id+"#onDate"]=sfo.onDate;
+                sdp["si#"+si.id+"#amount"]=sfo.amount;
+              }
+            }
+            addExColumns(adg1, columns1, groupedColumns1, items);
+            addExColumns(adg2, columns2, groupedColumns2, items);
+            adg1.width=adg2.width=this.width;
+            filter();
+            callLater(function():void{adg1.selectedItems=list3.source;});
+
+            // adg1中的AdvancedDataGridColumnGroup展开或收拢时adg2中对应的AdvancedDataGridColumnGroup也需要相应展开或收拢。
+            var ef:Function=function(e2:CommonEvent):void
+              {
+                var cc1:AdvancedDataGridColumn, cc2:AdvancedDataGridColumn;
+                cc1=e2.args[0];
+                cc2=adg2.groupedColumns[adg1.groupedColumns.indexOf(cc1)];
+                cc2.dispatchEvent(new CommonEvent(CommonEvent.EXPAND, e2.data));
+              };
+            for each (cc in adg1.groupedColumns)
+            {
+              if (cc is AdvancedDataGridColumnGroup)
+                cc.addEventListener(CommonEvent.EXPANDED, ef);
+            }
+          });
+      }
+
+      private function addExColumns(adg:AdvancedDataGrid, columns:Array, groupedColumns:Array, items:ArrayCollection):void
+      {
+        var cg0:AdvancedDataGridColumnGroup, cg1:AdvancedDataGridColumnGroup;
+        var cc:AdvancedDataGridColumn;
+        var si:SalItem;
+        var sif:String;
+        var fields:Array=["onDate", "amount"];
+        var aligns:Object={"onDate":"center", "amount":"right"};
+        var s:String, name:String=resourceManager.getString("gcc_hr", "salFixOnline");
+        var columns0:Array=columns.slice(0);
+        var groupedColumns0:Array=groupedColumns.slice(0);
+        if (items.length > 0)
+        {
+          cg0=new AdvancedDataGridColumnGroup();
+          if (items.length > 1)
+            cg0.headerRenderer=header;
+          cg0.setStyle("textAlign", "center");
+          cg0.editable=false;
+          cg0.headerText=name;
+          for each (si in items)
+          {
+            sif="si#"+si.id;
+            cg1=new AdvancedDataGridColumnGroup();
+            cg1.setStyle("textAlign", "center");
+            cg1.editable=false;
+            // cg1.headerText=si.name ? si.name : name+si.id;
+            cg1.headerText=si.no ? si.no+"["+si.name+"]" : name+si.id;
+            for each (s in fields)
+            {
+              cc=new AdvancedDataGridColumn();
+              cc.dataField=sif+"#"+s;
+              // cc.dataTipField=sif+"."+s;
+              cc.headerText=resourceManager.getString("gcc_hr", "salFixOnline."+s);
+              if (aligns[s])
+                cc.setStyle("textAlign", aligns[s]);
+              cg1.children.push(cc);
+              columns0.push(cc);
+            }
+            cg0.children.push(cg1);
+          }
+          groupedColumns0.push(cg0);
+        }
+        cc=new AdvancedDataGridColumn();
+        cc.width=1;
+        columns0.push(cc);
+        groupedColumns0.push(cc);
+
+        adg.invalidateList();
+        adg.columns=columns0;
+        adg.groupedColumns=groupedColumns0;
+        adg.validateNow();
+      }
+
+      // 计算合计项
+      private function calculate2():void
+      {
+        var obj:Object, si:SalItem, sdp:SalDeptPsn, sfo:SalFixOnline;
+        var sif:String;
+        var total:Object=new Object();
+        total[Constants.PROP_NAME_SERIAL]=resourceManager.getString("gcc", "total");
+        for each (obj in list1)
+        {
+          for each (si in items)
+          {
+            sif="si#"+si.id+"#amount";
+            if (!total[sif])
+              total[sif]=0;
+            if (obj["si#"+si.id + "#amount"])
+              total[sif] += obj["si#"+si.id + "#amount"];
+          }
+        }
+        list2.removeAll();
+        list2.addItem(total);
+      }
+
+      private function onScroll(event:Event):void
+      {
+        callLater(function():void{adg2.horizontalScrollPosition=adg1.horizontalScrollPosition;});
+      }
+
+      private function onChanged(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        if (d1 && d1.id != d2.id)
+        {
+          d1=d2;
+          load(d1);
+        }
+      }
+
+      private function onSelSalDeptPsn(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        var depart:Object=e.data;
+        if (depart)
+        {
+          label=resourceManager.getString("gcc_hr", "salDeptPsn.page2b", [depart.name]);
+          d2=depart;
+        }
+        else
+        {
+          label=resourceManager.getString("gcc_hr", "salDeptPsn.page2a");
+          d2=D0;
+        }
+      }
+
+      private function open(popup:Class, op:String):void
+      {
+        if (adg1.selectedItems.length <= 0)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "salDeptPsn.not.null"), 
+            Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        CommonUtil.popupWindow(popup, "", this, [adg1.selectedItems, op, items, map1, map2]);
+      }
+
+      private function addSalDeptPsn(e:Event, obj:Object=null):void
+      {
+        open(DeptPsnAED, Constants.OP_ADD);
+      }
+
+      private function editSalDeptPsn(e:Event, obj:Object=null):void
+      {
+        open(DeptPsnAED, Constants.OP_EDIT);
+      }
+
+      private function delSalDeptPsn(e:Event, obj:Object=null):void
+      {
+        open(DeptPsnAED, Constants.OP_DELETE);
+      }
+
+      private function addSalFixOnline(e:Event, obj:Object=null):void
+      {
+        open(FixOnlineAED, Constants.OP_ADD);
+      }
+
+      private function editSalFixOnline(e:Event, obj:Object=null):void
+      {
+        open(FixOnlineAED, Constants.OP_EDIT);
+      }
+
+      private function delSalFixOnline(e:Event, obj:Object=null):void
+      {
+        open(FixOnlineAED, Constants.OP_DELETE);
+      }
+
+      private function indexOfDeptPsn(sdp:SalDeptPsn):int
+      {
+        var item:SalDeptPsn;
+        for (var i:int=0; i < list1.length; i++)
+        {
+          item=list1.getItemAt(i) as SalDeptPsn;
+          if (item.personWorkerId > sdp.personWorkerId || (item.personId == sdp.personId && item.departId > sdp.departId))
+          {
+            return i;
+          }
+        }
+        return list1.length;
+      }
+
+      private function onAddSalDeptPsn(e:Events):void
+      {
+        if (list1 && e.data)
+        {
+          var did:int=d1 ? d1.id : 0;
+          var id:String;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            if (did == 0 || did == sdp.departId)
+            {
+              id="sdp#"+sdp.departId+"#"+sdp.personId;
+              map1[id]=sdp;
+              // list1.addItemAt(sdp, indexOfDeptPsn(sdp));
+              list1.addItem(sdp);
+            }
+          }
+          list1.refresh();
+        }
+        if (!e.data)
+          e.data=2;
+        else
+          e.stopImmediatePropagation();
+      }
+
+      private function onEditSalDeptPsn(e:Events):void
+      {
+        if (list1 && e.data)
+        {
+          var did:int=d1 ? d1.id : 0;
+          var item:Object;
+          var id:String;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            if (did == 0)
+            {
+              id="sdp#"+sdp["depart#old"].id+"#"+sdp.personId;
+              item=map1[id];
+              if (item)
+              {
+                item.id.depart=sdp.depart;
+                item.bank=sdp.bank;
+                item.bankCard=sdp.bankCard;
+                item.comment=sdp.comment;
+                map1[id]=null;
+                id="sdp#"+sdp.departId+"#"+sdp.personId;
+                map1[id]=item;
+              }
+            }
+            else if (did == sdp["depart#old"].id && did != sdp.departId)
+            {
+              id="sdp#"+sdp["depart#old"].id+"#"+sdp.personId;
+              item=map1[id];
+              if (item)
+              {
+                list1.removeItemAt(list1.getItemIndex(item));
+                map1[id]=null;
+              }
+            }
+          }
+          list1.refresh();
+        }
+        if (!e.data)
+          e.data=2;
+        else
+          e.stopImmediatePropagation();
+      }
+
+      private function onDelSalDeptPsn(e:Events):void
+      {
+        if (list1 && e.data)
+        {
+          var did:int=d1 ? d1.id : 0;
+          var item:Object;
+          var id:String;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            if (did == 0 || did == sdp.departId)
+            {
+              id="sdp#"+sdp.departId+"#"+sdp.personId;
+              item=map1[id];
+              if (item)
+              {
+                list1.removeItemAt(list1.getItemIndex(item));
+                map1[id]=null;
+              }
+            }
+          }
+          list1.refresh();
+        }
+        if (!e.data)
+          e.data=2;
+        else
+          e.stopImmediatePropagation();
+      }
+
+      private function reload(e:Events):void
+      {
+        if (list1 && e.data)
+        {
+          load(d1);
+        }
+        if (!e.data)
+          e.data=2;
+        else
+          e.stopImmediatePropagation();
+      }
+
+      private function onAddSalFixOnline(e:Events):void
+      {
+        reload(e);
+      }
+
+      private function onEditSalFixOnline(e:Events):void
+      {
+        reload(e);
+      }
+
+      private function onDelSalFixOnline(e:Events):void
+      {
+        reload(e);
+      }
+
+      private function onDepartChange(e:Event=null):void
+      {
+        filter();
+      }
+
+      private function onPositionChange(e:Event=null):void
+      {
+        filter();
+      }
+
+      private function selectAll(e:Event, obj:Object=null):void
+      {
+        var arr:Array=[];
+        for each (var obj:Object in list1)
+          arr.push(obj);
+        adg1.selectedItems=arr;
+      }
+
+      private function selectNone(e:Event, obj:Object=null):void
+      {
+        adg1.selectedItems=[];
+      }
+
+      private function selectReverse(e:Event, obj:Object=null):void
+      {
+        var arr:Array=[];
+        for each (var obj:Object in list1)
+          if (adg1.selectedItems.indexOf(obj) < 0)
+            arr.push(obj);
+        adg1.selectedItems=arr;
+      }
+
+      private function refresh(e:Event):void
+      {
+        load(d1);
+      }
+
+      private function export(e:Event):void
+      {
+        var did:int=d1 ? d1.id : 0;
+        var name:String=(did == 0) ? resourceManager.getString("gcc_hr", "salDeptPsn.page2a.filename", [UserController.branchName])
+          : resourceManager.getString("gcc_hr", "salDeptPsn.page2b.filename", [d1.name]);
+        CommonUtil.export(CommonUtil.getGridData(adg1), CommonUtil.getGridHeaders(adg1), null, name);
+      }
+
+      private function onSearchChange(e:Event):void
+      {
+        filter();
+      }
+
+      private function filter():void
+      {
+        var d:Department=cbDepart.selectedItem as Department;
+        var did:int=d ? d.id : 0;
+        var p:Position=cbPosition.selectedItem as Position;
+        var pno:String=p ? p.id.no : null;
+        var ss:String=CommonUtil.trim(tiSearch.text);
+        list1=new ArrayCollection(list0.source.filter(function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            return (did == 0 || item.person.departId == did)
+              && (pno == null || item.person.position == pno)
+              && (ss == "" || item.person.name.indexOf(ss) >= 0 || item.person.workerId.indexOf(ss) >= 0);
+          }));
+        calculate2();
+      }
+
+      private function close(e:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

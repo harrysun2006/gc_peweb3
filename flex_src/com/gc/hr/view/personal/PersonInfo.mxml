@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TabNavigator xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+                 preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:Box label="{resourceManager.getString('gcc_hr', 'node.person.page1')}" width="100%"
+          height="100%">
+    <mx:ToolBar percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.workerId')}:"/>
+        <mx:TextInput name="workerId" text="{person.workerId}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.name')}:"/>
+        <mx:TextInput name="name" text="{person.name}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.pid')}:"/>
+        <mx:TextInput name="pid" text="{person.pid}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.sex')}:"/>
+        <mx:TextInput name="sex" text="{person.sex}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.people')}:"/>
+        <mx:TextInput name="people" text="{person.people}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.nativePlace')}:"/>
+        <mx:TextInput name="nativePlace" text="{person.nativePlace}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.regAddress')}:"/>
+        <mx:TextInput name="regAddress" text="{person.regAddress}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.birthday')}:"/>
+        <mx:TextInput name="birthday" text="{df.format(person.birthday)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.marryStatus')}:"/>
+        <mx:TextInput name="marryStatus" text="{person.marryStatus}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.thisWorkLength')}:"/>
+        <mx:TextInput name="thisWorkLength" text="{person.thisWorkLength}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.paySocialInsInit')}:"/>
+        <mx:TextInput name="paySocialIns" text="{person.paySocialInsInit}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.paySocialInsAdj')}:"/>
+        <mx:TextInput name="paySocialIns" text="{person.paySocialInsAdj}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.paySocialInsSal')}:"
+                  toolTip="{resourceManager.getString('gcc', 'person.paySocialInsSal.tip')}"/>
+        <mx:TextInput name="paySocialIns" text="{person.paySocialInsSal}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.paySocialIns')}:"
+                  toolTip="{resourceManager.getString('gcc', 'person.paySocialIns.tip')}"/>
+        <mx:TextInput name="paySocialIns" text="{person.paySocialIns$}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.annuities')}:"/>
+        <mx:TextInput name="annuities" text="{person.annuities}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.accumulation')}:"/>
+        <mx:TextInput name="accumulation" text="{person.accumulation}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.chkGroup.name')}:"/>
+        <mx:TextInput name="chkGroup" text="{person.chkGroup.name}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.onDate')}:"/>
+        <mx:TextInput name="onDate" text="{df.format(person.onDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.downDate')}:"/>
+        <mx:TextInput name="downDate" text="{person.downDate$}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.downReason')}:"/>
+        <mx:TextInput name="downReason" text="{person.downReason}"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+  </mx:Box>
+  <mx:Box label="{resourceManager.getString('gcc_hr', 'node.person.page2')}" width="100%"
+          height="100%">
+    <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" sortableColumns="false"
+                         itemRenderer="mx.controls.Label" horizontalScrollPolicy="auto"
+                         lockedColumnCount="1" labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.workerId" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="onDate" width="120"/>
+        <mx:AdvancedDataGridColumn dataField="downDate" width="120" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="regType"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="salaryType"/>
+        <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="workType"/>
+        <mx:AdvancedDataGridColumn dataField="regBelong" width="240"/>
+        <mx:AdvancedDataGridColumn dataField="party"/>
+        <mx:AdvancedDataGridColumn dataField="grade"/>
+        <mx:AdvancedDataGridColumn dataField="schooling"/>
+        <mx:AdvancedDataGridColumn dataField="upgradeReason"/>
+        <mx:AdvancedDataGridColumn dataField="upgrader" dataTipField="upgrader.name"/>
+        <mx:AdvancedDataGridColumn dataField="isModContract"/>
+        <mx:AdvancedDataGridColumn dataField="contractEnd" dataTipField="contractEnd$"/>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </mx:Box>
+  <mx:Box label="{resourceManager.getString('gcc_hr', 'node.person.page3')}" width="100%"
+          height="100%">
+    <mx:AdvancedDataGrid id="adg2" width="100%" height="100%" sortableColumns="false"
+                         itemRenderer="mx.controls.Label" horizontalScrollPolicy="auto"
+                         lockedColumnCount="1" labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.workerId" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="onDate" width="120"/>
+        <mx:AdvancedDataGridColumn dataField="downDate" width="120" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name" width="240"/>
+        <mx:AdvancedDataGridColumn dataField="office"/>
+        <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="cert2No" width="120"/>
+        <mx:AdvancedDataGridColumn dataField="cert2NoHex"/>
+        <mx:AdvancedDataGridColumn dataField="allotReason"/>
+        <mx:AdvancedDataGridColumn dataField="alloter" dataTipField="alloter.name"/>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </mx:Box>
+  <mx:Box label="{resourceManager.getString('gcc_hr', 'node.person.page4')}" width="100%"
+          height="100%">
+    <mx:ToolBar percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.fillTableDate')}:"/>
+        <mx:TextInput name="fillTableDate" text="{df.format(person.fillTableDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.commend')}:"/>
+        <mx:TextInput name="commend" text="{person.commend}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.workDate')}:"/>
+        <mx:TextInput name="workDate" text="{df.format(person.workDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.retireDate')}:"/>
+        <mx:TextInput name="retireDate" text="{df.format(person.retireDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.serviceLength')}:"/>
+        <mx:TextInput name="serviceLength" text="{person.serviceLength}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.inDate')}:"/>
+        <mx:TextInput name="inDate" text="{df.format(person.inDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.outDate')}:"/>
+        <mx:TextInput name="outDate" text="{df.format(person.outDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.workLength')}:"/>
+        <mx:TextInput name="workLength" text="{person.workLength}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.thisWorkLength')}:"/>
+        <mx:TextInput name="thisWorkLength" text="{person.thisWorkLength}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.groupNo')}:"/>
+        <mx:TextInput name="groupNo" text="{person.groupNo}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contractNo')}:"/>
+        <mx:TextInput name="contractNo" text="{person.contractNo}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contr1From')}:"/>
+        <mx:TextInput name="contr1From" text="{df.format(person.contr1From)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contr1End')}:"/>
+        <mx:TextInput name="contr1End" text="{person.contr1End$}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contractReason')}:"/>
+        <mx:TextInput name="contractReason" text="{person.contractReason}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contr2From')}:"/>
+        <mx:TextInput name="contr2From" text="{df.format(person.contr2From)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.contr2End')}:"/>
+        <mx:TextInput name="contr2End" text="{df.format(person.contr2End)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.level')}:"/>
+        <mx:TextInput name="level" text="{person.level}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.techLevel')}:"/>
+        <mx:TextInput name="techLevel" text="{person.techLevel}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.responsibility')}:"/>
+        <mx:TextInput name="responsibility" text="{person.responsibility}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.cert1No')}:"/>
+        <mx:TextInput name="cert1No" text="{person.cert1No}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.cert1NoDate')}:"/>
+        <mx:TextInput name="cert1NoDate" text="{df.format(person.cert1NoDate)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.cert2No')}:"/>
+        <mx:TextInput name="cert2No" text="{person.cert2No}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.cert2NoHex')}:"/>
+        <mx:TextInput name="cert2NoHex" text="{person.cert2NoHex}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.serviceNo')}:"/>
+        <mx:TextInput name="serviceNo" text="{person.serviceNo}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.serviceNoDate')}:"/>
+        <mx:TextInput name="serviceNoDate" text="{df.format(person.serviceNoDate)}"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+  </mx:Box>
+  <mx:Box label="{resourceManager.getString('gcc_hr', 'node.person.page5')}" width="100%"
+          height="100%">
+    <mx:ToolBar percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.frontWorkResume')}:"/>
+        <mx:TextInput name="frontWorkResume" text="{person.frontWorkResume}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.frontTrainingResume')}:"/>
+        <mx:TextInput name="frontTrainingResume" text="{person.frontTrainingResume}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.specification')}:"/>
+        <mx:TextInput name="specification" text="{person.specification}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.degree')}:"/>
+        <mx:TextInput name="degree" text="{person.degree}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.graduate')}:"/>
+        <mx:TextInput name="graduate" text="{person.graduate}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.skill')}:"/>
+        <mx:TextInput name="skill" text="{person.skill}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.lanCom')}:"/>
+        <mx:TextInput name="lanCom" text="{person.lanCom}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.national')}:"/>
+        <mx:TextInput name="national" text="{person.national}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.state')}:"/>
+        <mx:TextInput name="state" text="{person.state}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.city')}:"/>
+        <mx:TextInput name="city" text="{person.city}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.address')}:"/>
+        <mx:TextInput name="address" text="{person.address}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.zip')}:"/>
+        <mx:TextInput name="zip" text="{person.zip}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.telephone')}:"/>
+        <mx:TextInput name="telephone" text="{person.telephone}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.email')}:"/>
+        <mx:TextInput name="email" text="{person.email}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.officeTel')}:"/>
+        <mx:TextInput name="officeTel" text="{person.officeTel}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.officeExt')}:"/>
+        <mx:TextInput name="officeExt" text="{person.officeExt}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.officeFax')}:"/>
+        <mx:TextInput name="officeFax" text="{person.officeFax}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.comment')}:"/>
+        <mx:TextInput name="comment" text="{person.comment}"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+  </mx:Box>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.binding.utils.ChangeWatcher;
+      import mx.controls.Label;
+      import mx.controls.TextInput;
+      import mx.core.UIComponent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.PersonalController;
+
+      [Bindable]
+      private var person:Person;
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(this, setItem);
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "psnStatus");
+        CommonUtil.setDataGridColumns(adg2, "gcc_hr", "psnOnline");
+      }
+
+      private function setItem(comp:Object):void
+      {
+        if (comp is Label)
+        {
+          var l:Label=comp as Label;
+          l.width=80;
+        }
+        if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.editable=false;
+          ti.width=170;
+          // ti.addEventListener(FlexEvent.DATA_CHANGE, setToolTip);
+          ChangeWatcher.watch(ti, "text", setToolTip);
+        }
+      }
+
+      private function setToolTip(event:Event):void
+      {
+        if (event.currentTarget is UIComponent)
+        {
+          var comp:UIComponent=event.currentTarget as UIComponent;
+          comp.toolTip=comp["text"];
+        }
+      }
+
+      public function showPerson(person:Person):void
+      {
+        this.person=person;
+        PersonalController.getPsnStatusList(person, function(e:ResultEvent):void{adg1.dataProvider=e.result;});
+        PersonalController.getPsnOnlineList(person, function(e:ResultEvent):void{adg2.dataProvider=e.result;});
+      }
+    ]]>
+  </mx:Script>
+</mx:TabNavigator>

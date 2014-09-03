@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()">
+  <mx:AdvancedDataGrid id="adg" width="100%" height="100%" editable="false" sortableColumns="false"
+                       horizontalScrollPolicy="auto" labelFunction="{CommonUtil.gridLabelFunction}"
+                       creationComplete="onCreationComplete()" change="onChange(event)">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" dataTipField="label"
+                                 width="64" labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.no"/>
+      <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name" width="270"/>
+      <mx:AdvancedDataGridColumn dataField="count" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                 textAlign="right"/>
+      <mx:AdvancedDataGridColumn width="1"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="refresh(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.events.ListEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.util.CommonUtil;
+
+      private var list:ArrayCollection;
+      private var map:Object={};
+
+      private function onPreinitialize():void
+      {
+        label=resourceManager.getString("gcc_hr", "salDeptPsn.page1");
+        addEventListener(Events.ADD_SALDEPTPSN, onAddSalDeptPsn);
+        addEventListener(Events.EDIT_SALDEPTPSN, onEditSalDeptPsn);
+        addEventListener(Events.DEL_SALDEPTPSN, onDelSalDeptPsn);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", "salDeptPsn");
+        load();
+      }
+
+      private function load():void
+      {
+        SalaryController.getDeptPsnListA({"branch.id": UserController.branchId, "@order": "no"}, function(e:ResultEvent):void
+          // SalaryController.getDeptPsnListA(UserController.branchId, function(e:ResultEvent):void
+          {
+            list=e.result as ArrayCollection;
+            var total:int=0;
+            CommonUtil.visit(list, function(obj:Object):void
+              {
+                total+=obj.hasOwnProperty("count") ? obj.count : 0;
+                if (obj.hasOwnProperty("depart")) {
+                  map["d#"+obj.depart.id]=obj;
+                }
+              });
+            map["d#total"]={label:resourceManager.getString("gcc_hr", "salDeptPsn.page1.total"), count:total};
+            list.addItem(map["d#total"]);
+            adg.invalidateList();
+            adg.dataProvider=list;
+            adg.validateNow();
+          });
+      }
+
+      private function onChange(e:ListEvent):void
+      {
+        var rowIndex:int=e.rowIndex;
+        if (rowIndex >= 0 && rowIndex < list.length)
+        {
+          var data:Object=list.getItemAt(rowIndex);
+          dispatchEvent(new Events(Events.SEL_SALDEPTPSN, data));
+        }
+      }
+
+      private function onAddSalDeptPsn(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        if (list && e.data)
+        {
+          var item:Object;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            item=map["d#"+sdp.departId];
+            if (item)
+              item.count++;
+          }
+          map["d#total"].count+=e.args.length;
+          list.refresh();
+        }
+      }
+
+      private function onEditSalDeptPsn(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        if (list && e.data)
+        {
+          var item:Object;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            item=map["d#"+sdp.departId];
+            if (item)
+              item.count++;
+            item=map["d#"+sdp["depart#old"].id];
+            if (item)
+              item.count--;
+          }
+          list.refresh();
+        }
+      }
+
+      private function onDelSalDeptPsn(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        if (list && e.data)
+        {
+          var item:Object;
+          for each (var sdp:SalDeptPsn in e.args)
+          {
+            item=map["d#"+sdp.departId];
+            if (item)
+              item.count--;
+          }
+          map["d#total"].count-=e.args.length;
+          list.refresh();
+        }
+      }
+
+      private function refresh(e:Event):void
+      {
+        load();
+      }
+
+      private function export(e:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg), CommonUtil.getGridHeaders(adg), null, 
+          resourceManager.getString("gcc_hr", "salDeptPsn.page1.filename", [UserController.branchName]));
+      }
+
+      private function close(e:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

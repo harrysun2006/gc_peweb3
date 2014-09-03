@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:view="com.gc.common.view.*"
+           layout="horizontal" horizontalAlign="center" verticalAlign="middle" width="100%"
+           height="100%">
+  <mx:Script>
+    <![CDATA[
+      
+    ]]>
+  </mx:Script>
+  <view:Login id="viewLogin"/>
+</mx:Module>

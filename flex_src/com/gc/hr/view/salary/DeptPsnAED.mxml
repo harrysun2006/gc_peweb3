@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%"
+                height="100%" preinitialize="onPreinitialize()">
+  <mx:AdvancedDataGrid id="adg" width="100%" height="100%" editable="true" sortableColumns="false"
+                       horizontalScrollPolicy="auto" lockedColumnCount="4" visible="false"
+                       labelFunction="{CommonUtil.gridLabelFunction}">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.name"/>
+      <mx:AdvancedDataGridColumn dataField="bank"/>
+      <mx:AdvancedDataGridColumn dataField="bankCard"/>
+      <mx:AdvancedDataGridColumn dataField="comment"/>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page2')}">
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.office"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.allotDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page3')}">
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.type"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.grade"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.upgradeDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox horizontalAlign="left" width="100%" paddingBottom="7" paddingLeft="7" id="note">
+    <mx:Label color="0xFF0000" text="{resourceManager.getString('gcc_hr', 'salDeptPsn.del.query')}"/>
+  </mx:HBox>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button id="doit" click="dof(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.model.SalItem;
+      import com.gc.hr.model.SalFixOnline;
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.model.Department;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var dof:Function;
+
+      private var list0:ArrayCollection;
+      private var list1:ArrayCollection;
+      private var op:String;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CLOSED, close);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.RETURN, onReturn);
+        dof=function(e:Event):void{};
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        list0=new ArrayCollection(e.args[0] as Array);
+        list1=ObjectUtil.copy(list0) as ArrayCollection;
+        adg.dataProvider=list1;
+        op=e.args[1] as String;
+        var sis:ArrayCollection=e.args[2] as ArrayCollection;
+        var si:SalItem;
+        if (op == Constants.OP_ADD)
+        {
+          title=resourceManager.getString("gcc_hr", "salDeptPsn.add");
+          dof=add;
+          CommonUtil.visit(list1, function(item:Object):void
+            {
+              if (item is SalDeptPsn) {
+                item.selected=false;
+                item.id.depart=null;
+                item.bank="";
+                item.bankCard="";
+                item.comment="";
+                for each (si in sis) {
+                  item["si#"+si.id]=null;
+                }
+              }
+            });
+        }
+        else if (op == Constants.OP_EDIT)
+        {
+          title=resourceManager.getString("gcc_hr", "salDeptPsn.edit");
+          dof=edit;
+        }
+        else if (op == Constants.OP_DELETE)
+        {
+          title=resourceManager.getString("gcc_hr", "salDeptPsn.del");
+          note.visible=note.includeInLayout=true;
+          doit.label=resourceManager.getString("gcc", "erase");
+          dof=erase;
+        }
+        var fields:Array;
+        if (op == Constants.OP_ADD || op == Constants.OP_EDIT)
+        {
+          note.visible=note.includeInLayout=false;
+          doit.label=resourceManager.getString("gcc", "save");
+          fields=["bank", "bankCard", "comment"];
+          CommonUtil.popupWindow(DeptPsnSelect, "", this);
+        }
+        else
+          fields=[];
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", "salDeptPsn", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              obj.editable=fields.indexOf(obj.dataField) >= 0;
+            }
+          });
+        adg.visible=true;
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var depart:Department=e.args[0] as Department;
+        var bank:String=e.args[1] as String;
+        for each (var sdp:SalDeptPsn in list1)
+        {
+          if (op == Constants.OP_EDIT)
+            sdp["depart#old"]=sdp.id.depart;
+          sdp.bank=(bank && bank != "") ? bank : sdp.bank;
+          sdp.id.depart=depart;
+        }
+        list1.refresh();
+      }
+
+      private function add(e:Event):void
+      {
+        BaseController.addObjects(list1, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.ADD_SALDEPTPSN, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function edit(e:Event):void
+      {
+        SalaryController.changeDeptPsns(list0.source, list1.source, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.EDIT_SALDEPTPSN, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function erase(e:Event):void
+      {
+        SalaryController.deleteDeptPsns(list1.source, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "erase.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.DEL_SALDEPTPSN, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function _close():void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function close(e:Event):void
+      {
+        _close();
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

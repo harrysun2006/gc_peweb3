@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BeanLoader
+	xmlns="org.swizframework.util.*"
+	xmlns:mx="http://www.adobe.com/2006/mxml"
+	xmlns:swizframework="org.swizframework.*"
+	xmlns:factory="org.swizframework.factory.*">
+
+	<swizframework:InitBeanOne id="initBean"/>
+	
+	<factory:Prototype id="initOne" className="org.swizframework.InitBeanOne"/>
+	
+	<swizframework:InitBeanTwo id="initTwo"/>
+	
+</BeanLoader>

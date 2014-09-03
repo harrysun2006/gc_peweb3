@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="350" height="200"
+                horizontalAlign="center" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)">
+  <mx:Label text="获取或填写事故编号" textAlign="center" width="100%" height="38"/>
+  <mx:HBox id="hboxTi" width="100%" horizontalAlign="center" height="53">
+    <mx:TextInput id="tiNo" name="no" text="{accident.no}"/>
+    <mx:Button id="btGetAccs" label="获取" click="getAccs(event)"/>
+  </mx:HBox>
+  <mx:HBox width="100%" horizontalAlign="center">
+    <mx:Button id="btSave" label="确定" click="sure(event)"/>
+    <mx:Label width="40"/>
+    <mx:Button id="btClose" label="取消" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.controller.CommonController;
+      import mx.collections.ArrayCollection;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.Constants;
+      import mx.rpc.events.ResultEvent;
+      import mx.controls.Alert;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.Events;
+      import mx.managers.PopUpManager;
+      import mx.validators.Validator;
+      import com.gc.util.CommonUtil;
+      import com.gc.CommonEvent;
+      import com.gc.safety.model.Accident;
+
+      private var user:SecurityUser;
+      public var branchId:int;
+      [Bindable]
+      private var accident:Accident;
+      [Bindable]
+      public var dept:Department;
+      [Bindable]
+      public var clickType:String;
+
+      private function onPreinitialize():void
+      {
+        user = UserController.user;
+        branchId = UserController.branchId;
+      }
+
+      private function onCreationComplete():void
+      {
+        if (BaseController.departmentList == null)
+        {
+          initDeptList();
+        }
+        else
+        {
+          initDeptItem();
+        }
+        tiNo.setFocus();
+      }
+
+      /** 初始化部门  */
+      private function initDeptList():void
+      {
+        BaseController.getDepartments(branchId,successDept);
+      }
+
+      private function successDept(event:ResultEvent):void
+      {
+        if (user.limit.safetyLimit == 3 || user.limit.safetyLimit == 4)
+        {
+          for (var i:int = 0; i < BaseController.departmentList.length; i++)
+          {
+            if (user.limit.safetyLimitDepart.id == (BaseController.departmentList.getItemAt(i,0) as Department).id)
+            {
+              dept = BaseController.departmentList.getItemAt(i,0) as Department;
+              break;
+            }
+          }
+        }
+      }
+
+      private function initDeptItem():void
+      {
+        if (user.limit.safetyLimit == 3 || user.limit.safetyLimit == 4)
+        {
+          for (var i:int = 0; i < BaseController.departmentList.length; i++)
+          {
+            if (user.limit.safetyLimitDepart.id == (BaseController.departmentList.getItemAt(i,0) as Department).id)
+            {
+              dept = BaseController.departmentList.getItemAt(i,0) as Department;
+              break;
+            }
+          }
+        }
+      }
+
+
+      private function getAccs(event:Event):void
+      {
+        if (["p","a"].indexOf(clickType) >= 0)
+        {
+          var accsWin:AccsWin = AccsWin(PopUpManager.createPopUp(this.parent,AccsWin,true));
+          PopUpManager.centerPopUp(accsWin);
+          accsWin.dept = dept;
+          accsWin.clickType = clickType;
+          accsWin.addEventListener(Events.CLICKED,getAccident);
+//          accsWin.addEventListener(Events.DBCLICKED,getAccident);
+        }
+        else
+        {
+          var aagWin:ArchAccsGuaWin= ArchAccsGuaWin(PopUpManager.createPopUp(this.parent,ArchAccsGuaWin,true));
+          PopUpManager.centerPopUp(aagWin);
+//          aagWin.dept = dept;
+          aagWin.clickType = clickType;
+          aagWin.addEventListener(Events.CLICKED,getAccident);
+//          aagWin.addEventListener(Events.DBCLICKED,getAccident);
+        }
+
+      }
+
+      private function getAccident(event:Events):void
+      {
+        accident = event.data as Accident;
+      }
+
+      private function sure(event:Event):void
+      {
+        if (!CommonUtil.validateForm(hboxTi,[{field:"no",error:"请获取或填写事故编号"}]))
+          return;
+        if (accident == null)
+        {
+          if (["p","a"].indexOf(clickType) >= 0)
+          {
+            AccidentController.getAccidentByNo(branchId,tiNo.text,successGetAccByNo);
+          }
+          else
+          {
+            // 结案存档 ：通过 no 查 符合条件的事故
+            AccidentController.getAccidentByNoForArch(branchId,tiNo.text, CommonController.closeDate, successGetAccByNoForArch);
+          }
+        }
+        else if (accident.no == tiNo.text)
+        {
+          if (["p","a"].indexOf(clickType) >= 0)
+          {
+            dispatchEvent(new Events(Events.GET,accident));
+            PopUpManager.removePopUp(this);
+          }
+          else
+          {
+            AccidentController.getAccidentByNo(branchId,tiNo.text,successGetAccByNo);
+          }
+        }
+        else if (accident.no != tiNo.text)
+        {
+          if (["p","a"].indexOf(clickType) >= 0)
+          {
+            AccidentController.getAccidentByNo(branchId,tiNo.text,successGetAccByNo);
+          }
+          else
+          {
+            // 结案存档 ：通过 no 查 符合条件的事故
+            AccidentController.getAccidentByNoForArch(branchId,tiNo.text, CommonController.closeDate, successGetAccByNoForArch);
+          }
+        }
+      }
+
+      private function successGetAccByNo(event:ResultEvent):void
+      {
+        accident == null;
+        var accs:ArrayCollection = event.result as ArrayCollection;
+        if (accs.length > 0)
+        {
+          var acc:Accident = accs[0];
+          if (dept != null && dept.id != acc.dept.id)
+          {
+            Alert.show("你输入的事故编号不是当前部门的，请确认后重新获取或填写",Constants.APP_NAME,
+              Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          if (clickType == "p" && [0,1].indexOf(acc.status) >= 0)
+          {
+            accident = acc;
+          }
+          else if (clickType == "a" && [1,2].indexOf(acc.status) >= 0)
+          {
+            accident = acc;
+          }
+          else if (clickType == "ar")
+          {
+            accident = acc;
+          }
+          else
+          {
+            Alert.show("你输入的事故编号不是当前处理状态的，请确认后重新获取或填写",Constants.APP_NAME,
+              Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        if (accident == null)
+        {
+          Alert.show("你输入的事故编号没有相应的事故信息，请确认后重新获取或填写",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        else
+        {
+          dispatchEvent(new Events(Events.GET,accident));
+          PopUpManager.removePopUp(this);
+        }
+      }
+
+      private function successGetAccByNoForArch(event:ResultEvent):void
+      {
+        accident = null;
+        var accs:ArrayCollection = event.result as ArrayCollection;
+        if (accs != null)
+        {
+          if (accs.length > 0)
+          {
+            accident = accs[0];
+            dispatchEvent(new Events(Events.GET,accident));
+            PopUpManager.removePopUp(this);
+          }
+        }
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,413 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:ToolBar id="form" percentWidth="100">
+      <mx:GridItem visible="{single}" includeInLayout="{single}">
+        <mx:Label text="{resourceManager.getString('gcc', 'person.depart.name')}:"/>
+        <mx:Label text="{depart.name}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.allotDate')}:"/>
+        <mx:TextInput name="allotDate" editable="false" width="160"
+                      text="{DateUtil.formatDate(po.allotDate, Constants.DATE_FORMAT)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.allotReason')}:"/>
+        <mx:TextInput name="allotReason" editable="false" text="{po.allotReason}" width="280"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+    <mx:HBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" horizontalScrollPolicy="auto"
+                           sortableColumns="false" labelFunction="{CommonUtil.gridLabelFunction}"
+                           lockedColumnCount="3" keyDown="CommonUtil.gridKeyDown(event)"
+                           verticalScrollPolicy="off">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                     labelFunction="{CommonUtil.serialLabelFunction}"
+                                     styleFunction="{CommonUtil.serialStyleFunction}"/>
+          <mx:AdvancedDataGridColumn dataField="workerId"/>
+          <mx:AdvancedDataGridColumn dataField="name"/>
+          <mx:AdvancedDataGridColumnGroup 
+                                          headerText="{resourceManager.getString('gcc_hr', 'person.manage.old.values')}"
+                                          textAlign="left">
+            <mx:AdvancedDataGridColumn dataField="allotDate"/>
+            <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"
+                                       visible="{!single}"/>
+            <mx:AdvancedDataGridColumn dataField="office"/>
+            <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+            <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+      <mx:AdvancedDataGrid id="adg2" width="360" height="100%" horizontalScrollPolicy="auto"
+                           editable="true" sortableColumns="false" styleFunction="styleOfPerson"
+                           labelFunction="{CommonUtil.gridLabelFunction}" scroll="onScroll(event)"
+                           keyDown="CommonUtil.gridKeyDown(event)"
+                           itemEditEnd="onItemEditEnd(event)">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumnGroup 
+                                          headerText="{resourceManager.getString('gcc_hr', 'person.manage.new.values')}"
+                                          textAlign="center">
+            <mx:AdvancedDataGridColumn dataField="office" itemEditor="{officeComboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"
+                                       editorDataField="selectedItem" itemEditor="{lineComboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"
+                                       editorDataField="selectedItem" itemEditor="{busComboBox}"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'update.batch')}" click="refresh(event)"
+                 toolTip="{resourceManager.getString('gcc_hr', 'person.update.batch.tooltip')}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="allot(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.PsnOnline;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var po:Person=new Person();
+      [Bindable]
+      private var officeComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var lineComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var busComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var depart:Department;
+      [Bindable]
+      private var single:Boolean;
+      private var departList:ArrayCollection;
+      private var list0:ArrayCollection; // 人员列表, T_PERSONAL
+      private var list1:ArrayCollection; // 原人员调动列表, T_PSN_ONLINE, 列表元素对象为Person
+      private var list2:ArrayCollection; // 现人员调动列表, T_PSN_ONLINE, 列表元素对象为Person
+      private var columnIndex:int;
+      private var rowIndex:int;
+
+      private function init():void
+      {
+        BaseController.getDepartmentsAndOLEs(UserController.branchId, UserController.hrDepartId, onGetDepartListSuccess);
+      }
+
+      private function onPreinitialize():void
+      {
+        columnIndex=-1;
+        rowIndex=-1;
+        depart=UserController.hrDepart;
+        single=(!UserController.HR_WRITE);
+
+        officeComboBox=new AdvancedClassFactory(ComboBox);
+        officeComboBox.properties={editable:true, itemRenderer:new ClassFactory(Label)};
+        officeComboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onOfficeCreateComplete}
+          , {type:KeyboardEvent.KEY_UP, listener:CommonUtil.keyUp}];
+        lineComboBox=new AdvancedClassFactory(ComboBox);
+        lineComboBox.properties={editable:true};
+        lineComboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onLineCreateComplete}];
+        busComboBox=new AdvancedClassFactory(ComboBox);
+        busComboBox.properties={editable:true, labelField:"authNo"};
+        busComboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onBusCreateComplete}];
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc", "person");
+        CommonUtil.setDataGridColumns(adg2, "gcc", "person");
+        this.setFocus();
+      }
+
+      private function onCreated(event:CommonEvent):void
+      {
+        if (event.args == null)
+          return;
+        var obj:Object=event.args[0];
+        po.allotDate=obj.date;
+        po.allotReason=obj.reason;
+        list0=event.args[1] as ArrayCollection;
+        var ids:ArrayCollection=new ArrayCollection(CommonUtil.getSubArray(list0.source, ["id"]));
+        var qo:Object={persons:ids, onDate_to:obj.date, downDate_from:obj.date};
+        var f:Function=function(e1:ResultEvent):void
+          {
+            var pos:ArrayCollection=e1.result as ArrayCollection;
+            var p0:Person, p1:Person, p2:Person, p3:PsnOnline, m:Object=new Object();
+            for each (p3 in pos)
+            {
+              m[p3.personId]=p3;
+            }
+            list1=new ArrayCollection();
+            list2=new ArrayCollection();
+            for each (p0 in list0)
+            {
+              p3=m[p0.id];
+              p1=new Person(p0.id)
+              p2=new Person(p0.id);
+              p1.workerId=p2.workerId=p0.workerId;
+              p1.name=p2.name=p0.name;
+              p2.allotDate=po.allotDate;
+              p2.allotReason=po.allotReason;
+              if (p3)
+              {
+                p1.onDate=p2.onDate=p3.onDate;
+                p1.downDate=p2.downDate=p3.downDate;
+                p1.allotDate=p3.onDate;
+                p1.allotReason=p3.allotReason;
+                p1.depart=p2.depart=p3.depart;
+                p1.office=p2.office=p3.office;
+                p1.line=p2.line=p3.line;
+                p1.bus=p2.bus=p3.bus;
+              }
+              else
+              {
+                p1.onDate=p2.onDate=p0.onDate;
+                p1.downDate=p2.downDate=p0.downDate;
+                p1.allotDate=p0.allotDate;
+                p1.allotReason=p0.allotReason;
+                p1.depart=p2.depart=p0.depart;
+                p1.office=p2.office=p0.office;
+                p1.line=p2.line=p0.line;
+                p1.bus=p2.bus=p0.bus;
+              }
+              p2.equals=true;
+              list1.addItem(p1);
+              list2.addItem(p2);
+            }
+            adg1.dataProvider=list1;
+            adg1.validateNow();
+            adg2.rowHeight=adg1.rowHeight;
+            adg2.dataProvider=list2;
+            adg2.validateNow();
+          };
+        PersonalController.getPsnOnlineList(qo, f);
+        init();
+      }
+
+      private function getDepart(coll:ArrayCollection, depart:Department):Department
+      {
+        if (depart == null)
+          return null;
+        var k:int=CommonUtil.indexOfKey(coll.toArray(), depart.id, "id");
+        return (k >= 0) ? coll[k] : null;
+      }
+
+      private function onGetDepartListSuccess(e:ResultEvent):void
+      {
+        departList=e.result as ArrayCollection;
+        var list:IList=CommonUtil.getGridList(adg2);
+        for each (var p:Person in list)
+        {
+          p.depart=getDepart(departList, p.depart as Department);
+        }
+      }
+
+      private function setDataProvider(obj:Object, property:String, selectedField:String, filter:Function=null):void
+      {
+        if (obj is ComboBox)
+        {
+          var cbox:ComboBox=obj as ComboBox;
+          if (cbox.data != null)
+          {
+            var data:Object=CommonUtil.getAccessorValue(cbox.data, property);
+            if (data is IList)
+            {
+              var list:IList=data as IList;
+              cbox.dataProvider=(filter == null) ? list : list.toArray().filter(filter);
+              cbox.selectedIndex=CommonUtil.indexOfKey(list.toArray(), cbox.data[selectedField], "label");
+              cbox.setStyle("color", colorOfPerson(cbox.data));
+            }
+          }
+        }
+      }
+
+      private function onOfficeCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "depart.offices", "office");
+      }
+
+      private function onLineCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "depart.lines", "line");
+      }
+
+      private function onBusCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "depart.equipments", "bus", function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            return (item.downDate == null || (po.allotDate != null && item.downDate > po.allotDate));
+          });
+      }
+
+      private function onScroll(event:Event):void
+      {
+        callLater(function():void{adg1.verticalScrollPosition=adg2.verticalScrollPosition;});
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          if (newData == "" && CommonUtil.getAccessorValue(data, property) == null)
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+        }
+        callLater(function():void
+          {
+            columnIndex=event.columnIndex;
+            rowIndex=event.rowIndex;
+            if (columnIndex < 0 || rowIndex < 0)
+              return;
+            var p1:Person=list1.getItemAt(rowIndex) as Person;
+            var p2:Person=list2.getItemAt(rowIndex) as Person;
+            p2.equals=equals(p1, p2);
+          });
+        // trace(event);
+      }
+
+      private function styleOfPerson(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        return {color:colorOfPerson(data)};
+      }
+
+      private function colorOfPerson(data:Object):uint
+      {
+        return (data && data.equals) ? Constants.Black : Constants.Blue;
+      }
+
+      private function equals(p1:Object, p2:Object):Boolean
+      {
+        return p1.office == p2.office && p1.lineId == p2.lineId && p1.busId == p2.busId;
+      }
+
+      private function close(event:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function refresh(event:Event):void
+      {
+        if (columnIndex < 0 || rowIndex < 0)
+          return;
+        var column:AdvancedDataGridColumn=adg2.columns[columnIndex] as AdvancedDataGridColumn;
+        var df:String=column.dataField;
+        if (df == "bus")
+          return;
+        var header:String=column.headerText;
+        var p:Person=list2.getItemAt(rowIndex) as Person;
+        var value:String=adg2.labelFunction(p, column);
+        Alert.show(resourceManager.getString("gcc_hr", "person.update.batch.query", [header, value]), 
+          Constants.APP_NAME, Alert.YES | Alert.NO, null, function(e1:CloseEvent):void
+          {
+            if (e1.detail == Alert.YES) {
+              var i:int;
+              var p1:Person, p2:Person;
+              for (i=0; i<list2.length; i++) {
+                p1=list1[i];
+                p2=list2[i];
+                p2[df]=p[df];
+                p2.equals=equals(p1, p2);
+              }
+            }
+          }, Constants.ICON32_QUESTION);
+      }
+
+      private function get changed():Boolean
+      {
+        var i:int;
+        var r:Boolean=false;
+        for (i=0; i < list1.length; i++)
+        {
+          if (!(equals(list1[i], list2[i]) && list1[i].allotDate.time == list2[i].allotDate.time && list1[i].allotReason == list2[i].allotReason))
+          {
+            r=true;
+            break;
+          }
+        }
+        return r;
+      }
+
+      private function allot(event:Event):void
+      {
+        // 2010-2-25: 业务字段没有变化的记录不需要更新! 前台不做检查,提示后台抛错信息!
+        // 2010-3-3: 调动日期之后有其他调动记录,卡号会置空,需要提示!
+        var s1:String="";
+        var i:int;
+        for (i=0; i < list1.length; i++)
+        {
+          if (list1[i].downDate < Constants.MAX_DATE) // 调动日期之后有其他调动记录
+          {
+            s1+=resourceManager.getString("gcc", "person.format01.nwc2", [list1[i].name, list1[i].workerId, list0[i].cert2No ? list0[i].cert2No : ""])+"\n";
+          }
+        }
+        s1=s1.substring(0, s1.length-1);
+        var f1:Function=function(e1:ResultEvent):void
+          {
+            var i:int;
+            for (i=0; i < list0.length; i++)
+            {
+              list0[i].allotDate=po.allotDate;
+              list0[i].allotReason=po.allotReason;
+              list0[i].office=list2[i].office;
+              list0[i].line=list2[i].line;
+              list0[i].bus=list2[i].bus;
+              if (list1[i].downDate < Constants.MAX_DATE) // 调动日期之后有其他调动记录
+              {
+                list0[i].cert2No=null;
+                list0[i].cert2NoHex=null;
+              }
+            }
+            var icon:Class;
+            if (s1.length > 0)
+            {
+              s1=resourceManager.getString("gcc_hr", "person.allot.warning.cert2.reset", [s1]);
+              icon=Constants.ICON32_WARNING;
+            }
+            else
+            {
+              s1=resourceManager.getString("gcc", "save.success");
+              icon=Constants.ICON32_INFO;
+            }
+            Alert.show(s1, Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                close();
+              // owner.dispatchEvent(CommonEvent.REFRESH_EVENT);
+              }, icon);
+          };
+        if (changed)
+          PersonalController.allotPersonsLine(list2.source, f1);
+        else
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

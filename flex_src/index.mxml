@@ -1,0 +1,237 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" minWidth="800"
+                minHeight="600" width="100%" height="100%" paddingLeft="0" paddingTop="0"
+                paddingRight="0" paddingBottom="0" preinitialize="onPreinitialize()"
+                applicationComplete="onApplicationComplete()" horizontalScrollPolicy="off"
+                verticalScrollPolicy="off">
+  <mx:Box width="100%" height="100%">
+    <mx:ModuleLoader id="loader" width="100%" height="100%"/>
+  </mx:Box>
+  <mx:Metadata>
+       [ResourceBundle("gcc")]
+	</mx:Metadata>
+  <mx:Style source="skins/gcc.css"/>
+  <mx:Script>
+    <![CDATA[
+      import flash.net.registerClassAlias;
+
+      import mx.controls.Alert;
+      import mx.events.CloseEvent;
+      import mx.events.ResourceEvent;
+      import mx.managers.ToolTipManager;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import org.swizframework.Swiz;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.LoadModuleEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.model.*;
+      import com.gc.util.AideUtil;
+      import com.gc.util.CommonUtil;
+
+      [SWF(width="800",height="600",backgroundColor="#FFFFFF",frameRate="24")]
+      /**
+       * creationComplete中执行Swiz.loadBeans, 所以此处Swiz无法注入;
+       * Module中的Swiz注入不稳定, 程序中一律使用使用Swiz.getBean()
+       * FLEX生成的SWF运行的顺序是: preloader->systemManager->FlexApplication started...
+       * ==>preinitialize(在所有的初始化之前触发,没有子组件的定义,但是可以引用组件的变量)
+       * ==>initialize(当所有子组件生成完成后触发,在这个时间点还没有组件被渲染出来)
+       * ==>creationComplete(组件定义完成并已经在显示列表)
+       * ==>applicationComplete(所有的组件初始化完成并显示)
+       * 参考http://clchun.javaeye.com/blog/204646
+       **/
+      // [Autowire(bean="loginUser")]
+      // private var user:SecurityUser;
+
+      /**
+       * http://localhost/index.swf?username=hsun&password=123456&module=hr可以取到参数
+       * http://localhost/index.html?username=hsun&password=123456&module=hr取不到参数,需要改html
+       * index.html由html-template/index.template.html模版生成
+       * 新建Flex项目时Flex Builder从sdks/3.2.0templates中选择一个模版复制到html-template/index.template.html
+       **/
+      private function onPreinitialize():void
+      {
+        // forceURL();
+        Constants.init();
+        Swiz.loadBeans([Beans]);
+        registerRemoteClasses();
+        loadSettings();
+        AideUtil.init();
+      }
+
+      // 取系统全局设置
+      private function loadSettings():void
+      {
+        BaseController.getSettings(function(e:ResultEvent):void
+          {
+            Constants.SETTINGS=e.result;
+          });
+      }
+
+      /**
+       * [RemoteClass(alias="com.gc.hr.po.HireType")]有时不起作用
+       * 使用registerClassAlias显式指定model对应的远程对象类
+       **/
+      private function registerRemoteClasses():void
+      {
+        registerClassAlias("com.gc.common.po.Branch", Branch);
+        registerClassAlias("com.gc.common.po.Department", Department);
+        registerClassAlias("com.gc.common.po.Equipment", Equipment);
+        registerClassAlias("com.gc.common.po.EquOnline", EquOnline);
+        registerClassAlias("com.gc.common.po.EventLog", EventLog);
+        registerClassAlias("com.gc.common.po.EventLogD", EventLogD);
+        registerClassAlias("com.gc.common.po.Line", Line);
+        registerClassAlias("com.gc.common.po.Office", Office);
+        registerClassAlias("com.gc.common.po.OfficePK", OfficePK);
+        registerClassAlias("com.gc.common.po.Person", Person);
+        registerClassAlias("com.gc.common.po.PsnOnline", PsnOnline);
+        registerClassAlias("com.gc.common.po.PsnStatus", PsnStatus);
+        registerClassAlias("com.gc.common.po.PsnChange", PsnChange);
+        registerClassAlias("com.gc.common.po.PsnPhoto", PsnPhoto);
+        registerClassAlias("com.gc.common.po.Position", Position);
+        registerClassAlias("com.gc.common.po.PositionPK", PositionPK);
+        registerClassAlias("com.gc.common.po.SecurityGroup", SecurityGroup);
+        registerClassAlias("com.gc.common.po.SecurityLimit", SecurityLimit);
+        registerClassAlias("com.gc.common.po.SecurityLimitPK", SecurityLimitPK);
+        registerClassAlias("com.gc.common.po.SecurityUser", SecurityUser);
+        registerClassAlias("com.gc.common.po.Weather", Weather);
+      }
+
+      private function onApplicationComplete():void
+      {
+        addEventListener(CommonEvent.EXIT, exit);
+        addEventListener(CommonEvent.LOGOUT, logout);
+        addEventListener(CommonEvent.RETURN, _return);
+        addEventListener(LoadModuleEvent.LOAD_MODULE, loadModule);
+        autoLogin();
+      }
+
+      private function exit(event:CommonEvent):void
+      {
+        /**
+         * 使用[ResourceBundle...]标签模块在编译时没有加入framework_rb.swc, Alert.okLabel没有加载本地资源
+         * 使用mxmlc编译资源模块swf + resourceManager.loadResourceModule方式OK!
+         **/
+        if (event.data == null || event.data)
+          Alert.show(resourceManager.getString("gcc", "system.exit.confirm"), Constants.APP_NAME, Alert.OK | Alert.CANCEL, this, _exit, Constants.ICON32_QUESTION);
+      }
+
+      private function _exit(event:CloseEvent):void
+      {
+        if (event.detail == Alert.OK)
+        {
+          AideUtil.exit();
+          var player:String=flash.system.Capabilities.playerType;
+          if (player == "StandAlone")
+          {
+            fscommand("quit"); //same as this
+              // flash.system.System.exit(0);
+          }
+          else
+          {
+            var url:URLRequest=new URLRequest("javascript:window.opener=null;window.close()");
+            navigateToURL(url, "_self");
+          }
+        }
+      }
+
+      private function logout(event:CommonEvent):void
+      {
+        UserController.user=SecurityUser.DEFAULT_USER;
+        loadModule(null, "login.swf");
+      }
+
+      private function _return(event:CommonEvent):void
+      {
+        loadModule(null, "modules.swf");
+      }
+
+      /**
+       * 加loader.applicationDomain=ApplicationDomain.currentDomain;语句后
+       * 将导致模块间切换的问题
+       **/
+      private function loadModule(event:LoadModuleEvent, url:String=null):void
+      {
+        // loader.load(event.url);
+        loader.unloadModule();
+        loader.loadModule((url != null) ? url : (event != null) ? event.url : "");
+        // loader.url=(url != null) ? url : (event != null) ? event.url : "";
+        // loader.applicationDomain=ApplicationDomain.currentDomain;
+      }
+
+      /**
+       * 检测url, 如果是xxx.html?..., 重定向为xxx.swf?...
+       **/
+      private function forceURL():void
+      {
+        var url:String=systemManager.loaderInfo.url;
+      }
+
+      private function autoLogin():void
+      {
+        var parameters:Object=Application.application.parameters;
+        var user:SecurityUser=UserController.user;
+        if (parameters["username"] != null)
+        {
+          user.useId=parameters["username"];
+          user.password1=parameters["password"];
+          CommonUtil.setValue(user, "limit.id.branch.useId", parameters["branch"]);
+          UserController.authenticate(user, function(e:ResultEvent):void
+            {
+              user=e.result as SecurityUser;
+              if (user == null)
+                login();
+              else
+              {
+                UserController.user=user;
+                dispatchModule();
+              }
+            }, function(e:FaultEvent):void
+            {
+              login();
+            });
+        }
+        else
+        {
+          login();
+        }
+      }
+
+      private function login():void
+      {
+        loadModule(null, "login.swf?" + CommonUtil.getQueryString());
+        // loadModule("login.swf");
+      }
+
+      private function dispatchModule():void
+      {
+        var module:String=Application.application.parameters["module"];
+        var user:SecurityUser=UserController.user;
+        var limit:SecurityLimit=user.limit;
+        if (module != null && limit != null)
+        {
+          if (user.branch.id != limit.id.branch.id)
+            loadModule(null, "modules.swf");
+          else if (module == "hr" && limit.hrLimit > 0)
+            loadModule(null, "hr.swf");
+          else if (module == "safety" && limit.safetyLimit > 0)
+            loadModule(null, "safety.swf");
+          else
+            loadModule(null, "modules.swf");
+        }
+        else
+        {
+          loadModule(null, "modules.swf");
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Application>

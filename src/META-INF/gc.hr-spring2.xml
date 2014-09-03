@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd"
+		default-lazy-init="true">
+
+	<!-- 注意interceptors的顺序, 如果loggerAdvisor在gcTransactionInterceptor里面, 则日志无法记录(回滚) -->
+	<bean id="hrAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcTransactionAdvisor"
+		p:beanNames="hrCommonDAO,hrCommonService,hrPersonalDAO,hrPersonalService,hrCheckDAO,hrCheckService,hrSalaryDAO,hrSalaryService"
+		p:proxyTargetClass="true"/>
+
+	<!-- HR Common DAO, Service & Util -->
+	<bean id="hrCommonDAO" class="com.gc.hr.dao.CommonDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="hrCommonService" class="com.gc.hr.service.CommonService" p:commonDAO-ref="hrCommonDAO"/>
+	<bean id="hrCommonServiceUtil" class="com.gc.hr.service.CommonServiceUtil" p:commonService-ref="hrCommonService" lazy-init="true"/>
+
+	<!-- HR Personal DAO, Service & Util -->
+	<bean id="hrPersonalDAO" class="com.gc.hr.dao.PersonalDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="hrPersonalService" class="com.gc.hr.service.PersonalService" p:personalDAO-ref="hrPersonalDAO"/>
+	<bean id="hrPersonalServiceUtil" class="com.gc.hr.service.PersonalServiceUtil" p:personalService-ref="hrPersonalService" lazy-init="true"/>
+
+	<!-- HR Check DAO, Service & Util -->
+	<bean id="hrCheckDAO" class="com.gc.hr.dao.CheckDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="hrCheckService" class="com.gc.hr.service.CheckService" p:checkDAO-ref="hrCheckDAO"/>
+	<bean id="hrCheckServiceUtil" class="com.gc.hr.service.CheckServiceUtil" p:checkService-ref="hrCheckService" lazy-init="true"/>
+
+	<!-- HR Salary DAO, Service & Util -->
+	<bean id="hrSalaryDAO" class="com.gc.hr.dao.SalaryDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="hrSalaryService" class="com.gc.hr.service.SalaryService" p:salaryDAO-ref="hrSalaryDAO"/>
+	<bean id="hrSalaryServiceUtil" class="com.gc.hr.service.SalaryServiceUtil" p:salaryService-ref="hrSalaryService" lazy-init="true"/>
+</beans>

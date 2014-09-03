@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" verticalAlign="top"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                xmlns:salary="com.gc.hr.view.salary.*">
+  <mx:states>
+    <mx:State name="printView">
+      <mx:RemoveChild target="{vb}"/>
+      <mx:AddChild position="child" creationPolicy="all">
+        <salary:FactPrintView id="s2"/>
+        <mx:Button label="Back" click="currentState=&quot;&quot;"/>
+      </mx:AddChild>
+    </mx:State>
+  </mx:states>
+
+  <mx:VBox id="vb" width="100%" height="100%">
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFactD.id.fact.id.no')}" width="100"/>
+      <mx:TextInput text="{fact.id.no}" enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.depart.name')}" width="100"/>
+      <mx:TextInput text="{fact.depart.name}" enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.date')}" width="100"/>
+      <mx:TextInput text="{DateField.dateToString(fact.date, Constants.DATE_FORMAT)}"
+                    enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.issueDate')}" width="100"/>
+      <mx:TextInput text="{DateField.dateToString(fact.issueDate, Constants.DATE_FORMAT)}"
+                    enabled="false"/>
+    </mx:HBox>
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.issueType')}" width="100"/>
+      <mx:TextInput text="{fact.itype$.label}" enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.issuer.workerId')}" width="100"/>
+      <mx:TextInput text="{fact.issuer.workerId}" enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.summary')}" width="100"/>
+      <mx:TextInput text="{fact.summary}" enabled="false"/>
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'salFact.comment')}" width="100"/>
+      <mx:TextInput text="{fact.comment}" enabled="false"/>
+    </mx:HBox>
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" lockedColumnCount="3"
+                         sortableColumns="false" horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" width="50"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.workerId" width="80"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name" width="80"/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center" verticalAlign="middle">
+      <mx:Button label="{resourceManager.getString('gcc', 'print.preview')}"
+                 click="onPreview(event)" enabled="false"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'print')}" click="print(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.common.model.Person;
+      import mx.core.Application;
+      import mx.controls.Alert;
+      import mx.controls.DateField;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+      import mx.collections.ArrayCollection;
+      import mx.events.StateChangeEvent;
+      import mx.managers.PopUpManager;
+      import mx.printing.FlexPrintJob;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.view.PrintManage;
+      import com.gc.hr.Events;
+      import com.gc.hr.model.SalFact;
+      import com.gc.hr.model.SalFactD;
+      import com.gc.hr.model.SalItem;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.util.DateUtil;
+      import com.gc.util.CommonUtil;
+
+      import fxl.xls.Workbook;
+      import fxl.xls.Worksheet;
+
+      [Bindable]
+      private var list:ArrayCollection=new ArrayCollection();
+      [Bindable]
+      private var fact:SalFact;
+      private var sheet:Worksheet;
+      private var arr:Object;
+      private var columns:Array;
+      private var groupedColumns:Array;
+      private var unprint:Array;
+
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CLOSED, onClosed);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.RETURN, onReturn);
+        addEventListener(Events.SEL_SALFACT, onSelSalFact);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, 'gcc_hr', 'salFactD');
+        groupedColumns=adg.groupedColumns;
+        columns=adg.columns;
+      }
+
+      private function onClosed(e:CommonEvent):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+
+      private function onCreated(e:Event=null):void
+      {
+        CommonUtil.popupWindow(FactPrintWin, "", this);
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var owner:DisplayObjectContainer=this;
+        SalaryController.getFactDs(e.data, function(e:ResultEvent):void
+          {
+            arr=e.result;
+            var facts:ArrayCollection=arr.facts as ArrayCollection;
+            if (facts.length <= 0)
+            {
+              Alert.show(resourceManager.getString('gcc_hr', 'salFactD.no.result'), Constants.APP_NAME, Alert.OK, null, onCreated, Constants.ICON32_WARNING);
+            }
+            else if (facts.length == 1)
+            {
+              fact=facts.getItemAt(0) as SalFact;
+              generateColumn(fact);
+            }
+            else
+            {
+              CommonUtil.popupWindow(FactPrintList, "", owner, facts);
+            }
+          });
+      }
+
+      private function onPreview(e:Event):void
+      {
+        var text:String="test flex report";
+
+        CommonUtil.popupWindow(PrintManage, "", this, text, true);
+      }
+
+      private function print(e:Event):void
+      {
+        var printJob:FlexPrintJob=new FlexPrintJob();
+        if (printJob.start())
+        {
+          // Create a FormPrintView control as a child of the current view.
+          var view:FactPrintView=new FactPrintView();
+//					view.rotation=90;
+//					view.scaleY=view.scaleX;
+          Application.application.addChild(view);
+          //Set the print view properties.s
+          view.width=printJob.pageWidth;
+          view.height=printJob.pageHeight;
+          view.adg.setStyle("headerSortSeparatorSkin", adg.getStyle("headerSortSeparatorSkin"));
+          view.adg.headerRenderer=Constants.ZERO_ADG_HEADER_RENDERER;
+          view.adg.itemRenderer=adg.itemRenderer;
+          view.adg.labelFunction=adg.labelFunction;
+          view.header.ti.text=resourceManager.getString('gcc_hr', 'salFactD.head', [fact.depart.name, DateField.dateToString(fact.date, Constants.DATE_FORMAT)]);
+
+          view.header.fact=fact;
+          var printColumns:Array=new Array();
+          adg.columns.forEach(function(item:*, index:int, arr:Array):void
+            {
+              if (unprint.indexOf(item["dataField"]) == -1)
+                printColumns.push(item);
+            });
+          view.adg.columns=printColumns;
+          var printGroupedColumns:Array=new Array();
+          printGroupedColumns=getPrintGroupedColumns(adg.groupedColumns);
+          view.adg.groupedColumns=printGroupedColumns;
+          view.adg.sortableColumns=false;
+          view.adg.dataProvider=adg.dataProvider;
+          view.showPage("single");
+
+          if (!view.adg.validNextPage)
+          {
+            printJob.addObject(view);
+          }
+          else
+          {
+            view.showPage("first");
+            printJob.addObject(view);
+            while (view.adg.validNextPage)
+            {
+              view.adg.nextPage();
+              view.showPage("next");
+              printJob.addObject(view);
+            }
+          }
+          printJob.printAsBitmap=true; //打印文字、表格清晰解决办法
+          Application.application.removeChild(view);
+        }
+        printJob.send();
+      }
+
+      private function getPrintGroupedColumns(groupedColumns:Array):Array
+      {
+        if (groupedColumns.length <= 0)
+          return null;
+        var printGroupedColumns:Array=new Array();
+        for each (var item:Object in groupedColumns)
+        {
+          if (item is AdvancedDataGridColumnGroup)
+          {
+            var cg1:AdvancedDataGridColumnGroup = item as AdvancedDataGridColumnGroup;
+            var children:Array=getPrintGroupedColumns(cg1.children);
+            if (children.length <= 0)
+              continue;
+            var cg:AdvancedDataGridColumnGroup=new AdvancedDataGridColumnGroup();
+            cg.editable=false;
+            cg.headerText=cg1.headerText;
+            cg.children=children;
+            printGroupedColumns.push(cg);
+          }
+          else if (item is AdvancedDataGridColumn)
+          {
+            if (unprint.indexOf(item["dataField"]) == -1)
+              printGroupedColumns.push(item);
+          }
+
+        }
+        return printGroupedColumns;
+      }
+
+      private function close(e:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+
+      private function onSelSalFact(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        generateColumn(e.data as SalFact);
+      }
+
+      private function generateColumn(fact:SalFact):void
+      {
+        this.fact=fact;
+        var idx:int=CommonUtil.indexOfObject(arr.facts, fact);
+        var factds:ArrayCollection=arr.factds as ArrayCollection;
+        var items:ArrayCollection=factds.getItemAt(idx).items;
+        if (items.length > 0)
+        {
+          if (items.length > 1)
+          {
+            var cg:AdvancedDataGridColumnGroup=new AdvancedDataGridColumnGroup();
+            cg.editable=false;
+            cg.headerText=resourceManager.getString('gcc_hr', 'salItem');
+            groupedColumns.push(cg);
+          }
+          unprint=new Array();
+          for each (var sal:SalItem in items)
+          {
+            var sif:String="si#" + sal.id;
+            var cc1:AdvancedDataGridColumn=new AdvancedDataGridColumn();
+            cc1.dataField=sif + ".amount";
+            cc1.headerText=sal.no + "[" + sal.name + "]";
+            cc1.setStyle("textAlign", "right");
+            cc1.width=120;
+            cc1.formatter=Constants.NUMBER_FORMATTER_N2;
+            columns.push(cc1);
+            if (items.length > 1)
+            {
+              cg.children.push(cc1);
+            }
+            else
+            {
+              groupedColumns.push(cc1);
+            }
+            if (sal.print=="0")
+              unprint.push(cc1.dataField);
+          }
+        }
+
+        adg.columns=columns;
+        adg.groupedColumns=groupedColumns;
+
+        var salFactD:SalFactD=null;
+        var data:ArrayCollection=arr.list;
+        for each (var tmp:SalFactD in data)
+        {
+          if (tmp.hdNo == fact.no)
+          {
+            if (salFactD == null || tmp.id.no != salFactD.id.no)
+            {
+              salFactD=tmp;
+              list.addItem(salFactD);
+            }
+            var si:SalItem=tmp.item;
+            salFactD["si#" + si.id + ".amount"]=tmp.amount;
+          }
+        }
+        callLater(function():void{adg.dataProvider=list;});
+      }
+
+      private function export(e:Event):void
+      {
+        var xls:Workbook=new Workbook();
+        sheet = new Worksheet(xls);
+        var dataProviderCollection:ArrayCollection=adg.dataProvider as ArrayCollection;
+        var rowCount:int=dataProviderCollection.length;
+        sheet.resize(3*rowCount+1,adg.columnCount); //设置EXCEL的行和列数
+        var columns:Array=adg.columns;
+        var fields:ArrayCollection=new ArrayCollection();
+        var i:int=0;
+        for each (var field:AdvancedDataGridColumn in columns)
+        {
+          fields.addItem(field.dataTipField!=null?field.dataTipField.toString():field.dataField.toString());
+          i++;
+        }
+
+        var printColumns:ArrayCollection=new ArrayCollection();
+        adg.columns.forEach(function(item:*, index:int, arr:Array):void{
+            if (unprint.indexOf(item["dataField"]) == -1)
+              printColumns.addItem(item);
+          });
+
+        for (var r:int=0; r<3*rowCount; r=r+3)
+        {
+          var record:Object=dataProviderCollection.getItemAt(r/3);
+          //迭代生成抬头行
+          insertRecordInSheet(r,sheet,printColumns,printColumns,true);
+
+          //填充数据
+          insertRecordInSheet(r+1,sheet,record,fields);
+            //r+2行用于间隔打印
+        }
+        xls.sheets.addItem(sheet);
+
+        var bytes:ByteArray=xls.save();
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(e1:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.save(bytes,fact.depart.name+DateField.dateToString(fact.date, Constants.DATE_FORMAT)+resourceManager.getString("gcc_hr", "salFactD.print"));
+      }
+
+
+      private function insertRecordInSheet(row:int, sheet:Worksheet, record:Object, printColumns:ArrayCollection, isTitle:Boolean=false):void
+      {
+        var colCount:int=printColumns.length; //adg.columnCount;
+        for (var c:int=0; c<colCount; c++)
+        {
+          var i:int=0;
+          for each (var field:String in printColumns)
+          {
+            if (!isTitle && (record!=null))
+              sheet.setCell(row, i, CommonUtil.getAccessorValue(record,field));
+            else
+              sheet.setCell(row, i, printColumns[i].headerText);
+            i++;
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

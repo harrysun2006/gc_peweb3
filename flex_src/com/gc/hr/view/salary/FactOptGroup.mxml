@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" autoLayout="true" paddingLeft="6"
+         paddingTop="6" paddingRight="6" paddingBottom="6" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" label="分组设置">
+  <mx:Label text="请选择分组汇总的链接项目(选中复选框表示需要分页): "/>
+  <mx:HBox width="100%">
+    <mx:List id="l1" width="50%" dataProvider="{list1}" allowDragSelection="true"
+             allowMultipleSelection="true" dragEnabled="true" dragMoveEnabled="true"
+             dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList1(event)"/>
+    <mx:List id="l2" width="50%" dataProvider="{list2}" allowDragSelection="true"
+             allowMultipleSelection="true" dragEnabled="true" dragMoveEnabled="true"
+             dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList2(event)">
+      <mx:itemRenderer>
+        <mx:Component>
+          <mx:CheckBox click="data.g=!data.g" selected="{data.g}"/>
+        </mx:Component>
+      </mx:itemRenderer>
+    </mx:List>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.CommonEvent;
+      import com.gc.common.model.Person;
+
+      [Bindable]
+      private var list1:ArrayCollection;
+      [Bindable]
+      private var list2:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        list1 = ObjectUtil.copy(Person.LINK_ITEMS) as ArrayCollection;
+        list2 = new ArrayCollection();
+        for each (var obj:Object in list1)
+        {
+          obj.g = false;
+        }
+        addEventListener(CommonEvent.CLOSED, closed);
+      }
+
+      private function onCreationComplete():void
+      {
+        l2.height = l1.height;
+        l2.rowHeight = l1.rowHeight;
+      }
+
+      private function onDbClickList1(e:Event):void
+      {
+        if (l1.selectedIndex >= 0)
+        {
+          list2.addItem(l1.selectedItem);
+          list1.removeItemAt(l1.selectedIndex);
+        }
+      }
+
+      private function onDbClickList2(e:Event):void
+      {
+        if (l2.selectedIndex >= 0)
+        {
+          list1.addItem(l2.selectedItem);
+          list2.removeItemAt(l2.selectedIndex);
+        }
+      }
+
+      private function closed(e:CommonEvent):void
+      {
+        var obj:Object, options:Object = e.data;
+        options.gg = [];
+        for each (obj in list2)
+          options.gg.push({id:0, no:obj.no, name:obj.label, t:"L", g:(obj.g ? 2:1), s:0});
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">
+  <mx:VBox height="100%" width="100%" autoLayout="true">
+    <mx:HDividedBox height="100%" width="100%" autoLayout="true" verticalGap="800">
+      <mx:DataGrid id="dgPeople" width="60%" height="100%"
+                   dataProvider="{PersonalController.peopleList}" allowMultipleSelection="true"
+                   selectable="true" styleName="red" click="selectPeople(dgPeople.selectedItem)"
+                   labelFunction="{CommonUtil.gridLabelFunction}">
+        <mx:columns>
+          <mx:DataGridColumn headerText="BRANCH" dataField="id" dataTipField="id.branch.name"/>
+          <mx:DataGridColumn headerText="NAME" dataField="id" dataTipField="id.name" width="120"/>
+          <mx:DataGridColumn headerText="NO" dataField="no" width="80"/>
+          <mx:DataGridColumn headerText="ACTIVE" dataField="active" width="80"/>
+        </mx:columns>
+      </mx:DataGrid>
+      <mx:Form id="form" width="40%" defaultButton="{btnSave}" styleName="red">
+        <mx:FormItem label="Branch" name="id.branch">
+          <mx:TextInput id="tiBranchId" name="id.branch.id" text="{people.id.branch.id}"
+                        editable="false"/>
+        </mx:FormItem>
+        <mx:FormItem label="Name">
+          <mx:TextInput id="tiName" name="id.name" text="{people.id.name}"/>
+        </mx:FormItem>
+        <mx:FormItem label="No">
+          <mx:TextInput name="no" text="{people.no}"/>
+        </mx:FormItem>
+        <mx:FormItem label="Ative">
+          <mx:TextInput name="active" text="{people.active}"/>
+        </mx:FormItem>
+        <mx:FormItem label="Description">
+          <mx:TextInput name="description" text="{people.description}"/>
+        </mx:FormItem>
+        <mx:FormItem label="Date">
+          <mx:DateField name="onDate" formatString="YYYY-MM-DD"/>
+        </mx:FormItem>
+        <mx:FormItem id="btnSave">
+          <mx:Button label="Save" click="dispatchEvent(new Events(Events.ADD_PEOPLE, people))"/>
+        </mx:FormItem>
+      </mx:Form>
+    </mx:HDividedBox>
+    <mx:HBox autoLayout="true" paddingTop="10" paddingBottom="10" paddingLeft="10">
+      <mx:Button label="Get Peoples" click="PersonalController.getPeoples(0)"/>
+      <mx:Button label="Clear" click="PersonalController.peopleList.removeAll()"/>
+      <mx:Button label="Add" click="addPeople()"/>
+      <mx:Button label="Delete" click="BaseController.deleteObject(dgPeople.selectedItem)"/>
+      <mx:Button label="Test1(Form==>VO)" click="test1()"/>
+      <mx:Button label="Test2(DataGrid==>VO)" click="test2()"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.core.Container;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.model.Branch;
+      import com.gc.hr.model.People;
+      import com.gc.hr.model.PeoplePK;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var people:People;
+
+      private function test1():void
+      {
+        var people:People=CommonUtil.createInstance(form, "com.gc.hr.model.People") as People;
+        // ["name"]="abc";
+        trace(ObjectUtil.toString(people));
+      }
+
+      private function test2():void
+      {
+        people=dgPeople.selectedItem as People;
+        if (people != null)
+          trace(ObjectUtil.toString(people));
+      }
+
+      private function addPeople():void
+      {
+        if (people == null)
+          people=new People();
+        CommonUtil.loadInstance(form, people);
+        BaseController.addObject(people, onAddPeopleSuccess);
+      }
+
+      private function onAddPeopleSuccess(event:ResultEvent):void
+      {
+        PersonalController.peopleList.addItem(people);
+      }
+
+      private function selectPeople(item:Object):void
+      {
+        people=item as People;
+        //        var pe:PeopleEvent=new PeopleEvent(PeopleEvent.HR_PERSONAL_SEL_PEOPLE, people);
+        //        Swiz.dispatchEvent(pe);
+        //        Alert.show(people.id.name);
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>
+

@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="380" height="320"
+                xmlns:gc="com.gc.controls.*" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" horizontalAlign="center">
+    <mx:RadioButtonGroup id="rbga" change="onRadioButtonChange(event)"/>
+    <mx:RadioButtonGroup id="rbgb" change="onRadioButtonChange(event)"/>
+    <mx:Grid width="100%" height="100%" borderStyle="solid" paddingLeft="5" paddingTop="5"
+             paddingRight="5" paddingBottom="5">
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p03.depart')}:"/>
+        </mx:GridItem>
+        <mx:GridItem colSpan="2">
+          <mx:RadioButton 
+                          label="{resourceManager.getString('gcc_hr', 'report.p03.depart.select.all')}"
+                          groupName="rbga" value="11" selected="true"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem/>
+        <mx:GridItem>
+          <mx:RadioButton 
+                          label="{resourceManager.getString('gcc_hr', 'report.p03.depart.select.other')}"
+                          groupName="rbga" value="12"/>
+        </mx:GridItem>
+        <mx:GridItem>
+          <gc:AutoCompleteComboBox id="cbDepart" width="160" enabled="false"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p03.person')}:"/>
+        </mx:GridItem>
+        <mx:GridItem colSpan="2">
+          <mx:RadioButton 
+                          label="{resourceManager.getString('gcc_hr', 'report.p03.person.select.all')}"
+                          groupName="rbgb" value="21" selected="true"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem/>
+        <mx:GridItem>
+          <mx:RadioButton 
+                          label="{resourceManager.getString('gcc_hr', 'report.p03.person.select.other')}"
+                          groupName="rbgb" value="22"/>
+        </mx:GridItem>
+        <mx:GridItem>
+          <gc:AutoCompleteComboBox id="cbPerson" width="160" enabled="false"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:HBox id="form" horizontalAlign="center" width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p03.endDate')}:"/>
+      <mx:DateField id="date_to" name="date_to" formatString="{Constants.DATE_FORMAT}"
+                    yearNavigationEnabled="true" editable="true" width="180"/>
+    </mx:HBox>
+    <mx:Label id="note" textAlign="left" width="100%"/>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.controls.RadioButton;
+      import mx.controls.Label;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        title=resourceManager.getString("gcc_hr", "report.p03");
+        cbDepart.dataProvider=BaseController.departmentList;
+        cbPerson.dataProvider=Person.ALL;
+        cbDepart.itemRenderer=cbPerson.itemRenderer=new ClassFactory(Label);
+        note.text=note.toolTip=resourceManager.getString("gcc_hr", "report.p03.endDate.tip");
+        note.width=this.width-60;
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        var qo:Object=e && e.data && e.data.qo ? e.data.qo : {date_to: new Date()};
+        date_to.text=DateUtil.formatDate(qo.date_to);
+        date_to.setFocus();
+        callLater(function():void
+          {
+            rbga.selectedValue=qo.a ? qo.a : 11;
+            rbgb.selectedValue=qo.b ? qo.b : 21;
+            setComboBoxes();
+            cbDepart.selectedIndex=(qo && qo.depart is Department) ? cbDepart.dataProvider.getItemIndex(qo.depart) : -1;
+            cbDepart.validateNow();
+            cbPerson.selectedIndex=(qo && qo.person is Person) ? cbPerson.dataProvider.getItemIndex(qo.person) : -1;
+            cbPerson.validateNow();
+          });
+      }
+
+      private function setComboBoxes():void
+      {
+        cbDepart.enabled=(rbga.selectedValue == 12);
+        cbPerson.enabled=(rbgb.selectedValue == 22);
+      }
+
+      private function onRadioButtonChange(e:Event):void
+      {
+        setComboBoxes();
+      }
+
+      private function open(e:Event):void
+      {
+        var qo:Object={};
+        var fields:Array=["date_to"];
+        if (!CommonUtil.validateForm(form, fields))
+          return;
+        qo={a:rbga.selectedValue, b:rbgb.selectedValue, "branch.id":UserController.branchId};
+        CommonUtil.loadInstance(form, qo, true);
+        if (qo.a == 12)
+        {
+          qo.depart=cbDepart.selectedItem;
+          if (qo.depart == null)
+          {
+            CommonUtil.showError(cbDepart, 2000, resourceManager.getString("gcc_hr", "report.p03.selectDepart"));
+            cbDepart.setFocus();
+            return;
+          }
+          qo["depart.id"]=qo.depart.id;
+        }
+        if (qo.b == 22)
+        {
+          qo.person=cbPerson.selectedItem;
+          if (qo.person == null)
+          {
+            CommonUtil.showError(cbPerson, 2000, resourceManager.getString("gcc_hr", "report.p03.selectPerson"));
+            cbPerson.setFocus();
+            return;
+          }
+          qo["person.id"]=qo.person.id;
+        }
+        PersonalController.getWorkLengths(qo, function(e2:ResultEvent):void
+          {
+            close();
+            callLater(function():void{CommonUtil.popupWindow(ReportP03, "", owner, {persons:e2.result, qo:qo});});
+          });
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

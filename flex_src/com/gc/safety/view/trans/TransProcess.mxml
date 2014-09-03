@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+        creationComplete="onCreationComplete()" width="100%" height="100%"
+        verticalScrollPolicy="auto" horizontalAlign="center">
+  <mx:Label text="违章处理" fontSize="16" fontWeight="bold" textAlign="center" width="100%" height="8%"/>
+  <mx:HBox width="100%" horizontalAlign="center">
+    <mx:Label id="ldeptar" text="部门" width="70"/>
+    <mx:TextInput id="tiDeptar" text="{limitDepart.name}" editable="false" width="160"/>
+    <!--mx:Label id="lAccNo" text="{resourceManager.getString('gcc_safety', 'transinfo.id.accno')}"/>
+         <mx:TextInput id="tiAccNo" editable="false" width="160"/>
+         <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.inputDate')}"/>
+         <mx:TextInput id="tiInputDate" editable="false" width="160"/-->
+    <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.inputer.name')}"/>
+    <mx:TextInput id="tiInputer" text="{UserController.personName}" editable="false" width="160"/>
+  </mx:HBox>
+  <mx:AdvancedDataGrid id="adgTrans" dataProvider="{transList}" editable="true"
+                       labelFunction="{CommonUtil.gridLabelFunction}" width="90%" height="70%"
+                       horizontalScrollPolicy="auto" verticalScrollPolicy="auto"
+                       sortableColumns="false" itemEditBegin="onItemEditBegin(event)"
+                       itemEditEnd="onItemEditEnd(event)">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no"
+                                 labelFunction="{CommonUtil.serialLabelFunction}" width="64"
+                                 color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+                                 textAlign="center" formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="transDate"/>
+      <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+      <mx:AdvancedDataGridColumn dataField="code"/>
+      <mx:AdvancedDataGridColumn dataField="transType" dataTipField="transType.name"/>
+      <mx:AdvancedDataGridColumn dataField="upFee" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="point"/>
+      <mx:AdvancedDataGridColumn dataField="penalty" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="doDate"/>
+      <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.label"
+                                 itemEditor="{psnComboBox}" editorDataField="selectedItem"/>
+      <!--mx:AdvancedDataGridColumn dataField="confirmObj" dataTipField="confirmObj.label" width="80"/-->
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox id="hbDown" width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+           horizontalGap="40">
+    <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="onSave(event)"
+               width="70" height="35"/>
+    <mx:Button id="btExport" label="{resourceManager.getString('gcc','export')}"
+               click="onExport(event)" width="70" height="35"/>
+    <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+               click="onClose(event)" width="70" height="35"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.PsnOnline;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.common.model.Department;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.Events;
+      import mx.utils.ObjectUtil;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.safety.controller.TransController;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.controls.Alert;
+      import com.gc.safety.model.TransInfo;
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.events.AdvancedDataGridEventReason;
+      import com.gc.controls.AutoCompleteComboBox;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+
+      [Bindable]
+      private var psnComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var transList:ArrayCollection;
+      private var transInfo:TransInfo;
+      private var psnList:ArrayCollection;
+      private var oldTransList:ArrayCollection;
+      [Bindable]
+      private var limitDepart:Department;
+      private var fields:Array;
+      private var driverOnlines:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        fields=["driver"];
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            psnList = new ArrayCollection();
+            transList = new ArrayCollection();
+            psnComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            psnComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onPsnCreateComplete}];
+            oldTransList = null;
+            var popupwin:DepartWin = CommonUtil.popupWindow(DepartWin,"违章部门") as DepartWin;
+            popupwin.addEventListener(Events.GET,function(event:Events):void 
+              {
+                PopUpManager.removePopUp(popupwin);
+                transList = event.data as ArrayCollection;
+//                for each (var ti:TransInfo in transList)
+//                {
+//                  ti.confirmObj=(ti.confirm=="1")? Constants.CONFIRMOBJ[1] : Constants.CONFIRMOBJ[0];
+//                }
+                oldTransList = ObjectUtil.copy(transList) as ArrayCollection;
+                limitDepart = event.args[0] as Department;
+                preLoad();
+              });
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgTrans, "gcc_safety", "transinfo", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+              column.editable=(fields.indexOf(column.dataField) >= 0);
+            }
+          });
+      }
+
+      private function preLoad():void
+      {
+        PersonalController.getDriverOnlines2(UserController.branchId,limitDepart.id,function(evt:ResultEvent):void
+          {
+            driverOnlines = evt.result as ArrayCollection;
+          });
+      }
+
+      private function onPsnCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(psnList.toArray(), event.currentTarget.data["driver"], "label");
+        //点击编辑后自动选择第一条,下面的代码
+//        if (event.currentTarget.selectedIndex==-1)
+//          event.currentTarget.dataProvider=psnList;
+      }
+
+      private function onItemEditBegin(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          //必须在这new，不然编辑后会出现多条
+          psnList = new ArrayCollection();
+          for each (var psnOnline:PsnOnline in driverOnlines)
+          {
+            if (psnOnline.onDate <= data["transDate"] && psnOnline.downDate >= data["transDate"])
+            {
+              var driver:Person = psnOnline.person;
+              if (psnOnline.line != null)
+                driver["lineName"]=psnOnline.line.name;
+              else
+                driver["lineName"]=Constants.NULL_LABEL;
+              psnList.addItem(driver);
+            }
+          }
+          psnComboBox.properties={dataProvider: psnList, labelFunction: showPsnLine};
+        }
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+            data[property]=newData;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+        }
+      }
+
+      private function showPsnLine(item:Object):String
+      {
+        if (item is Person)
+          return item.label+"["+item.cert1No+"]["+item.lineName+"]";
+        else
+          return item.toString();
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (transList.length > 0)
+          transList.removeAll();
+      }
+
+      private function onSave(event:Event):void
+      {
+        if (transList.length <= 0)
+          return;
+        if (ObjectUtil.compare(oldTransList, transList,1)==0)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, 
+            Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        TransController.saveTrans2(transList,oldTransList,limitDepart.id,CommonController.closeDate,
+          function(e:ResultEvent):void
+          {
+            oldTransList = ObjectUtil.copy(transList) as ArrayCollection;
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, 
+              Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+
+      }
+
+      private function onExport(event:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adgTrans),CommonUtil.getGridHeaders(adgTrans),null,limitDepart.name+"违章信息.xls");
+      }
+
+      private function onClose(event:Event):void
+      {
+        Alert.show(resourceManager.getString('gcc_safety','gua.out.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO) return;
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          },Constants.ICON32_QUESTION);
+      }
+    ]]>
+  </mx:Script>
+
+</mx:Box>

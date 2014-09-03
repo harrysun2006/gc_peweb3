@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+								preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+	<mx:VBox id="vbox" width="100%" height="100%" autoLayout="true">
+		<mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+			<mx:Button label="{resourceManager.getString('gcc_hr', 'cancel')}" click="close(event)"/>
+		</mx:HBox>
+	</mx:VBox>
+	<mx:Script>
+		<![CDATA[
+			private function onPreinitialize():void
+			{
+			}
+
+			private function onCreationComplete():void
+			{
+			}
+
+			private function close(event:Event=null):void
+			{
+				dispatchEvent(CommonEvent.CLOSE_EVENT);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

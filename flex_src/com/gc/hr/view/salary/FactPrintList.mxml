@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" layout="vertical" width="586" height="310">
+  <mx:DataGrid id="dg" dataProvider="{list}" doubleClickEnabled="true"
+               doubleClick="onDBClick(event)" labelFunction="{CommonUtil.gridLabelFunction}"
+               textAlign="center" height="100%">
+    <mx:columns>
+      <mx:DataGridColumn headerText="{resourceManager.getString('gcc', 'serial')}"
+                         labelFunction="{CommonUtil.serialLabelFunction}"/>
+      <mx:DataGridColumn dataField="id" dataTipField="id.no"/>
+      <mx:DataGridColumn dataField="depart" dataTipField="depart.name"/>
+      <mx:DataGridColumn dataField="month"/>
+      <mx:DataGridColumn dataField="issueDate"/>
+      <mx:DataGridColumn dataField="itype$" dataTipField="itype$.label"/>
+      <mx:DataGridColumn dataField="issuer" dataTipField="issuer.workerId"/>
+      <mx:DataGridColumn dataField="comment"/>
+      <mx:DataGridColumn dataField="summary"/>
+    </mx:columns>
+  </mx:DataGrid>
+
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.dataGridClasses.DataGridColumn;
+      import mx.managers.PopUpManager;
+
+      import com.gc.CommonEvent;
+      import com.gc.hr.Events;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var list:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            list=new ArrayCollection(e.args);
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(dg, "gcc_hr", "salFact");
+      }
+
+      private function onDBClick(e:Event):void
+      {
+        if (dg.selectedItem != null)
+        {
+          owner.dispatchEvent(new Events(Events.SEL_SALFACT, dg.selectedItem));
+          PopUpManager.removePopUp(this);
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

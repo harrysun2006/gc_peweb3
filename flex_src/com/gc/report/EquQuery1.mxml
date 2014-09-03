@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" label="{resourceManager.getString('gcc_report', 'equ.query.tab1')}" width="400" height="300">
+	<mx:ToolBar percentWidth="100">
+		<mx:GridItem>
+			<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.useId')}:"/>
+			<mx:TextInput name="useId"/>
+		</mx:GridItem>
+		<mx:GridItem>
+			<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.authNo')}:"/>
+			<mx:TextInput name="authNo"/>
+		</mx:GridItem>
+		<mx:GridItem>
+			<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.color')}:"/>
+			<mx:TextInput name="color"/>
+		</mx:GridItem>
+	</mx:ToolBar>
+</mx:Box>

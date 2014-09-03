@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:salary="com.gc.hr.view.salary.*"
+         width="100%" height="100%" preinitialize="onPreinitialize()">
+  <mx:AdvancedDataGrid id="adg4" width="100%" height="100%" visible="false" lockedColumnCount="4"
+                       horizontalScrollPolicy="auto" labelFunction="{CommonUtil.gridLabelFunction}"
+                       sortableColumns="false" creationComplete="onCreationComplete()">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.name"/>
+      <mx:AdvancedDataGridColumn dataField="bank"/>
+      <mx:AdvancedDataGridColumn dataField="bankCard"/>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page2')}">
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.office"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.allotDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page3')}">
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.type"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.grade"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.person.upgradeDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="refresh(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:HBox horizontalAlign="left" width="100%" paddingBottom="7" paddingLeft="7">
+    <mx:Label color="0x0000FF" id="note"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.rpc.events.ResultEvent;
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.hr.Events;
+      import com.gc.hr.model.SalItem;
+      import com.gc.hr.model.SalFixOnline;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.common.controller.UserController;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+
+      private var list:ArrayCollection;
+      private var items:ArrayCollection;
+      private var time:Date;
+      private var columns:Array;
+      private var groupedColumns:Array;
+
+      private function onPreinitialize():void
+      {
+        this.label=resourceManager.getString('gcc_hr', 'salDeptPsn.page4');
+        header=new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        addEventListener(CommonEvent.CHANGED, onChanged);
+        addEventListener(Events.ADD_SALDEPTPSN, onAddSalDeptPsn);
+        addEventListener(Events.EDIT_SALDEPTPSN, onEditSalDeptPsn);
+        addEventListener(Events.DEL_SALDEPTPSN, onDelSalDeptPsn);
+        addEventListener(Events.ADD_SALFIXONLINE, onAddSalFixOnline);
+        addEventListener(Events.EDIT_SALFIXONLINE, onEditSalFixOnline);
+        addEventListener(Events.DEL_SALFIXONLINE, onDelSalFixOnline);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg4, "gcc_hr", "salDeptPsn");
+        adg4.visible=true;
+        adg4.width=this.width;
+        columns=adg4.columns;
+        groupedColumns=adg4.groupedColumns;
+        if (!list)
+          load();
+      }
+
+      private function onChanged(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        if (!list && columns)
+          load();
+      }
+
+      private function load():void
+      {
+        SalaryController.getDeptPsnListD({"branch.id": UserController.branchId}, function(e:ResultEvent):void
+          {
+            // 返回对象格式为: {items:items, data:[{sdp:sdp, sfos:[sfo1, ..., sfon]}], time:time}
+            var r:Object=e.result;
+            var data:ArrayCollection=r.data as ArrayCollection;
+            items=r.items as ArrayCollection;
+            time=r.time as Date;
+            note.text=resourceManager.getString("gcc_hr", "salFixOnline.note", [DateUtil.formatDate(time)]);
+            list=new ArrayCollection();
+            var sdp:SalDeptPsn;
+            var sfos:ArrayCollection;
+            var sfo:SalFixOnline;
+            var si:SalItem;
+            var obj:Object;
+            var cg0:AdvancedDataGridColumnGroup, cg1:AdvancedDataGridColumnGroup;
+            var cc:AdvancedDataGridColumn;
+            var sif:String;
+            var fields:Array=["id.onDate", "amount"];
+            var aligns:Object={"id.onDate":"center", "amount":"right"};
+            var s:String, name:String=resourceManager.getString("gcc_hr", "salFixOnline");
+            var columns1:Array=columns.slice(0);
+            var groupedColumns1:Array=groupedColumns.slice(0);
+            if (items.length > 0)
+            {
+              cg0=new AdvancedDataGridColumnGroup();
+              if (items.length > 1) cg0.headerRenderer=header;
+              cg0.setStyle("textAlign", "center");
+              cg0.editable=false;
+              cg0.headerText=name;
+              for each (si in items)
+              {
+                sif="si#"+si.id;
+                cg1=new AdvancedDataGridColumnGroup();
+                cg1.setStyle("textAlign", "center");
+                cg1.editable=false;
+                cg1.headerText=si.no ? si.no+"["+si.name+"]" : name+si.id;
+                for each (s in fields)
+                {
+                  cc=new AdvancedDataGridColumn();
+                  cc.dataField=sif;
+                  cc.dataTipField=sif+"."+s;
+                  cc.headerText=resourceManager.getString("gcc_hr", "salFixOnline."+s);
+                  if (aligns[s]) cc.setStyle("textAlign", aligns[s]);
+                  cg1.children.push(cc);
+                  columns1.push(cc);
+                }
+                cg0.children.push(cg1);
+              }
+              groupedColumns1.push(cg0);
+            }
+            cc=new AdvancedDataGridColumn();
+            cc.width=1;
+            groupedColumns1.push(cc);
+
+            for each (obj in data)
+            {
+              sdp=obj.sdp as SalDeptPsn;
+              sfos=obj.sfos as ArrayCollection;
+              list.addItem(sdp);
+              for each (sfo in sfos)
+              {
+                si=sfo.item;
+                sdp["si#"+si.id]=sfo;
+              }
+            }
+            adg4.invalidateList();
+            adg4.columns=columns1;
+            adg4.groupedColumns=groupedColumns1;
+            adg4.dataProvider=list;
+            adg4.validateNow();
+          });
+      }
+
+      private function refresh(e:Event):void
+      {
+        load();
+      }
+
+      private function export(e:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg4, ["selected"]), CommonUtil.getGridHeaders(adg4, ["selected"]), null, resourceManager.getString("gcc_hr", "salDeptPsn.page4.filename", [UserController.branchName]));
+      }
+
+      private function reset(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        if (list && e.data == 2)
+          list=null;
+      }
+
+      private function onAddSalDeptPsn(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function onEditSalDeptPsn(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function onDelSalDeptPsn(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function onAddSalFixOnline(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function onEditSalFixOnline(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function onDelSalFixOnline(e:Events):void
+      {
+        reset(e);
+      }
+
+      private function close(e:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="dgPersonStatList" width="100%" height="100%"
+                       dataProvider="{personStatList}"
+                       labelFunction="{CommonUtil.gridLabelFunction}">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'stat.item')}"
+                                 dataField="{Constants.PROP_NAME_LABEL}" width="120"/>
+      <mx:AdvancedDataGridColumn 
+                                 headerText="{resourceManager.getString('gcc', 'stat.person.count')}"
+                                 dataField="{Constants.PROP_NAME_COUNT}" width="80"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="right"/>
+      <mx:AdvancedDataGridColumn width="400" sortable="false"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var personStatList:ArrayCollection=new ArrayCollection();
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(dgPersonStatList, "gcc", "person");
+        // addEventListener(CommonEvent.CHANGE_VIEW, onChangeView);
+        // addEventListener(CommonEvent.EXPORT, export);
+      }
+
+      public function statPersons(item:Object, ancestors:Array, orderColumns:Array):void
+      {
+        if (item == null || !(item["children"] is Array))
+          return;
+        personStatList.removeAll();
+        counter(item);
+        var children:Array=item["children"] as Array;
+        for each (var child:Object in children)
+          personStatList.addItem(child);
+        personStatList.addItem(item);
+      }
+
+      private function counter(item:Object):void
+      {
+        if (item == null)
+          return;
+        if (item["children"] == null || !(item["children"] is Array))
+        {
+          item[Constants.PROP_NAME_COUNT]=1;
+          return;
+        }
+        var children:Array=item["children"];
+        var count:int=0;
+        for each (var child:Object in children)
+        {
+          if (!child.hasOwnProperty(Constants.PROP_NAME_COUNT))
+          {
+            counter(child);
+          }
+          count+=child[Constants.PROP_NAME_COUNT];
+        }
+        item[Constants.PROP_NAME_COUNT]=count;
+      }
+
+      private function onChangeView(event:Event):void
+      {
+        dispatchEvent(new CommonEvent(CommonEvent.UPDATE_MENU, {id: "export", command: export}));
+      }
+
+      private function export(event:Event):void
+      {
+        trace("PersonStat::export");
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

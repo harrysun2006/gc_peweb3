@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)"
+                layout="vertical" width="800" height="400" verticalGap="20"
+                xmlns:controls="com.gc.controls.*">
+  <mx:ToolBar id="form" width="100%" height="100%" paddingTop="20">
+    <mx:FormItem label="凭证号" width="100%">
+      <mx:TextInput id="tiAccNo" name="accNo"/>
+    </mx:FormItem>
+    <mx:FormItem label="违法日期" width="100%">
+      <controls:DateSelector name="transDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.dept.name')}" width="100%">
+      <mx:ComboBox id="cbDept" name="dept.id" labelField="name"
+                   dataProvider="{BaseController.departmentList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="车牌号" width="100%">
+      <mx:TextInput id="tiAuthNo" name="bus.authNo"/>
+    </mx:FormItem>
+    <mx:FormItem label="驾驶员姓名" width="100%">
+      <mx:TextInput id="tiDriver" name="driver.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="违法类别" width="100%">
+      <mx:ComboBox id="cbTransType" name="transType.id"/>
+    </mx:FormItem>
+    <mx:FormItem label="违法代码" width="100%">
+      <mx:TextInput id="tiCode" name="code"/>
+    </mx:FormItem>
+    <mx:FormItem label="记分" width="100%">
+      <mx:TextInput id="tiPoint" name="point"/>
+    </mx:FormItem>
+    <mx:FormItem label="罚款" width="100%">
+      <mx:TextInput id="tiPenalty" name="penalty"/>
+    </mx:FormItem>
+    <mx:FormItem label="保费上浮" width="100%">
+      <mx:TextInput id="tiUpFee" name="upFee"/>
+    </mx:FormItem>
+    <mx:FormItem label="录入日期" width="100%">
+      <controls:DateSelector name="inputDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="经办人姓名" width="100%">
+      <mx:TextInput id="tiInputer" name="inputer.name"/>
+    </mx:FormItem>
+    <mx:FormItem label="处理日期" width="100%">
+      <controls:DateSelector name="doDate" output="{qo}"/>
+    </mx:FormItem>
+  </mx:ToolBar>
+  <mx:HBox width="100%" horizontalAlign="center" paddingTop="20" horizontalGap="40">
+    <mx:Button id="btOk" label="确定" click="ok(event)"/>
+    <mx:Button id="btReset" label="重置" click="onReset(event)"/>
+    <mx:Button id="btClose" label="取消" click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import com.gc.common.model.Line;
+      import com.gc.common.model.EquOnline;
+      import mx.managers.PopUpManager;
+      import com.gc.common.controller.UserController;
+      import mx.events.ListEvent;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.model.TransInfo;
+      import mx.controls.ComboBase;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import mx.controls.PopUpButton;
+      import mx.containers.FormItem;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.controller.TransController;
+      import mx.utils.ObjectProxy;
+      import com.gc.common.controller.BaseController;
+
+      [Bindable]
+      private var qo:Object = new ObjectProxy();
+      private var itemWidth:int = 160;
+
+      private function onPreinitialize():void
+      {
+        TransInfo.init();
+        TransController.getTransTypes(UserController.branchId,function(evt:ResultEvent):void
+          {
+            cbTransType.dataProvider=TransController.transTypeList;
+            cbTransType.selectedItem=null;
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        itemWidth=tiAccNo.getVisibleRect(form).width;
+        CommonUtil.visit(form,setItem);
+        btOk.setFocus();
+      }
+
+      protected function updateSearchText(item:Object):void
+      {
+        if (item == null)
+          return;
+        var name:String=item["name"];
+        item=CommonUtil.getItem(item);
+        // var prop:Object={name: name, value: CommonUtil.getItemValue(item), label: CommonUtil.getItemLabel(item)};
+        var prop:Object=new Object();
+        prop[Constants.PROP_NAME_NAME]=name;
+        prop[Constants.PROP_NAME_TYPE]=CommonUtil.getAccessorType(TransInfo, prop[Constants.PROP_NAME_NAME]);
+        if (prop[Constants.PROP_NAME_TYPE] == "Number")
+          prop[Constants.PROP_NAME_VALUE]=Number(CommonUtil.getItemValue(item));
+        else if (prop[Constants.PROP_NAME_TYPE] == "int")
+          prop[Constants.PROP_NAME_VALUE]=int(Number(CommonUtil.getItemValue(item)));
+        else
+          prop[Constants.PROP_NAME_VALUE]=CommonUtil.getItemValue(item);
+        prop[Constants.PROP_NAME_LABEL]=CommonUtil.getItemLabel(item);
+        prop[Constants.PROP_NAME_SHOW]=true;
+        onFilteringQOChanged([prop]);
+      }
+
+      private function onFilteringQOChanged(arr:Array):void
+      {
+        // trace("onTreeFilteringQOChanged");
+        var items:Array=arr;
+        var oldValue:Object;
+        var qo:Object=TransInfo.qo;
+        var k:int;
+        for each (var item:Object in items)
+        {
+          if (item == null)
+            continue;
+          oldValue=CommonUtil.getAccessorValue(qo, item[Constants.PROP_NAME_NAME]);
+          // oldValue=qo[item[Constants.PROP_NAME_NAME]];
+//          item[Constants.PROP_NAME_TYPE]=CommonUtil.getAccessorType(Accident, item[Constants.PROP_NAME_NAME]);
+          if (item[Constants.PROP_NAME_TYPE] == "String" || item[Constants.PROP_NAME_LABEL] == "")
+          {
+            if (item[Constants.PROP_NAME_VALUE] == "")
+              item[Constants.PROP_NAME_VALUE]=null;
+            if (item[Constants.PROP_NAME_LABEL] == "")
+              item[Constants.PROP_NAME_LABEL]=null;
+          }
+          if (item[Constants.PROP_NAME_VALUE] != oldValue || item[Constants.PROP_NAME_TYPE] == "Date")
+          {
+            qo[item[Constants.PROP_NAME_NAME]]=item[Constants.PROP_NAME_VALUE];
+          }
+        }
+      }
+
+      protected function onFocusOut(event:Event):void
+      {
+        updateSearchText(event.currentTarget);
+      }
+
+      protected function onChange(event:Event):void
+      {
+        var obj:Object=event.currentTarget;
+        updateSearchText(obj);
+      }
+
+      protected function setItem(comp:Object):void
+      {
+        if (comp is FormItem)
+        {
+          var fi:FormItem=comp as FormItem;
+          fi.styleName="filterLabel";
+        }
+        else if (comp is TextInput)
+        {
+          comp.addEventListener(FocusEvent.FOCUS_OUT, onFocusOut);
+        }
+        else if (comp is ComboBox)
+        {
+          var cbox:ComboBox=comp as ComboBox;
+          if (cbox.editable)
+            cbox.addEventListener(FocusEvent.FOCUS_OUT, onFocusOut);
+          else
+            cbox.addEventListener(ListEvent.CHANGE, onChange);
+          cbox.width=itemWidth;
+          cbox.addEventListener(KeyboardEvent.KEY_DOWN, CommonUtil.keyDown);
+          CommonUtil.selectDefaultItem(cbox, CommonUtil.getAccessorValue(qo, cbox.name));
+        }
+        else if (comp is PopUpButton)
+        {
+          var pub:PopUpButton=comp as PopUpButton;
+          pub.width=itemWidth;
+        }
+      }
+
+      private function onReset(event:Event):void
+      {
+        /**
+         * 关于事件参考
+         * http://www.blogjava.net/usherlight/archive/2006/03/02/33264.html
+         **/
+        TransInfo.init();
+        CommonUtil.empty(qo);
+        CommonUtil.visit(this, clearItem);
+      }
+
+      private function clearItem(comp:Object):void
+      {
+        if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.text=null;
+        }
+        else if (comp is ComboBase)
+        {
+          var cbase:ComboBase=comp as ComboBase;
+          cbase.selectedItem=null;
+          cbase.text=null;
+        }
+      }
+
+      private function ok(event:Event):void
+      {
+        if (qo.hasOwnProperty("transDate_from") || qo.hasOwnProperty("transDate_to"))
+        {
+          TransInfo.qo["transDate_from"]=qo["transDate_from"];
+          TransInfo.qo["transDate_to"]=qo["transDate_to"];
+        }
+        if (qo.hasOwnProperty("inputDate_from") || qo.hasOwnProperty("inputDate_to"))
+        {
+          TransInfo.qo["inputDate_from"]=qo["inputDate_from"];
+          TransInfo.qo["inputDate_to"]=qo["inputDate_to"];
+        }
+        if (qo.hasOwnProperty("doDate_from") || qo.hasOwnProperty("doDate_to"))
+        {
+          TransInfo.qo["doDate_from"]=qo["doDate_from"];
+          TransInfo.qo["doDate_to"]=qo["doDate_to"];
+        }
+        var win:TitleWindow = this;
+        var q:Object = TransInfo.qo;
+        TransController.getTransListByAll(UserController.limit,TransInfo.qo,function(evt:ResultEvent):void
+          {
+            var arrs:ArrayCollection = evt.result as ArrayCollection;
+            if(arrs.length<=0)
+            {
+              Alert.show("对不起，没有你要查找的违章信息",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+            var transList:ArrayCollection = new ArrayCollection();
+            for each (var arr:Array in arrs)
+            {
+              var transInfo:TransInfo = arr[0];
+              var equOnline:EquOnline = arr[1];
+              transInfo["depart"]=equOnline.depart;
+              if(equOnline.line != null)
+                transInfo["line"]=equOnline.line;
+              else
+                transInfo["line"]=new Line();
+              transList.addItem(transInfo);
+            }
+            owner.dispatchEvent(new Events(Events.GET,transList));
+            PopUpManager.removePopUp(win);
+          });
+
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

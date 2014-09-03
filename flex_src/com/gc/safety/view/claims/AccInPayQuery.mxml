@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGrid xmlns:mx="http://www.adobe.com/2006/mxml" labelFunction="{CommonUtil.gridLabelFunction}"
+					 preinitialize="onPreinitialize()" creationComplete="onCreationComplete()" sortableColumns="false"
+			 		 horizontalScrollPolicy="auto" verticalScrollPolicy="auto" editable="false"
+			 		 dataProvider="{adgAC}" height="100%">
+	<mx:groupedColumns>
+		<mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+								   editable="false" labelFunction="{CommonUtil.serialLabelFunction}" textAlign="center"/>
+		<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.id.refNo"/>
+		<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.appDate"/>
+		<mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+										headerText="{resourceManager.getString('gcc_safety', 'claims.accident.head')}"
+										textAlign="left" editable="false">
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.no"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkGuaReport.reportNo"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.dept.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.bus.authNo"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.date"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.address"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.driver.workerId"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.driver.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.accident.driver.cert1No"/>
+		</mx:AdvancedDataGridColumnGroup>
+		<mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+										headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsngua.head')}"
+										textAlign="left" editable="false">
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkAccInPsn.id.no"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkAccInPsn.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkAccInPsn.mediFee"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkAccInPsn.other1"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.fkAccInPsn.other2"/>
+		</mx:AdvancedDataGridColumnGroup>
+		<mx:AdvancedDataGridColumn dataField="fkAccInPsnGua" dataTipField="fkAccInPsnGua.mediFee"/>
+		<mx:AdvancedDataGridColumn dataField="mediFee"/>
+		<mx:AdvancedDataGridColumn width="1"/>
+	</mx:groupedColumns>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.collections.ArrayCollection;
+			import com.gc.util.CommonUtil;
+			import com.gc.controls.AdvancedClassFactory;
+			import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+			
+			[Bindable]
+			private var header:AdvancedClassFactory;
+			[Bindable]
+			private var adgAC:ArrayCollection = new ArrayCollection();
+			
+			private function onPreinitialize():void
+			{
+				header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+				CommonUtil.setDataGridColumns(this, "gcc_safety", "accinpsnguapay");
+			}
+			
+			private function onCreationComplete():void
+			{
+				percentWidth = 100;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGrid>

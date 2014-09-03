@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" preinitialize="onPreinitialize()" xmlns:alivepdf1="org.alivepdf.*" xmlns:pdf="org.alivepdf.pdf.*" xmlns:pages="org.alivepdf.pages.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import org.alivepdf.display.PageMode;
+			import org.alivepdf.layout.Size;
+			import org.alivepdf.layout.Unit;
+			import org.alivepdf.layout.Orientation;
+			import com.gc.CommonEvent;
+			
+			private function onPreinitialize():void
+			{
+				addEventListener(CommonEvent.CREATED, onCreated);
+			}
+			
+			private function onCreated(e:CommonEvent):void
+			{
+				var text:String=e.data as String;
+				
+				// var page:PageMode = new Page ( Orientation.LANDSCAPE, Unit.MM, Size.A4 );
+				
+			}
+			
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,249 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="330" height="440"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)">
+  <mx:Form id="form" percentWidth="100">
+    <mx:FormItem label="事故编号">
+      <mx:TextInput id="tiAccNo" name="fkAccident.no" text="{accOutObj.fkAccident.no}"/>
+    </mx:FormItem>
+    <mx:FormItem label="对象序号">
+      <mx:TextInput id="tiNo" name="id.no" text="{accOutObj.id.no}" restrict="0-9"/>
+    </mx:FormItem>
+    <mx:FormItem label="撞击对象">
+      <mx:TextInput id="tiObj" name="obj.name" text="{accOutObj.obj.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="支付日期">
+      <mx:DateField id="dfPayDate" name="payDate" text="{df.format(accOutObj.payDate)}"
+                    formatString="{Constants.DATE_FORMAT}"/>
+    </mx:FormItem>
+    <mx:FormItem label="赔偿金额">
+      <mx:TextInput id="tiPayFee" name="payFee" text="{accOutObj.payFee}"/>
+    </mx:FormItem>
+    <mx:FormItem label="经办人">
+      <mx:TextInput id="tiPayPsn" name="payPsn.name" text="{accOutObj.payPsn.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="支付备注">
+      <mx:TextArea id="taPayDesc" name="payDesc" text="{accOutObj.payDesc}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox id="addBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="save(event)"/>
+    <mx:Button id="btCancel" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:HBox id="delBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btDelete" label="{resourceManager.getString('gcc','delete')}" click="del(event)"/>
+    <mx:Button id="btCancel1" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:HBox id="upBT" horizontalAlign="center" width="100%">
+    <mx:Button id="btUpdate" label="{resourceManager.getString('gcc','update')}"
+               click="update(event)"/>
+    <mx:Button id="btCancel2" label="{resourceManager.getString('gcc','cancel')}"
+               click="cancel(event)"/>
+  </mx:HBox>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.CloseEvent;
+      import mx.utils.ObjectUtil;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.common.controller.UserController;
+      import mx.controls.ComboBox;
+      import mx.controls.TextArea;
+      import mx.controls.DateField;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.model.AccOutObj;
+
+      [Bindable]
+      private var accOutObj:AccOutObj;
+      private var accNoItem:String;
+      private var noItem:int;
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(this, setItem);
+        //增加
+        addEventListener(Events.ADD,getAddObject);
+        //删除
+        addEventListener(Events.DELETE, getDelObject);
+        //更新
+        addEventListener(Events.UPDATE, getUpObject);
+      }
+
+      private function setItem(comp:Object):void
+      {
+        if (comp is DateField)
+        {
+          var df:DateField=comp as DateField;
+          df.width = tiNo.width;
+        }
+      }
+
+      // 控制控件的可编辑及按钮的可用性，arr = [add,del,up],都是Boolean
+      private function compManage(textEditable:Boolean,cbEnable:Boolean,arr:Array):void
+      {
+        CommonUtil.visit(form,function(comp:Object):void 
+          {
+            if(comp is TextInput)
+            {
+              var ti:TextInput = comp as TextInput;
+              ti.editable = textEditable;
+            } else if(comp is TextArea)
+            {
+              var ta:TextArea = comp as TextArea;
+              ta.editable = textEditable;
+            } else if(comp is ComboBox)
+            {
+              var cb:ComboBox = comp as ComboBox;
+              cb.enabled = cbEnable;
+            } else if(comp is DateField)
+            {
+              var df:DateField = comp as DateField;
+              df.enabled = cbEnable;
+            }
+          });
+        addBT.visible = arr[0];
+        addBT.includeInLayout = arr[0];
+        delBT.visible = arr[1];
+        delBT.includeInLayout = arr[1];
+        upBT.visible = arr[2];
+        upBT.includeInLayout = arr[2];
+      }
+
+      private function getAddObject(event:Events):void
+      {
+        compManage(true,true,[true,false,false]);
+        tiObj.editable = false;
+        tiPayPsn.editable = false;
+        accOutObj = event.data as AccOutObj;
+        accNoItem = ObjectUtil.copy(accOutObj.fkAccident.no) as String;
+        noItem = ObjectUtil.copy(accOutObj.id.no) as int;
+        if (accOutObj == null)
+        {
+          tiAccNo.setFocus();
+          return;
+        }
+        dfPayDate.selectedDate = new Date();
+        tiPayFee.setFocus();
+        tiPayPsn.text = UserController.personName;
+      }
+
+      private function getDelObject(event:Events):void
+      {
+        compManage(false,false,[false,true,false]);
+        accOutObj = event.data as AccOutObj;
+        btDelete.setFocus();
+      }
+
+      private function getUpObject(event:Events):void
+      {
+        compManage(true,true,[false,false,true]);
+        tiObj.editable = false;
+        tiPayPsn.editable = false;
+        accOutObj = event.data as AccOutObj;
+        accNoItem = ObjectUtil.copy(accOutObj.fkAccident.no) as String;
+        noItem = ObjectUtil.copy(accOutObj.id.no) as int;
+        btUpdate.setFocus();
+      }
+
+      private function save(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,["fkAccident.no","id.no","dfPayDate","payFee","tiPayPsn"]))
+          return;
+        if (tiAccNo.text != accNoItem || tiNo.text != noItem.toString())
+        {
+          AccidentController.getAOOByAccIdAndNo(UserController.branchId, tiAccNo.text,int(tiNo.text),function(evt:ResultEvent):void 
+            {
+              var list:ArrayCollection = evt.result as ArrayCollection;
+              if(list.length > 0)
+              {
+                var accOutObj1:AccOutObj = list[0] as AccOutObj;
+                CommonUtil.loadInstance(form,accOutObj1);
+                accOutObj1.payPsn = UserController.person;
+                AccidentController.saveAccOutObj(accOutObj1,function(evt:ResultEvent):void {
+                    dispatchEvent(new Events(Events.SAVE_SUCCESS));
+                  });
+              } else {
+                dispatchEvent(new Events(Events.REFRESH));
+                Alert.show('您填写的事故编号和序号没有对应的未审核的对象',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              }
+            });
+        }
+        else
+        {
+          CommonUtil.loadInstance(form,accOutObj);
+          accOutObj.payPsn = UserController.person;
+          AccidentController.saveAccOutObj(accOutObj,function(evt:ResultEvent):void {
+              dispatchEvent(new Events(Events.SAVE_SUCCESS));
+            });
+        }
+      }
+
+      private function del(event:Event):void
+      {
+        accOutObj.payFee = 0;
+        accOutObj.payDate = null;
+        accOutObj.payPsn = null;
+        accOutObj.payDesc = null;
+        Alert.show('确定要删除吗',Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO)
+              return;
+            AccidentController.saveAccOutObj(accOutObj, function(e:ResultEvent):void {
+                dispatchEvent(new Events(Events.DEL_SUCCESS));
+              })
+          },Constants.ICON32_QUESTION);
+      }
+
+      private function update(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,["fkAccident.no","id.no","dfPayDate","payFee","tiPayPsn"]))
+          return;
+        if (tiAccNo.text != accNoItem || tiNo.text != noItem.toString())
+        {
+          AccidentController.getAOOByAccIdAndNo(UserController.branchId, tiAccNo.text,int(tiNo.text),function(evt:ResultEvent):void 
+            {
+              var list:ArrayCollection = evt.result as ArrayCollection;
+              if(list.length > 0)
+              {
+                accOutObj = list[0] as AccOutObj;
+                CommonUtil.loadInstance(form,accOutObj);
+                accOutObj.payPsn = UserController.person;
+                AccidentController.saveAccOutObj(accOutObj,function(evt:ResultEvent):void {
+                    dispatchEvent(new Events(Events.UPDATE_SUCCESS));
+                  });
+              } else {
+                dispatchEvent(new Events(Events.REFRESH));
+                Alert.show('您填写的事故编号和序号没有对应的未审核的对象',Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              }
+            });
+        }
+        else
+        {
+          CommonUtil.loadInstance(form,accOutObj);
+          accOutObj.payPsn = UserController.person;
+          AccidentController.saveAccOutObj(accOutObj,function(evt:ResultEvent):void {
+              dispatchEvent(new Events(Events.UPDATE_SUCCESS));
+            });
+        }
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(new Events(Events.REFRESH));
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

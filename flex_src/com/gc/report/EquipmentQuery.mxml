@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="{resourceManager.getString('gcc_report', 'equ.query.title')}"
+				preinitialize="onPreinitialize()" creationComplete="onCreationComplete()" layout="vertical"
+				xmlns:report="com.gc.report.*">
+	<mx:HBox verticalAlign="middle" width="100%">
+		<mx:TabNavigator width="70%">
+			<report:EquQuery1/>
+			<report:EquQuery2/>
+			<report:EquQuery3/>
+			<mx:Box label="{resourceManager.getString('gcc_report', 'equ.query.tab1')}" width="100%" height="100%">
+				<mx:ToolBar percentWidth="100">
+					<mx:GridItem>
+						<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.useId')}:"/>
+						<mx:TextInput name="useId"/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.authNo')}:"/>
+						<mx:TextInput name="authNo"/>
+					</mx:GridItem>
+					<mx:GridItem>
+						<mx:Label text="{resourceManager.getString('gcc_report', 'equ.query.tab1.color')}:"/>
+						<mx:TextInput name="color"/>
+					</mx:GridItem>
+					
+					
+				</mx:ToolBar>
+			</mx:Box>
+		</mx:TabNavigator>
+		<mx:ButtonBar id="bb" width="80" direction="vertical" dataProvider="{buttons}" verticalAlign="middle" verticalGap="5"/>
+	</mx:HBox>
+
+
+
+
+	<mx:Script>
+		<![CDATA[
+			[Bindable]
+			private var buttons:Array;
+			
+			private function onPreinitialize():void
+			{
+				buttons=[resourceManager.getString('gcc', 'query'),
+						 resourceManager.getString('gcc', 'reset'),
+						 resourceManager.getString('gcc', 'export'),
+						 resourceManager.getString('gcc', 'close')];
+			}
+			
+			private function onCreationComplete():void
+			{
+				trace(bb);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

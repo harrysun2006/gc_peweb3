@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adgGis" width="100%" height="100%"
+                       labelFunction="{CommonUtil.gridLabelFunction}" lockedColumnCount="1"
+                       itemRenderer="mx.controls.Label" dataProvider="{gis}"
+                       horizontalScrollPolicy="auto">
+    <mx:columns>
+      <!--mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.id.accNo"/-->
+      <mx:AdvancedDataGridColumn dataField="guaNo"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.onDate"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.downDate"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.inputDate"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.insurer.name"/>
+      <mx:AdvancedDataGridColumn dataField="fee" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="guaCost" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="guaCounts" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                 textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="guaPayFees" textAlign="right"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.safety.model.GuarInfo;
+      import mx.collections.ArrayCollection;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var gis:ArrayCollection = new ArrayCollection();
+      private var item:Object;
+      private var ancestors:Array;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGis,"gcc_safety","tree.guaList");
+        addEventListener(CommonEvent.EXPORT,function(event:CommonEvent):void 
+          {
+            CommonUtil.export(CommonUtil.getGridData(adgGis),CommonUtil.getGridHeaders(adgGis),null,event.data.label + "保单列表.xls");
+          });
+      }
+
+      public function listGuas(item:Object,ancestors:Array,orderColumns:Array):void
+      {
+        if (item == null)
+          return;
+        this.item = item;
+        this.ancestors = ancestors;
+        gis = item.gis;
+        for each (var gi:GuarInfo in gis)
+        {
+          gi.guaCounts = gi.ags.length;
+          gi.guaPayFees = 0;
+          for each (var agp:Object in gi.apgs)
+          {
+            gi.guaPayFees += agp.mediFee + agp.other1 + agp.other2;
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

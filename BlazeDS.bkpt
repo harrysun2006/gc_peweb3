@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<breakpoints>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="262" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints(BaseHTTPEndpoint.class[BaseHTTPEndpoint"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints(BaseHTTPEndpoint.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:BaseHTTPEndpoint [line: 262] - service(HttpServletRequest, HttpServletResponse)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="8611"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="8580"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.BaseHTTPEndpoint"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="40" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(BatchProcessFilter.class[BatchProcessFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(BatchProcessFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:BatchProcessFilter [line: 40] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="1496"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="1430"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.BatchProcessFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/spring-webmvc.jar" type="1"/>
+<marker charStart="-1" lineNumber="829" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/spring-webmvc.jar&lt;org.springframework.web.servlet(DispatcherServlet.class[DispatcherServlet"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/spring-webmvc.jar&lt;org.springframework.web.servlet(DispatcherServlet.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:DispatcherServlet [line: 829] - doDispatch(HttpServletRequest, HttpServletResponse)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="35098"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="35051"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="org.springframework.web.servlet.DispatcherServlet"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="138" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(FlexContext.class[FlexContext"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(FlexContext.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:FlexContext [line: 138] - getHttpResponse()"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="5137"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="5086"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.FlexContext"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-remoting.jar" type="1"/>
+<marker charStart="-1" lineNumber="379" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services.remoting.adapters(JavaAdapter.class[JavaAdapter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services.remoting.adapters(JavaAdapter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:JavaAdapter [line: 379] - invoke(Message)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="15118"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="15031"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.services.remoting.adapters.JavaAdapter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="79" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(LegacyFilter.class[LegacyFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(LegacyFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:LegacyFilter [line: 79] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="3248"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="3183"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.LegacyFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="158" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(LegacyFilter.class[LegacyFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(LegacyFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:LegacyFilter [line: 158] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="5815"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="5787"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.LegacyFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="1503" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBroker.class[MessageBroker"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBroker.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:MessageBroker [line: 1503] - routeMessageToService(Message, Endpoint)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="48647"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="48584"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.MessageBroker"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="62" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(MessageBrokerFilter.class[MessageBrokerFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(MessageBrokerFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:MessageBrokerFilter [line: 62] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="2426"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="2365"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.MessageBrokerFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="121" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(MessageBrokerFilter.class[MessageBrokerFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(MessageBrokerFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:MessageBrokerFilter [line: 121] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="4978"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="4919"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.MessageBrokerFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/spring-flex-1.0.0.RC2.jar" type="1"/>
+<marker charStart="-1" lineNumber="67" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/spring-flex-1.0.0.RC2.jar&lt;org.springframework.flex.servlet(MessageBrokerHandlerAdapter.class[MessageBrokerHandlerAdapter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/spring-flex-1.0.0.RC2.jar&lt;org.springframework.flex.servlet(MessageBrokerHandlerAdapter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:MessageBrokerHandlerAdapter [line: 67] - handle(HttpServletRequest, HttpServletResponse, Object)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="2234"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="2180"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="org.springframework.flex.servlet.MessageBrokerHandlerAdapter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="251" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint:MessageBrokerServlet [line: 251] - service(HttpServletRequest, HttpServletResponse)"/>
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBrokerServlet.class[MessageBrokerServlet"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBrokerServlet.class"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="9503"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="9466"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.MessageBrokerServlet"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="322" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint:MessageBrokerServlet [line: 322] - service(HttpServletRequest, HttpServletResponse)"/>
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBrokerServlet.class[MessageBrokerServlet"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging(MessageBrokerServlet.class"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="12493"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="12451"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.MessageBrokerServlet"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-remoting.jar" type="1"/>
+<marker charStart="-1" lineNumber="168" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services(RemotingService.class[RemotingService"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services(RemotingService.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:RemotingService [line: 168] - serviceMessage(Message)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="6038"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="5996"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.services.RemotingService"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-remoting.jar" type="1"/>
+<marker charStart="-1" lineNumber="183" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services(RemotingService.class[RemotingService"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-remoting.jar&lt;flex.messaging.services(RemotingService.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:RemotingService [line: 183] - serviceMessage(Message)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="6801"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="6742"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.services.RemotingService"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="76" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SerializationFilter.class[SerializationFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SerializationFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:SerializationFilter [line: 76] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="2737"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="2706"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.SerializationFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="179" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SerializationFilter.class[SerializationFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SerializationFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:SerializationFilter [line: 179] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="6592"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="6539"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.SerializationFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/www/WEB-INF/lib/flex-messaging-core.jar" type="1"/>
+<marker charStart="-1" lineNumber="44" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SessionFilter.class[SessionFilter"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="org.eclipse.jdt.internal.core.JavaModelManager.handleId" value="=peweb3/www\/WEB-INF\/lib\/flex-messaging-core.jar&lt;flex.messaging.endpoints.amf(SessionFilter.class"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="message" value="Line breakpoint:SessionFilter [line: 44] - invoke(ActionContext)"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="1669"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="1641"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="flex.messaging.endpoints.amf.SessionFilter"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/peweb3/src/com/gc/web/UserService.java" type="1"/>
+<marker charStart="-1" lineNumber="121" type="org.eclipse.jdt.debug.javaLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint:UserService [line: 121] - getLimitBranches(SecurityUser)"/>
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.jdt.debug"/>
+<attrib name="org.eclipse.jdt.debug.ui.JAVA_ELEMENT_HANDLE_ID" value="=peweb3/src&lt;com.gc.web{UserService.java[UserService"/>
+<attrib name="org.eclipse.jdt.debug.core.suspendPolicy" value="2"/>
+<attrib name="charStart" value="-1"/>
+<attrib name="charEnd" value="-1"/>
+<attrib name="org.eclipse.jdt.debug.core.installCount" value="0"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_end" value="4591"/>
+<attrib name="org.eclipse.jdt.debug.ui.member_start" value="4554"/>
+<attrib name="org.eclipse.jdt.debug.core.typeName" value="com.gc.web.UserService"/>
+</marker>
+</breakpoint>
+</breakpoints>

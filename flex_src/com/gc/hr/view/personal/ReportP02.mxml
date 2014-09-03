@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                layout="vertical" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%">
+    <mx:Label id="lName" width="100%" textAlign="center" fontSize="20" fontWeight="bold"/>
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="70%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p02.period')}:"/>
+          <mx:Label text="{report.period}"/>
+        </mx:GridItem>
+        <mx:GridItem width="30%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p02.change')}:"/>
+          <mx:Label text="{report.change.label}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" itemRenderer="mx.controls.Label"
+                         sortableColumns="false" scroll="onScroll(event)" resizableColumns="false"
+                         horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="person.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="person.name"/>
+        <mx:AdvancedDataGridColumn dataField="person.sex"/>
+        <mx:AdvancedDataGridColumn dataField="person.pid"/>
+        <mx:AdvancedDataGridColumn dataField="date"/>
+        <mx:AdvancedDataGridColumn dataField="reason"/>
+        <mx:AdvancedDataGridColumn dataField="on"/>
+        <mx:AdvancedDataGridColumn dataField="down"/>
+        <mx:AdvancedDataGridColumn dataField="newDepart" dataTipField="newDepart.name"/>
+        <mx:AdvancedDataGridColumn dataField="newOffice"/>
+        <mx:AdvancedDataGridColumn dataField="newLine" dataTipField="newLine.name"/>
+        <mx:AdvancedDataGridColumn dataField="newBus" dataTipField="newBus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="newCert2No"/>
+        <mx:AdvancedDataGridColumn dataField="newRegType"/>
+        <mx:AdvancedDataGridColumn dataField="newType"/>
+        <mx:AdvancedDataGridColumn dataField="newSalaryType"/>
+        <mx:AdvancedDataGridColumn dataField="newPosition" dataTipField="newPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="newWorkType"/>
+        <mx:AdvancedDataGridColumn dataField="newRegBelong"/>
+        <mx:AdvancedDataGridColumn dataField="newParty"/>
+        <mx:AdvancedDataGridColumn dataField="newGrade"/>
+        <mx:AdvancedDataGridColumn dataField="newSchooling"/>
+        <mx:AdvancedDataGridColumn dataField="newContractNo"/>
+        <mx:AdvancedDataGridColumn dataField="newContr1End"/>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <gc:StyledDataGrid id="adg2" width="100%" height="24" showHeaders="false" editable="false"
+                       horizontalScrollPolicy="auto" verticalScrollPolicy="off"
+                       resizableColumns="false">
+      <gc:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn dataField="c0"/>
+        <mx:AdvancedDataGridColumn dataField="c1"/>
+        <mx:AdvancedDataGridColumn dataField="c2"/>
+        <mx:AdvancedDataGridColumn dataField="c3"/>
+        <mx:AdvancedDataGridColumn dataField="c4"/>
+        <mx:AdvancedDataGridColumn dataField="c5"/>
+        <mx:AdvancedDataGridColumn dataField="c6"/>
+        <mx:AdvancedDataGridColumn dataField="c7"/>
+        <mx:AdvancedDataGridColumn dataField="c8"/>
+        <mx:AdvancedDataGridColumn dataField="c9"/>
+        <mx:AdvancedDataGridColumn dataField="c10"/>
+        <mx:AdvancedDataGridColumn dataField="c11"/>
+        <mx:AdvancedDataGridColumn dataField="c12"/>
+        <mx:AdvancedDataGridColumn dataField="c13"/>
+        <mx:AdvancedDataGridColumn dataField="c14"/>
+        <mx:AdvancedDataGridColumn dataField="c15"/>
+        <mx:AdvancedDataGridColumn dataField="c16"/>
+        <mx:AdvancedDataGridColumn dataField="c17"/>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </gc:columns>
+    </gc:StyledDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.PsnChange;
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var report:Object;
+      private var qo:Object;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "report.p02.grid");
+        adg1.lockedColumnCount=adg2.lockedColumnCount=7;
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        lName.text=resourceManager.getString("gcc_hr", "report.p02.name", [UserController.branchName]);
+        qo=e.data;
+        PersonalController.reportP02(qo, load);
+      }
+
+      private function load(e:ResultEvent):void
+      {
+        report=e.result;
+        report.total[Constants.PROP_NAME_SERIAL]=resourceManager.getString("gcc", "total");
+        var p:Person;
+        var s:int = 0, id1:int = 0, id2:int;
+        for each (var pc:PsnChange in report.data)
+        {
+          p = ObjectUtil.copy(pc.person) as Person;
+          id2 = p.id;
+          if (id1 == id2)
+          {
+            p.workerId = "";
+            p.name = "";
+            p.sex = "";
+            p.pid = "";
+            pc.person = p;
+          }
+          else
+          {
+            s++
+            pc.serial = s;
+          }
+          id1 = id2;
+        }
+        adg1.dataProvider=report.data;
+        adg2.dataProvider=report.total;
+      }
+
+      private function onScroll(event:Event):void
+      {
+        callLater(function():void{adg2.horizontalScrollPosition=adg1.horizontalScrollPosition;});
+      }
+
+      private function export(e:Event):void
+      {
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(e1:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "exportP02", [qo]);
+        fr.download(ur, resourceManager.getString("gcc_hr", "report.p02.file"));
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

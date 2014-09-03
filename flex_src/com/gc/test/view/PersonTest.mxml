@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">
+  <mx:VBox height="100%" width="100%" autoLayout="true">
+    <mx:DataGrid id="dgPersons" width="100%" height="100%" styleName="red" dataProvider="{list}"
+                 labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:DataGridColumn headerText="ID" dataField="id" width="100"/>
+        <mx:DataGridColumn headerText="NAME" dataField="name" width="120"/>
+        <mx:DataGridColumn headerText="BRANCH" dataField="branch" dataTipField="branch.name"/>
+        <mx:DataGridColumn headerText="ON DATE" dataField="onDate" width="160"/>
+      </mx:columns>
+    </mx:DataGrid>
+    <mx:HBox autoLayout="true" paddingTop="10" paddingBottom="10" paddingLeft="10">
+      <mx:Button label="All" click="all()"/>
+      <mx:Button label="All Raw" click="raw()"/>
+      <mx:Button label="Some" click="some()"/>
+      <mx:Button label="Clear" click="clear()"/>
+      <mx:Button label="Print" click="print()"/>
+      <mx:Button label="Export to Excel" click="export()"/>
+      <mx:Button label="Test1" click="test1()"/>
+      <mx:Label text="Hello World!" id="msg" textAlign="right" styleName="red"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.test.controller.TestController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.PrintUtil;
+
+      [Bindable]
+      private var list:Object;
+
+      private function export():void
+      {
+        trace("Export to Excel!!!");
+      }
+
+      private function all():void
+      {
+        TestController.getAllPersons(0, function(e:ResultEvent):void{list=e.result;});
+      }
+
+      private function raw():void
+      {
+        TestController.getAllPersonsRaw(0, function(e:ResultEvent):void{list=e.result;});
+      }
+
+      private function some():void
+      {
+        PersonalController.getPersonsByIds([1141, 2545, 3969, 8285, 8286, 8287], function(e:ResultEvent):void{list=e.result;});
+      }
+
+      private function clear():void
+      {
+        dgPersons.dataProvider.removeAll();
+        dgPersons.selectable=true;
+      }
+
+      private function print():void
+      {
+        PrintUtil.print(dgPersons);
+      }
+
+      private function test1():void
+      {
+        dgPersons.selectedIndex=0;
+        dgPersons.selectable=false;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

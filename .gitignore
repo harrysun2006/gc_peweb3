@@ -1,0 +1,16 @@
+hs_err_pid*
+.settings/
+bin/
+data/
+doc/
+lib-src/
+temp/
+upload/
+www/WEB-INF/classes
+ROOT/WEB-INF/classes
+*.exe
+*.dll
+*.pbd
+*.lnk
+*.zip
+*.swf

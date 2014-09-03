@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+                showCloseButton="true" close="PopUpManager.removePopUp(this);">
+  <mx:XML id="xml" source="weather.xml"/>
+  <mx:DataGrid id="myDatagrid" dataProvider="{xml.city}" variableRowHeight="true" editable="true"
+               rowHeight="50" width="100%" height="100%">
+    <mx:columns>
+      <mx:DataGridColumn dataField="Location"/>
+      <mx:DataGridColumn dataField="Climate" editable="true" editorDataField="value">
+        <mx:itemEditor>
+          <mx:Component>
+            <mx:ComboBox>
+              <mx:dataProvider>
+                <mx:String>Mild</mx:String>
+                <mx:String>Hot</mx:String>
+                <mx:String>Foggy</mx:String>
+                <mx:String>Rainy</mx:String>
+                <mx:String>Snow</mx:String>
+              </mx:dataProvider>
+            </mx:ComboBox>
+          </mx:Component>
+        </mx:itemEditor>
+      </mx:DataGridColumn>
+      <mx:DataGridColumn dataField="CloudCoverPercent" editable="true" editorDataField="value"
+                         itemEditor="com.gc.test.view.CloudCover"/>
+    </mx:columns>
+  </mx:DataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

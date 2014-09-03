@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx" xmlns:flex="http://www.springframework.org/schema/flex"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://www.springframework.org/schema/flex http://www.springframework.org/schema/flex/spring-flex-1.0.xsd"
+		default-lazy-init="true">
+
+	<!-- 注意interceptors的顺序, 如果gcLoggerAdvisor在gcTransactionInterceptor里面, 则日志无法记录(回滚) -->
+	<!-- bean id="commonBaseAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcLoggerAdvisor,gcTransactionAdvisor"
+		p:beanNames="commonBaseDAO,commonBaseService,userService" p:proxyTargetClass="true"/-->
+
+	<bean id="commonBaseAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcTransactionAdvisor"
+		p:beanNames="commonBaseDAO,commonBaseService,userService" p:proxyTargetClass="true"/>
+    
+	<bean id="commonLogAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcTransactionAdvisor"
+		p:beanNames="commonLogService"/>
+
+	<!-- Common Base DAO, Service & Util -->
+	<bean id="commonBaseDAO" class="com.gc.common.dao.BaseDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="commonBaseService" class="com.gc.common.service.BaseService" p:baseDAO-ref="commonBaseDAO"/>
+	<bean id="commonBaseServiceUtil" class="com.gc.common.service.BaseServiceUtil" p:baseService-ref="commonBaseService" lazy-init="true"/>
+
+	<!-- Common Log Service & Util -->
+	<bean id="commonLogService" class="com.gc.common.service.LogService" p:logDAO-ref="commonBaseDAO"/>
+	<bean id="commonLogServiceUtil" class="com.gc.common.service.LogServiceUtil" p:logService-ref="commonLogService" lazy-init="true"/>
+
+	<!-- User Service & Util -->
+	<bean id="userService" class="com.gc.web.UserService" p:baseDAO-ref="commonBaseDAO" p:authenticationManager-ref="_authenticationManager"/>
+	<bean id="userServiceUtil" class="com.gc.web.UserServiceUtil" p:userService-ref="userService" lazy-init="true"/>
+</beans>

@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox id="vbox" width="100%" height="100%" autoLayout="true">
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         sortableColumns="false" editable="false" selectionMode="singleCell"
+                         itemRenderer="mx.controls.Label"
+                         labelFunction="{CommonUtil.gridLabelFunction}"
+                         keyDown="keyDownHandler(event)">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="name" editable="false"/>
+        <mx:AdvancedDataGridColumn dataField="workerId" editable="false"/>
+        <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page1')}"
+                                        textAlign="left" editable="false">
+          <mx:AdvancedDataGridColumn dataField="pid"/>
+          <mx:AdvancedDataGridColumn dataField="sex"/>
+          <mx:AdvancedDataGridColumn dataField="people"/>
+          <mx:AdvancedDataGridColumn dataField="nativePlace"/>
+          <mx:AdvancedDataGridColumn dataField="regAddress"/>
+          <mx:AdvancedDataGridColumn dataField="birthday"/>
+          <mx:AdvancedDataGridColumn dataField="marryStatus"/>
+          <mx:AdvancedDataGridColumn dataField="annuities"/>
+          <mx:AdvancedDataGridColumn dataField="accumulation"/>
+          <mx:AdvancedDataGridColumn dataField="chkGroup" dataTipField="chkGroup.name"/>
+          <mx:AdvancedDataGridColumn dataField="onDate"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page4')}"
+                                        textAlign="left" editable="false">
+          <mx:AdvancedDataGridColumn dataField="fillTableDate"/>
+          <mx:AdvancedDataGridColumn dataField="commend"/>
+          <mx:AdvancedDataGridColumn dataField="workDate"/>
+          <mx:AdvancedDataGridColumn dataField="retireDate"/>
+          <mx:AdvancedDataGridColumn dataField="serviceLength"/>
+          <mx:AdvancedDataGridColumn dataField="inDate"/>
+          <mx:AdvancedDataGridColumn dataField="outDate"/>
+          <mx:AdvancedDataGridColumn dataField="workLength"/>
+          <mx:AdvancedDataGridColumn dataField="groupNo"/>
+          <mx:AdvancedDataGridColumn dataField="contractNo"/>
+          <mx:AdvancedDataGridColumn dataField="contr1From"/>
+          <mx:AdvancedDataGridColumn dataField="contr1End"/>
+          <mx:AdvancedDataGridColumn dataField="contractReason"/>
+          <mx:AdvancedDataGridColumn dataField="contr2From"/>
+          <mx:AdvancedDataGridColumn dataField="contr2End"/>
+          <mx:AdvancedDataGridColumn dataField="workType"/>
+          <mx:AdvancedDataGridColumn dataField="level"/>
+          <mx:AdvancedDataGridColumn dataField="techLevel"/>
+          <mx:AdvancedDataGridColumn dataField="responsibility"/>
+          <mx:AdvancedDataGridColumn dataField="cert1No"/>
+          <mx:AdvancedDataGridColumn dataField="cert1NoDate"/>
+          <mx:AdvancedDataGridColumn dataField="cert2No"/>
+          <mx:AdvancedDataGridColumn dataField="cert2NoHex"/>
+          <mx:AdvancedDataGridColumn dataField="serviceNo"/>
+          <mx:AdvancedDataGridColumn dataField="serviceNoDate"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page5')}"
+                                        textAlign="left" editable="false">
+          <mx:AdvancedDataGridColumn dataField="frontWorkResume"/>
+          <mx:AdvancedDataGridColumn dataField="frontTrainingResume"/>
+          <mx:AdvancedDataGridColumn dataField="specification"/>
+          <mx:AdvancedDataGridColumn dataField="degree"/>
+          <mx:AdvancedDataGridColumn dataField="graduate"/>
+          <mx:AdvancedDataGridColumn dataField="skill"/>
+          <mx:AdvancedDataGridColumn dataField="lanCom"/>
+          <mx:AdvancedDataGridColumn dataField="national"/>
+          <mx:AdvancedDataGridColumn dataField="state"/>
+          <mx:AdvancedDataGridColumn dataField="city"/>
+          <mx:AdvancedDataGridColumn dataField="address"/>
+          <mx:AdvancedDataGridColumn dataField="zip"/>
+          <mx:AdvancedDataGridColumn dataField="telephone"/>
+          <mx:AdvancedDataGridColumn dataField="email"/>
+          <mx:AdvancedDataGridColumn dataField="officeTel"/>
+          <mx:AdvancedDataGridColumn dataField="officeExt"/>
+          <mx:AdvancedDataGridColumn dataField="officeFax"/>
+          <mx:AdvancedDataGridColumn dataField="comment"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page2')}"
+                                        textAlign="left" editable="false">
+          <mx:AdvancedDataGridColumn dataField="allotDate"/>
+          <mx:AdvancedDataGridColumn dataField="allotReason"/>
+          <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+          <mx:AdvancedDataGridColumn dataField="office"/>
+          <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+          <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page3')}"
+                                        textAlign="left" editable="false">
+          <mx:AdvancedDataGridColumn dataField="upgradeDate"/>
+          <mx:AdvancedDataGridColumn dataField="upgradeReason"/>
+          <mx:AdvancedDataGridColumn dataField="type"/>
+          <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"/>
+          <mx:AdvancedDataGridColumn dataField="regBelong"/>
+          <mx:AdvancedDataGridColumn dataField="party"/>
+          <mx:AdvancedDataGridColumn dataField="grade"/>
+          <mx:AdvancedDataGridColumn dataField="schooling"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumn dataField="amount1" headerText="金额1"/>
+        <mx:AdvancedDataGridColumn dataField="amount2" headerText="金额2" formatter="{up3}"/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="load(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:NumberFormatter id="up3" precision="3" rounding="up"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+
+      private function onPreinitialize():void
+      {
+        header=new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc", "person", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+                // column.editable=true;
+            }
+          });
+        this.setFocus();
+        /**
+         * 列宽控制: AdvancedDataGrid.getLastColumnResidualWidth
+         **/
+        // adg.borderMetrics.right=300;
+        if (width > 0)
+          adg.width=vbox.width=width-viewMetricsAndPadding.left-viewMetricsAndPadding.right;
+      }
+
+      private function load(event:Event):void
+      {
+        PersonalController.getPersonsByIds([1141, 2545, 3969, 8285, 8286, 8287], function(e:ResultEvent):void
+          {
+            adg.dataProvider=(e.result as ArrayCollection).toArray().filter(function(item:Object, idx:uint, arr:Array):Boolean
+              {
+                item.amount1=Math.random()*100;
+                item.amount2=Math.random()*100;
+                return (item.downDate >= Constants.MAX_DATE);
+              });
+            adg.validateNow();
+          });
+      }
+
+      private function close(event:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

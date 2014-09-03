@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="350" height="200"
+                horizontalAlign="center" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)">
+  <mx:Label text="{resourceManager.getString('gcc_safety','gua.get.or.input.guaNo')}"
+            textAlign="center" width="100%" height="38"/>
+  <mx:HBox id="hboxTi" width="100%" horizontalAlign="center" height="53">
+    <mx:TextInput id="tiAccNo" text="{gua.id.accNo}"/>
+    <mx:Button id="btGetGuas" label="{resourceManager.getString('gcc_safety','gua.get')}"
+               click="getGuas(event)"/>
+  </mx:HBox>
+  <mx:HBox width="100%" horizontalAlign="center">
+    <mx:Button id="btSave" label="{resourceManager.getString('gcc','ok')}" click="sure(event)"/>
+    <mx:Label width="40"/>
+    <mx:Button id="btClose" label="{resourceManager.getString('gcc','cancel')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import mx.validators.Validator;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.model.Guarantee;
+      import com.gc.CommonEvent;
+
+      [Bindable]
+      private var gua:Guarantee;
+      private function onPreinitialize():void
+      {
+
+      }
+
+      private function onCreationComplete():void
+      {
+        tiAccNo.setFocus();
+      }
+
+      private function getGuas(event:Event):void
+      {
+        var guasWin:GuasWin = GuasWin(PopUpManager.createPopUp(this.parent,GuasWin,true));
+        PopUpManager.centerPopUp(guasWin);
+        guasWin.addEventListener(Events.CLICKED,getItem);
+//        guasWin.addEventListener(Events.DBCLICKED,getItem);
+      }
+
+      private function getItem(event:Events):void
+      {
+        gua = event.data as Guarantee;
+      }
+
+      private function sure(event:Event):void
+      {
+        if (!CommonUtil.validateForm(hboxTi,[{field:"tiAccNo",error:resourceManager.getString('gcc_safety','gua.get.or.input.guaNo')}]))
+          return;
+        if (gua != null)
+        {
+          if (gua.id.accNo == tiAccNo.text)
+          {
+            dispatchEvent(new CommonEvent(CommonEvent.ADD,gua));
+            PopUpManager.removePopUp(this);
+          }
+          else
+          {
+            //通过右连接查询出来的结果明细中的bus 怎么取
+            GuaranteeController.getGuaByAccNo(UserController.branchId,tiAccNo.text, CommonController.closeDate,successGetGua);
+          }
+        }
+        else
+        {
+          //通过右连接查询出来的结果明细中的bus 怎么取
+          GuaranteeController.getGuaByAccNo(UserController.branchId,tiAccNo.text, CommonController.closeDate,successGetGua);
+        }
+      }
+
+      private function successGetGua(event:ResultEvent):void
+      {
+        var tmp:ArrayCollection = event.result as ArrayCollection;
+        if (tmp.length > 0)
+        {
+          gua = tmp.getItemAt(0) as Guarantee;
+          dispatchEvent(new CommonEvent(CommonEvent.ADD,gua));
+          PopUpManager.removePopUp(this);
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.sorry.no.gua'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+      }
+
+      private function close(event:Event):void
+      {
+        this.dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

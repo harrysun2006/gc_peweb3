@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGrid xmlns:mx="http://www.adobe.com/2006/mxml"
+                     labelFunction="{CommonUtil.gridLabelFunction}"
+                     preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                     sortableColumns="false" horizontalScrollPolicy="auto">
+  <mx:groupedColumns>
+    <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" color="0x0000FF"
+                               backgroundColor="0xD8D8D8" fontWeight="bold" editable="false"
+                               labelFunction="{CommonUtil.serialLabelFunction}" textAlign="center"/>
+    <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                    headerText="{resourceManager.getString('gcc_safety', 'claims.accident.head')}"
+                                    textAlign="left" editable="false">
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.no"
+                                 editorDataField="selectedItem"/>
+      <mx:AdvancedDataGridColumn dataField="fkGuaReport" dataTipField="fkGuaReport.reportNo"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.dept.name"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.bus.authNo"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.date"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.address"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.name"/>
+      <mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.cert1No"/>
+    </mx:AdvancedDataGridColumnGroup>
+    <mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+                                    headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsngua.head')}"
+                                    textAlign="left" editable="false">
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.id.no"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.name"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.sex"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.age"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.status"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.mediFee"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.other1"/>
+      <mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.other2"/>
+    </mx:AdvancedDataGridColumnGroup>
+    <!--mx:AdvancedDataGridColumnGroup 
+                                    headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsngua.head')}"
+                                    textAlign="left" editable="false"-->
+      <mx:AdvancedDataGridColumn dataField="mediFee" editable="false"
+                                 headerText="{resourceManager.getString('gcc_safety', 'claims.sum')}"/>
+      <!--
+           <mx:AdvancedDataGridColumn dataField="mediFee"/>
+           <mx:AdvancedDataGridColumn dataField="other1"/>
+           <mx:AdvancedDataGridColumn dataField="other2"/>
+      -->
+    <!--/mx:AdvancedDataGridColumnGroup-->
+    <mx:AdvancedDataGridColumnGroup headerRenderer="{header}" textAlign="left" editable="false"
+                                    headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsnpay.head')}">
+      <mx:AdvancedDataGridColumn dataField="getDate"/>
+      <mx:AdvancedDataGridColumn dataField="getRefNo"/>
+      <mx:AdvancedDataGridColumn dataField="getSum"/>
+    </mx:AdvancedDataGridColumnGroup>
+    <mx:AdvancedDataGridColumn width="1"/>
+  </mx:groupedColumns>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+
+      private function onPreinitialize():void
+      {
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        CommonUtil.setDataGridColumns(this, "gcc_safety", "accInPsnGua");
+      }
+
+      private function onCreationComplete():void
+      {
+        percentWidth = 100;
+      }
+    ]]>
+  </mx:Script>
+</mx:AdvancedDataGrid>

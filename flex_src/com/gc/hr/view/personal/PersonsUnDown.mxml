@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="800" height="600"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}"
+                         keyDown="keyDownHandler(event)">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.undown.note')}"
+                                        textAlign="center">
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                     labelFunction="{CommonUtil.serialLabelFunction}"
+                                     styleFunction="{CommonUtil.serialStyleFunction}"/>
+          <mx:AdvancedDataGridColumn dataField="name"/>
+          <mx:AdvancedDataGridColumn dataField="workerId"/>
+          <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+          <mx:AdvancedDataGridColumn dataField="position" dataTipField="fkPosition.name"/>
+          <mx:AdvancedDataGridColumn dataField="pid"/>
+          <mx:AdvancedDataGridColumn dataField="downDate"/>
+          <mx:AdvancedDataGridColumn dataField="downReason"/>
+        </mx:AdvancedDataGridColumnGroup>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="undown(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      private var list0:ArrayCollection;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc", "person", CommonUtil.complexColumnCompare);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        this.setFocus();
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        if (e.args == null)
+          return;
+        list0=new ArrayCollection(e.args.filter(function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            return (item.downDate < Constants.MAX_DATE);
+          }));
+        adg.dataProvider=list0;
+        adg.validateNow();
+        if (list0.length <= 0)
+        {
+          close();
+          Alert.show(resourceManager.getString("gcc", "persons.not.on"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function undown(e:Event):void
+      {
+        if (list0.length > 0)
+        {
+          PersonalController.undownPersons(list0.source, null, function undownPersonsSuccessHandler(e1:ResultEvent):void
+            {
+              Alert.show(resourceManager.getString("gcc_hr", "person.manage.undown.undown.success"), 
+                Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+                {
+                  for (var i:int=0; i < list0.length; i++)
+                  {
+                    list0[i].downDate=Constants.MAX_DATE;
+                  }
+                  close();
+                // owner.dispatchEvent(CommonEvent.REFRESH_EVENT);
+                }, Constants.ICON32_INFO);
+            });
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

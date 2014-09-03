@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+        preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+        horizontalAlign="center">
+  <mx:VBox width="90%" height="100%">
+    <mx:Label text="事故查询" fontSize="16" fontWeight="bold" textAlign="center" width="100%"
+              height="5%"/>
+    <mx:AdvancedDataGrid id="adgA" labelFunction="{CommonUtil.gridLabelFunction}" width="100%"
+                         height="100%" lockedColumnCount="4" horizontalScrollPolicy="auto"
+                         sortableColumns="false" styleFunction="onStyleFunction">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="n" headerText="序号"
+                                   labelFunction="{CommonUtil.serialLabelFunction}" width="64"
+                                   color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="center"/>
+        <mx:AdvancedDataGridColumn dataField="dept" dataTipField="dept.name"/>
+        <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+        <mx:AdvancedDataGridColumn dataField="no"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.name"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="date" labelFunction="onDateFormating"
+                                   headerText="日期时间" width="165"/>
+        <mx:AdvancedDataGridColumn dataField="address"/>
+        <mx:AdvancedDataGridColumn dataField="weather" dataTipField="weather.name"/>
+        <mx:AdvancedDataGridColumn dataField="type" dataTipField="type.name"/>
+        <mx:AdvancedDataGridColumn dataField="reason"/>
+        <mx:AdvancedDataGridColumn dataField="level" dataTipField="level.name"/>
+        <mx:AdvancedDataGridColumn dataField="duty" dataTipField="duty.name"/>
+        <mx:AdvancedDataGridColumn dataField="statusStr"/>
+        <mx:AdvancedDataGridColumn dataField="reportStr"/>
+        <mx:AdvancedDataGridColumn dataField="processor" dataTipField="processor.name"/>
+        <mx:AdvancedDataGridColumn dataField="initDesc"/>
+        <!--mx:AdvancedDataGridColumn dataField="roadFacility"/>
+             <mx:AdvancedDataGridColumn dataField="desc1"/>
+             <mx:AdvancedDataGridColumn dataField="desc2"/>
+             <mx:AdvancedDataGridColumn dataField="desc3"/>
+             <mx:AdvancedDataGridColumn dataField="course"/>
+             <mx:AdvancedDataGridColumn dataField="processInfo"/>
+             <mx:AdvancedDataGridColumn dataField="policeNo"/>
+             <mx:AdvancedDataGridColumn dataField="billNum" formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+             <mx:AdvancedDataGridColumn dataField="extent" dataTipField="extent.name"/>
+             <mx:AdvancedDataGridColumn dataField="destroy"/>
+             <mx:AdvancedDataGridColumn dataField="initor" dataTipField="initor.name"/>
+             <mx:AdvancedDataGridColumn dataField="initDate"/>
+             <mx:AdvancedDataGridColumn dataField="deptor" dataTipField="deptor.name"/>
+             <mx:AdvancedDataGridColumn dataField="deptDate"/>
+             <mx:AdvancedDataGridColumn dataField="deptDesc"/>
+             <mx:AdvancedDataGridColumn dataField="compor" dataTipField="compor.name"/>
+             <mx:AdvancedDataGridColumn dataField="compDate"/>
+             <mx:AdvancedDataGridColumn dataField="compDesc"/>
+             <mx:AdvancedDataGridColumn dataField="archor" dataTipField="archor.name"/>
+             <mx:AdvancedDataGridColumn dataField="archDate"/-->
+        <mx:AdvancedDataGridColumnGroup headerText="赔偿费用（估）">
+          <mx:AdvancedDataGridColumn dataField="lostFee" headerText="车辆自损额" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnFee" headerText="客伤赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outPsnFee" headerText="撞人赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outObjFee" headerText="撞物赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="paySumA" headerText="小计" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="赔偿费用（结）">
+          <mx:AdvancedDataGridColumn dataField="lostPayFee" headerText="车辆自损额" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnPayFee" headerText="客伤赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outPsnPayFee" headerText="撞人赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outObjPayFee" headerText="撞物赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="paySumC" headerText="小计" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="保险反馈">
+          <mx:AdvancedDataGridColumn dataField="inPsnGuaPayFee" headerText="客伤赔付" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outGuaPayFee" headerText="三责赔付" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <!--mx:AdvancedDataGridColumnGroup headerText="三责">
+             <mx:AdvancedDataGridColumn dataField="outGuaFee" textAlign="right"/>
+             </mx:AdvancedDataGridColumnGroup>
+             <mx:AdvancedDataGridColumnGroup headerText="客伤">
+             <mx:AdvancedDataGridColumn dataField="inPsnGuaFee" textAlign="right"/>
+             </mx:AdvancedDataGridColumnGroup-->
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:AdvancedDataGrid id="adgB" labelFunction="{CommonUtil.gridLabelFunction}" width="100%"
+                         height="100%" lockedColumnCount="4" horizontalScrollPolicy="auto"
+                         sortableColumns="false" styleFunction="onStyleFunction">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="n" headerText="序号" labelFunction="serialLabelFunction"
+                                   width="64" color="0x0000FF" backgroundColor="0xD8D8D8"
+                                   fontWeight="bold" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                   textAlign="center"/>
+        <mx:AdvancedDataGridColumn dataField="dept" dataTipField="dept.name"/>
+        <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+        <mx:AdvancedDataGridColumn dataField="no"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.name"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="date" labelFunction="onDateFormating"
+                                   headerText="日期时间" width="165"/>
+        <mx:AdvancedDataGridColumn dataField="address"/>
+        <mx:AdvancedDataGridColumn dataField="weather" dataTipField="weather.name"/>
+        <mx:AdvancedDataGridColumn dataField="type" dataTipField="type.name"/>
+        <mx:AdvancedDataGridColumn dataField="reason"/>
+        <mx:AdvancedDataGridColumn dataField="level" dataTipField="level.name"/>
+        <mx:AdvancedDataGridColumn dataField="duty" dataTipField="duty.name"/>
+        <mx:AdvancedDataGridColumn dataField="statusStr"/>
+        <mx:AdvancedDataGridColumn dataField="reportStr"/>
+        <mx:AdvancedDataGridColumn dataField="processor" dataTipField="processor.name"/>
+        <mx:AdvancedDataGridColumn dataField="initDesc"/>
+        <mx:AdvancedDataGridColumnGroup headerText="事故对象">
+          <mx:AdvancedDataGridColumn dataField="objType" headerText="类别"/>
+          <mx:AdvancedDataGridColumn dataField="objStatus" headerText="状态"/>
+          <mx:AdvancedDataGridColumn dataField="objName" headerText="姓名"/>
+          <mx:AdvancedDataGridColumn dataField="objSex" headerText="性别"/>
+          <mx:AdvancedDataGridColumn dataField="objAge" headerText="年龄"
+                                     formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+          <mx:AdvancedDataGridColumn dataField="objAddress" headerText="地址"/>
+          <mx:AdvancedDataGridColumn dataField="objDuty" headerText="责任"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="赔偿费用（估）">
+          <mx:AdvancedDataGridColumn dataField="lostFee" headerText="车辆自损额" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnFee" headerText="客伤赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outPsnFee" headerText="撞人赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outObjFee" headerText="撞物赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="paySumA" headerText="小计" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="赔偿费用（结）">
+          <mx:AdvancedDataGridColumn dataField="lostPayFee" headerText="车辆自损额" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnPayFee" headerText="客伤赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outPsnPayFee" headerText="撞人赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outObjPayFee" headerText="撞物赔偿" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="paySumC" headerText="小计" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="保险反馈">
+          <mx:AdvancedDataGridColumn dataField="inPsnGuaPayFee" headerText="客伤赔付" textAlign="right"/>
+          <mx:AdvancedDataGridColumn dataField="outGuaPayFee" headerText="三责赔付" textAlign="right"/>
+        </mx:AdvancedDataGridColumnGroup>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+             horizontalGap="10">
+      <mx:Button id="btExport" label="导出" click="export(event)"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.Accident;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.IList;
+      import com.gc.Constants;
+      import com.gc.util.DateUtil;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+
+      private var mode:String;
+      private var itemList:ArrayCollection = new ArrayCollection();
+
+      private function onPreinitialize():void
+      {
+        var obj:DisplayObject=this;
+        addEventListener(CommonEvent.CREATED,function(event:CommonEvent):void
+          {
+            itemList.removeAll();
+            CommonUtil.popupWindow(ReportAccsWin,"事故查询条件",obj);
+            new Events(Events.ACC_REFILTERING).stopImmediatePropagation();
+            addEventListener(Events.ACC_REFILTERING,function(evt:Events):void
+              {
+                var accs:ArrayCollection = evt.data as ArrayCollection;
+                mode = (evt.args)[0] as String;
+                if(mode == "a")
+                {
+                  onShowADG();
+                  adgA.dataProvider = accs;
+                  adgA.validateNow();
+                }else if(mode == "b")
+                {
+                  onShowADG(true);
+                  adgB.dataProvider = accs;
+                  adgB.validateNow();
+                  for each(var acc:Accident in accs)
+                  {
+                    if(acc.no != null)
+                      itemList.addItem(acc);
+                  }
+                }
+              });
+          });
+      }
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgA,"gcc_safety","accident");
+        CommonUtil.setDataGridColumns(adgB,"gcc_safety","accident");
+        onShowADG();
+      }
+
+      private function onShowADG(show:Boolean=false):void
+      {
+        adgA.visible = !show;
+        adgA.includeInLayout = !show;
+        adgB.visible = show;
+        adgB.includeInLayout = show;
+      }
+
+      public function serialLabelFunction(item:Object, column:AdvancedDataGridColumn):String
+      {
+        if (item != null && item.no != null)
+        {
+          return (itemList.getItemIndex(item)+1).toString();
+        }
+        return "";
+      }
+
+      private function onDateFormating(item:Object, column:AdvancedDataGridColumn):String
+      {
+        return DateUtil.formatDateTime(item.date);
+      }
+
+      private function onStyleFunction(data:Object, col:AdvancedDataGridColumn):Object
+      {
+        if (data.hasOwnProperty("color") && data["color"] != null)
+        {
+          return { color:0x8E388E, fontWeight:"bold", fontSize:12 };
+        }
+        return {};
+      }
+
+      private function export(event:Event):void
+      {
+        if (mode == "a")
+          CommonUtil.export(CommonUtil.getGridData(adgA),CommonUtil.getGridHeaders(adgA),null,DateUtil.formatDate(new Date())+"事故信息.xls");
+        else if (mode == "b")
+          CommonUtil.export(CommonUtil.getGridData(adgB),CommonUtil.getGridHeaders(adgB),null,DateUtil.formatDate(new Date())+"事故信息.xls");
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:Box>

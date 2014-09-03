@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AdvancedDataGrid xmlns:mx="http://www.adobe.com/2006/mxml" labelFunction="{CommonUtil.gridLabelFunction}" 
+					 preinitialize="onPreinitialize()" creationComplete="onCreationComplete()" sortableColumns="false"
+			 		 horizontalScrollPolicy="auto" verticalScrollPolicy="auto" editable="true"
+			 		 itemEditEnd="onItemEditEnd(event)" dataProvider="{adgAC}"
+					 height="100%">
+	<mx:groupedColumns>
+		<mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+									editable="false" labelFunction="{CommonUtil.serialLabelFunction}" textAlign="center"/>
+		<mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+										headerText="{resourceManager.getString('gcc_safety', 'claims.accident.head')}"
+										textAlign="left" editable="false">
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.no" editorDataField="selectedItem" itemEditor="{accidentComboBox}"/>
+			<mx:AdvancedDataGridColumn dataField="fkGuaReport" dataTipField="fkGuaReport.reportNo"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.dept.name"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.bus.authNo"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.date"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.address"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.workerId"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.name"/>
+			<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.cert1No"/>
+		</mx:AdvancedDataGridColumnGroup>
+		<mx:AdvancedDataGridColumnGroup headerRenderer="{header}"
+										headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsngua.head')}"
+										textAlign="left" editable="false">
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.id.no" formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.sex"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.age" formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.status" labelFunction="{setPsnStatus}"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.mediFee"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.other1"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccInPsn" dataTipField="fkAccInPsn.other2"/>
+		</mx:AdvancedDataGridColumnGroup>
+		<!--mx:AdvancedDataGridColumnGroup headerText="{resourceManager.getString('gcc_safety', 'claims.accident.inpsnpay.head')}"
+										textAlign="left" editable="false"-->
+			<mx:AdvancedDataGridColumn dataField="mediFee" itemEditor="{textInput}" headerText="{resourceManager.getString('gcc_safety', 'claims.sum')}" editable="false"/>
+			<!--
+			<mx:AdvancedDataGridColumn dataField="mediFee"/>
+			<mx:AdvancedDataGridColumn dataField="other1"/>
+			<mx:AdvancedDataGridColumn dataField="other2"/>
+			-->
+		<!--/mx:AdvancedDataGridColumnGroup-->
+		<mx:AdvancedDataGridColumn width="1"/>
+	</mx:groupedColumns>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.formatters.NumberBaseRoundType;
+			import mx.formatters.NumberFormatter;
+			import mx.utils.ObjectUtil;
+			import mx.rpc.events.ResultEvent;
+			import mx.managers.PopUpManager;
+			import mx.collections.ArrayCollection;
+			import mx.events.ListEvent;
+			import mx.events.DropdownEvent;
+			import mx.events.FlexEvent;
+			import mx.events.AdvancedDataGridEventReason;
+			import mx.events.AdvancedDataGridEvent;
+			import mx.controls.Alert;
+			import mx.controls.ComboBox;
+			import mx.controls.TextInput;
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import com.gc.Constants;
+			import com.gc.safety.model.Insurer;
+			import com.gc.safety.model.AccInPsnPay;
+			import com.gc.safety.model.AccInPsnGua;
+			import com.gc.safety.controller.AccidentController;
+			import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+			import com.gc.controls.AdvancedClassFactory;
+			import com.gc.util.CommonUtil;
+
+			[Bindable]
+			private var accidentComboBox:AdvancedClassFactory;
+			[Bindable]
+			private var header:AdvancedClassFactory;
+			[Bindable]
+			private var textInput:AdvancedClassFactory;
+			
+			[Bindable]
+			public var adgAC:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var accidentList2DP:ArrayCollection = new ArrayCollection();
+			
+			private var fields:Array;
+			private var accidentList2:AccidentList2;
+			private var accNo:String;		// 记录datagird里combobox修改时的值,itemeditend用
+			public var modify:Boolean;
+			private var bak:ArrayCollection = new ArrayCollection();
+			
+			private function onPreinitialize():void
+			{
+				fields = ["accident.no", "mediFee"];
+				CommonUtil.setDataGridColumns(this, "gcc_safety", "accInPsnGua", function(obj:Object):void
+						{
+							if (obj is AdvancedDataGridColumn)
+							{
+								var column:AdvancedDataGridColumn = obj as AdvancedDataGridColumn;
+								column.editable = (column.dataTipField != null) ? fields.indexOf(column.dataTipField) >= 0 : fields.indexOf(column.dataField) >= 0;
+							}
+						});
+				
+				header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+				textInput = new AdvancedClassFactory(TextInput);
+				textInput.properties = {restrict: "0-9\."};
+				accidentComboBox = new AdvancedClassFactory(ComboBox);
+				accidentComboBox.properties = {editable: true, dataProvider: accidentList2DP, dropdownWidth: 0, labelFunction: setAccComboBoxLabel};
+				accidentComboBox.listeners = [{type: FlexEvent.CREATION_COMPLETE, listener: onAccidentComboBoxCreated}, 
+											  {type: DropdownEvent.OPEN, listener: onAccidentComboBoxOpen},
+											  {type: KeyboardEvent.KEY_UP, listener: onAccidentComboBoxKey},
+											  {type: ListEvent.CHANGE, listener: onAcc2AccEdit},
+											  {type: FocusEvent.FOCUS_OUT, listener: onAdg2AccFocusOut}
+											];
+			}
+			
+			private function onCreationComplete():void
+			{
+				percentWidth = 100;
+			}
+			
+			/** 伤亡人员状态, 0-死亡, 1-受伤 */
+			private function setPsnStatus(item:Object, column:AdvancedDataGridColumn):String
+			{
+				var ret:String="";
+				if (item is AccInPsnGua && item != null)
+				{
+					if (item.fkAccInPsn != null)
+					{
+						ret = Constants.MAIMS[item.fkAccInPsn.status].label;
+					}
+				}
+				return ret;
+			}
+			
+			private function onItemEditEnd(event:AdvancedDataGridEvent):void
+	      	{
+		        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+		        {
+		          	var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+		          	var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+		          	var newData:Object=adg.itemEditorInstance[column.editorDataField];
+		          	var property:String=column.dataField;
+		          	var data:Object=event.itemRenderer.data;
+		          	// var clazz:Class=CommonUtil.getClass(data, property);
+//		          	var propertyTipField:String = column.dataTipField; //通过事故绑定还是有问题！，注意
+//		          	if(propertyTipField == "accident.no")
+//		          		var i:int = CommonUtil.indexOfKey(accidentList2DP.toArray(), data["accident"],"accident");
+		          	try
+		          	{
+		            	data[property]=newData;
+		          	}
+		          	catch (error:Error)
+		          	{
+		            	event.reason = AdvancedDataGridEventReason.CANCELLED;
+		          	}
+		        }
+	      	}
+	      	
+	      	private function setAccComboBoxLabel(item:Object):String
+			{
+				if(item == null || item == "")
+					return "";
+				return item.accident.no;
+			}
+			
+	      	/** 绑定事故下拉列表与DG值 */
+			private function onAccidentComboBoxCreated(e:FlexEvent):void
+			{
+				if (e.currentTarget is ComboBox)
+				{
+					e.currentTarget.selectedIndex = CommonUtil.indexOfKey(accidentList2DP.toArray(), e.currentTarget.data["accident"], "accident");
+				}
+			}
+			
+			/** 事故下拉框打开 */
+			private function onAccidentComboBoxOpen(e:DropdownEvent):void
+			{
+				if (accidentList2 != null) return;
+				accidentList2 = AccidentList2(PopUpManager.createPopUp(this, AccidentList2, false));
+				accidentList2.adg.dataProvider = accidentList2DP;
+				accidentList2.x = e.currentTarget.dropdown.x;
+				accidentList2.y = e.currentTarget.dropdown.y;
+				accidentList2.adg.addEventListener(MouseEvent.CLICK, onAccList2ClickHandler);
+			}
+			
+			/** 事故下拉框选择 */
+			private function onAccList2ClickHandler(e:MouseEvent):void
+			{
+				fulfillADG2(selectedItem as AccInPsnGua, accidentList2.adg.selectedItem);
+				closeAccList2();
+			}
+			
+			/**
+			 * 填充客伤理赔凭证
+			 * @parm	dest 	填充目标对象,if null, 填充所有
+			 * @parm	source 	填充源对象, if null, 填充所有	
+			 */
+			public function fulfillADG2(dest:AccInPsnGua=null, source:Object=null):void
+			{
+				// id.no, insurer, appdate, apppsn, appdesc在保存时统一填充;
+				// 因为目前提交保险公司理赔只有一个金额,所以用医药费保存金额汇总,补偿费和误工费隐藏
+				if (dest != null && source != null)
+				{
+					var i:int;
+					var gua:AccInPsnGua
+					dest.accident = source.hasOwnProperty("accident") ? source.accident : null;
+					dest.fkAccInPsn = source.hasOwnProperty("fkAccInPsn") ? source.fkAccInPsn : null;
+					dest.fkGuaReport = source.hasOwnProperty("fkGuaReport") ? source.fkGuaReport: null;
+					dest.cstmNo = dest.fkAccInPsn.id.no;
+					dest.mediFee = (dest.fkAccInPsn != null) ? dest.fkAccInPsn.mediFee + dest.fkAccInPsn.other1 + dest.fkAccInPsn.other2 : 0;
+					dest.hasGuarInfo = source.hasOwnProperty("hasGuarInfo") ? source.hasGuarInfo : false;
+					dest.hasAccInPsnGua = source.hasOwnProperty("hasAccInPsnGua") ? source.hasAccInPsnGua : true;
+					if (modify)
+					{
+						// var idx:int = CommonUtil.indexOfKey(bak, accInPsnGua.fkAccInPsn, "fkAccInPsn"); 可改进
+						dest.mediFee = 0;
+						if (dest.fkAccInPsn != null)
+						{
+							for (i=0; i < bak.length; i++)
+							{
+								gua = bak.getItemAt(i, 0) as AccInPsnGua;
+								if (gua.fkAccInPsn.id.accId == dest.fkAccInPsn.id.accId &&
+									gua.fkAccInPsn.id.branch.id ==  dest.fkAccInPsn.id.branch.id &&
+									gua.fkAccInPsn.id.no ==  dest.fkAccInPsn.id.no)
+								{
+									 dest.mediFee = gua.mediFee;
+									 break;
+								}
+							}
+						}
+					}
+					else
+					{
+						dest.mediFee = (dest.fkAccInPsn != null) ? dest.fkAccInPsn.mediFee + 
+									dest.fkAccInPsn.other1 + dest.fkAccInPsn.other2 : 0;
+					}
+				} 
+				else if (dest == null && source == null) 
+				{
+					adgAC.removeAll();
+					for each (var obj:Object in accidentList2DP)
+					{
+						var accInPsnGua:AccInPsnGua = new AccInPsnGua();
+						accInPsnGua.accident = obj.hasOwnProperty("accident") ? obj.accident : null;
+						accInPsnGua.fkAccInPsn = obj.hasOwnProperty("fkAccInPsn") ? obj.fkAccInPsn : null;
+						accInPsnGua.fkGuaReport = obj.hasOwnProperty("fkGuaReport") ? obj.fkGuaReport: null;
+						accInPsnGua.hasGuarInfo = obj.hasOwnProperty("hasGuarInfo") ? obj.hasGuarInfo : false;
+						accInPsnGua.hasAccInPsnGua = obj.hasOwnProperty("hasAccInPsnGua") ? obj.hasAccInPsnGua : true;
+						if (modify)
+						{
+//							var idx:int = CommonUtil.indexOfKey(bak, accInPsnGua.fkAccInPsn, "fkAccInPsn");
+							accInPsnGua.mediFee = 0;
+							if (accInPsnGua.fkAccInPsn != null)
+							{
+								for (i=0; i < bak.length; i++)
+								{
+									gua = bak.getItemAt(i, 0) as AccInPsnGua;
+									if (gua.fkAccInPsn.id.accId == accInPsnGua.fkAccInPsn.id.accId &&
+										gua.fkAccInPsn.id.branch.id ==  accInPsnGua.fkAccInPsn.id.branch.id &&
+										gua.fkAccInPsn.id.no ==  accInPsnGua.fkAccInPsn.id.no)
+									{
+										 accInPsnGua.mediFee = gua.mediFee;
+										 break;
+									}
+								}
+							}
+						}
+						else
+						{
+							accInPsnGua.mediFee = (accInPsnGua.fkAccInPsn != null) ? accInPsnGua.fkAccInPsn.mediFee + 
+										accInPsnGua.fkAccInPsn.other1 + accInPsnGua.fkAccInPsn.other2 : 0;
+						}
+						adgAC.addItem(accInPsnGua);
+					}
+				}
+			}
+			
+			/** 关闭客伤事故选择列表 */
+			private function closeAccList2():void
+			{
+				accidentList2.adg.dataProvider = null;
+				accidentList2.adg.removeEventListener(MouseEvent.DOUBLE_CLICK, onAccList2ClickHandler);
+				PopUpManager.removePopUp(accidentList2);
+				accidentList2 = null;
+			}
+			
+			/** 事故编号下拉时按Esc关闭选择列表 */
+			private function onAccidentComboBoxKey(e:KeyboardEvent):void
+			{
+				if (e.keyCode == Keyboard.ESCAPE && accidentList2 != null)
+				{
+					closeAccList2();
+				}
+			}
+			
+			/** 事故编号可输入,编辑完后验证编号是否有效 */
+			private function onAcc2AccEdit(e:ListEvent):void
+			{
+				accNo = (e.currentTarget as ComboBox).text;
+				var newAC:ArrayCollection = new ArrayCollection();
+				if (accidentList2 != null)
+				{
+					for each (var obj:Object in accidentList2DP)
+					{
+						if (obj.hasOwnProperty("accident"))
+						{
+							if ((obj.accident.no as String).search(accNo) >= 0)
+								newAC.addItem(obj);
+						}
+					}
+					accidentList2.adg.dataProvider = newAC;
+				}
+				else
+				{
+					(e.currentTarget as ComboBox).open();
+				}
+			}
+	      	
+	      	/** 下拉列表移出光标后移除下拉明细窗口 */
+			private function onAdg2AccFocusOut(e:FocusEvent):void
+			{
+				if (accidentList2 == null) return;
+				if (focusManager.getFocus() != accidentList2.adg)
+					closeAccList2();
+			}
+			
+			public function getAccInPsn(branchId:int, insurer:Insurer):void
+			{
+				// accidentList2DP里没有存理赔金额,先备份数据供修改凭证时用
+				bak.removeAll();
+				bak = ObjectUtil.copy(adgAC) as ArrayCollection;
+				AccidentController.getAccAndInPsnListByInsurer(branchId, insurer, onGetInPsnSuccess);
+			}
+			
+			/** 组合客伤事故数据源 */
+			private function onGetInPsnSuccess(e:ResultEvent):void
+			{
+				for each (var obj:Object in AccidentController.accInPsnList)
+				{
+					var dp:Object = new Object();
+					dp.accident = (obj as ArrayCollection).getItemAt(0, 0);
+					dp.fkAccInPsn = (obj as ArrayCollection).getItemAt(1, 0);
+					var accInPsnPays:ArrayCollection = dp.fkAccInPsn.accInPsnPays;
+					var mediFee:Number = 0;
+					var other1:Number = 0;
+					var other2:Number = 0;
+					for each (var accInPsnPay:AccInPsnPay in accInPsnPays)
+					{
+						mediFee += accInPsnPay.mediFee;
+						other1 += accInPsnPay.other1;
+						other2 += accInPsnPay.other2;
+					}
+					dp.fkAccInPsn.mediFee = mediFee;
+					dp.fkAccInPsn.other1 = other1;
+					dp.fkAccInPsn.other2 = other2;
+					dp.fkGuaReport = (obj as ArrayCollection).getItemAt(2, 0);
+					dp.hasGuarInfo = (obj as ArrayCollection).getItemAt(3, 0);
+					dp.hasAccInPsnGua = (obj as ArrayCollection).getItemAt(4, 0);
+					accidentList2DP.addItem(dp);
+				}
+				for each(var aog:Object in adgAC)
+				{
+					for each(var adp:Object in accidentList2DP)
+					{
+						if(aog["accident"].id.id == adp["accident"].id.id)
+							aog["accident"]=adp["accident"];
+					}
+				}
+			}
+			
+			// 可接受事故号: 营运部审核状态,在指定保险公司报过案的事故列表,
+			// 无对应险种的有效保单或已存在对应的其他理赔凭证 可提示后接受
+			public function onCheckGua():Array
+			{
+				var val1:BooleanValidator = new BooleanValidator(true);
+				var val2:BooleanValidator = new BooleanValidator(false);
+				var err:Array = CommonUtil.validateGrid(this, 
+									[
+										{field: "hasGuarInfo", validator: val1, error: resourceManager.getString('gcc_safety', 'accInPsnGua.no.guarinfo')},
+										{field: "hasAccInPsnGua", validator: val2, error: resourceManager.getString('gcc_safety', 'accInPsnGua.has.accInPsnGua')}
+									], null, -1, 0);
+				return err;
+			}
+			
+			
+		]]>
+	</mx:Script>
+</mx:AdvancedDataGrid>

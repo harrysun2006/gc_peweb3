@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<BeanLoader xmlns="org.swizframework.util.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+            xmlns:model="com.gc.common.model.*">
+  <mx:Script>
+    <![CDATA[
+      public static const LOGIN_USER:String = "loginUser";
+      public static const SERVICE_FLEX:String = "flexService";
+      public static const SERVICE_USER:String = "userService";
+      public static const SERVICE_COMMON_BASE:String = "commonBaseService";
+      public static const SERVICE_HR_COMMON:String = "hrCommonService";
+      public static const SERVICE_HR_PERSONAL:String = "hrPersonalService";
+      public static const SERVICE_HR_CHECK:String = "hrCheckService";
+      public static const SERVICE_HR_SALARY:String = "hrSalaryService";
+      public static const SERVICE_SAFETY_COMMON:String = "safetyCommonService";
+      public static const SERVICE_SAFETY_ACCIDENT:String = "safetyAccidentService";
+      public static const SERVICE_SAFETY_CLAIMS:String = "safetyClaimsService";
+      public static const SERVICE_SAFETY_GUARANTEE:String = "safetyGuaranteeService";
+      public static const SERVICE_SAFETY_TRANS:String = "safetyTransService";
+    ]]>
+  </mx:Script>
+  <!-- custom channel set -->
+  <DynamicChannelSet id="gcAmfChannel" contextRoot="{Constants.SERVER_CONTEXT}"
+                     serverPort="{Constants.SERVER_PORT}"/>
+
+  <model:SecurityUser id="loginUser" comment="sylla"/>
+
+  <mx:RemoteObject id="flexService" destination="flexService" channelSet="{gcAmfChannel}"
+                   showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="userService" destination="userService" channelSet="{gcAmfChannel}"
+                   showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="commonBaseService" destination="commonBaseService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="hrCommonService" destination="hrCommonService" channelSet="{gcAmfChannel}"
+                   showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="hrPersonalService" destination="hrPersonalService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="hrCheckService" destination="hrCheckService" channelSet="{gcAmfChannel}"
+                   showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="hrSalaryService" destination="hrSalaryService" channelSet="{gcAmfChannel}"
+                   showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="safetyCommonService" destination="safetyCommonService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="safetyAccidentService" destination="safetyAccidentService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="safetyClaimsService" destination="safetyClaimsService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="safetyGuaranteeService" destination="safetyGuaranteeService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+  <mx:RemoteObject id="safetyTransService" destination="safetyTransService"
+                   channelSet="{gcAmfChannel}" showBusyCursor="true" concurrency="single"/>
+
+</BeanLoader>
+

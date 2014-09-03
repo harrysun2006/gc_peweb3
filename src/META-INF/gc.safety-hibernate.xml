@@ -1,0 +1,532 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC 
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.gc.safety.po" default-lazy="true">
+	<!-- 车辆违法类型 -->
+	<class name="TransType" table="T_SAF_TRANSGRESSTYPE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 车辆违法明细表 -->
+	<class name="TransInfo" table="T_SAF_TRANSGRESS" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="TransInfoPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accNo" column="C_ACCNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="inputDate" column="C_DATE"/>
+		<many-to-one name="inputer" column="C_INPUTER" class="com.gc.common.po.Person"/>
+		<property name="transDate" column="C_FACT_DATE"></property>
+		<many-to-one name="bus" column="C_BUSID" class="com.gc.common.po.Equipment"/>
+		<many-to-one name="driver" column="C_DRIVERID" class="com.gc.common.po.Person"/>
+		<many-to-one name="transType" column="C_TYPEID" class="TransType"/>
+		<property name="upFee" column="C_UPFEE"/>
+		<property name="code" column="C_CODE"/>
+		<property name="point" column="C_POINT"/>
+		<property name="penalty" column="C_PENALTY"/>
+		<property name="doDate" column="C_DO_DATE"/>
+		<property name="confirm" column="C_CONFIRM"/>
+	</class>
+
+	<!-- 事故类别 -->
+	<class name="AccType" table="T_SAF_ACCTYPE" dynamic-insert="true" dynamic-update="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 事故等级表 -->
+	<class name="AccLevel" table="T_SAF_ACCLEVEL" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 事故责任表 -->
+	<class name="AccDuty" table="T_SAF_ACCDUTY" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 撞击对象表 -->
+	<class name="AccObject" table="T_SAF_ACCOBJECT" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 处理机关表 -->
+	<class name="AccProcessor" table="T_SAF_ACCPROCESSOR" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 受损程度表-->
+	<class name="AccExtent" table="T_SAF_ACCEXTENT" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+	
+	<!-- 投保类型表 -->
+	<class name="GuaType" table="T_SAF_GUATYPE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+
+	<!-- 投保公司表 -->
+	<class name="Insurer" table="T_SAF_GUAINSURER" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch" />
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_COMMENT"/>
+	</class>
+	
+	<!-- 投保信息表 -->
+	<class name="Guarantee" table="T_SAF_GUARANTEE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="GuaranteePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accNo" column="C_ACCNO"/>
+		</composite-id>
+		<property name="inputDate" column="C_DATE"/>
+		<many-to-one name="type" column="C_TYPE" class="GuaType" lazy="false"/>
+		<many-to-one name="insurer" column="C_INSURER" class="Insurer"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<many-to-one name="doPsn" column="C_DOPSN" class="com.gc.common.po.Person"/>
+		<property name="insurerPsn" column="C_INSURERPSN"/>
+		<property name="desc" column="C_COMMENT"/>
+		<set name="guarInfos" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCNO" not-null="false"/>
+			</key>
+			<one-to-many class="GuarInfo"/>
+		</set>
+	</class>
+	
+	<!-- 保单明细表-->
+	<class name="GuarInfo" table="T_SAF_GUARANTEEDT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="GuarInfoPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accNo" column="C_ACCNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="bus" column="C_BUSID" class="com.gc.common.po.Equipment" lazy="false"/>
+		<property name="lineNo" column="C_BUSLINE"/>
+		<property name="useId" column="C_BUSAUTHNO"/>
+		<property name="type" column="C_BUSTYPE"/>
+		<property name="sits" column="C_BUSSITS"/>
+		<property name="archNo" column="C_BUSARCHNO"/>
+		<property name="powerNo" column="C_BUSPOWERNO"/>
+		<property name="guaNo" column="C_GUANO"/>
+		<property name="guaDesc" column="C_GUADESP"/>
+		<property name="guaCost" column="C_GUACOST"/>
+		<property name="fee" column="C_FEE"/>
+		<many-to-one name="fkGuarantee" insert="false" update="false" class="Guarantee">
+			<column name="C_BELONG"/>
+			<column name="C_ACCNO"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 事故明细表 -->
+	<class name="Accident" table="T_SAF_ACCIDENT" dynamic-insert="true" dynamic-update="true" lazy="false">
+		<composite-id name="id" class="AccidentPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="id" column="C_ID"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="date" column="C_DATE"/>
+		<many-to-one name="dept" column="C_DEPTID" class="com.gc.common.po.Department"/>
+		<many-to-one name="line" column="C_LINEID" class="com.gc.common.po.Line"/>
+		<many-to-one name="bus" column="C_BUSID" class="com.gc.common.po.Equipment"/>
+		<many-to-one name="driver" column="C_DRIVERID" class="com.gc.common.po.Person"/>
+		<many-to-one name="level" column="C_LEVELID" class="AccLevel"/>
+		<many-to-one name="type" column="C_TYPEID" class="AccType"/>
+		<many-to-one name="duty" column="C_DUTYID" class="AccDuty"/>
+		<many-to-one name="weather" column="C_WEATHERID" class="com.gc.common.po.Weather"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="roadFacility" column="C_ROADFACILITY"/>
+		<property name="desc1" column="C_ROADDESC1"/>
+		<property name="desc2" column="C_ROADDESC2"/>
+		<property name="desc3" column="C_ROADDESC3"/>
+		<property name="reason" column="C_REASON"/>
+		<property name="course" column="C_COURSE"/>
+		<property name="processInfo" column="C_PROCESSINFO"/>
+		<many-to-one name="processor" column="C_PROCESSOR" class="AccProcessor"/>
+		<property name="policeNo" column="C_POLICENO"/>
+		<property name="billNum" column="C_BILLNUM"/>
+		<property name="report" column="C_REPORT"/>
+		<many-to-one name="extent" column="C_EXTENTID" class="AccExtent"/>
+		<property name="destroy" column="C_DESTROY"/>
+		<property name="lost" column="C_LOST"/>
+		<property name="status" column="C_STATUS"/>
+		<many-to-one name="initor" column="C_INIT_PSN" class="com.gc.common.po.Person"/>
+		<property name="initDate" column="C_INIT_DATE"/>
+		<property name="initDesc" column="C_INIT_DESC"/>
+		<many-to-one name="deptor" column="C_DEPT_PSN" class="com.gc.common.po.Person"/>
+		<property name="deptDate" column="C_DEPT_DATE"/>
+		<property name="deptDesc" column="C_DEPT_DESC"/>
+		<many-to-one name="compor" column="C_COMP_PSN" class="com.gc.common.po.Person"/>
+		<property name="compDate" column="C_COMP_DATE"/>
+		<property name="compDesc" column="C_COMP_DESC"/>
+		<property name="archDate" column="C_ARCH_DATE"/>
+		<many-to-one name="archor" column="C_ARCH_PSN" class="com.gc.common.po.Person"/>
+		<set name="accOutPsns" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+			</key>
+			<one-to-many class="AccOutPsn"/>
+		</set>
+		<set name="accInPsns" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+			</key>
+			<one-to-many class="AccInPsn"/>
+		</set>
+		<set name="accOutObjs" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+			</key>
+			<one-to-many class="AccOutObj"/>
+		</set>
+		<set name="guaReports" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+			</key>
+			<one-to-many class="GuaReport"/>
+		</set>
+	</class>
+	
+	<!-- 客伤人员表 -->
+	<class name="AccInPsn" table="T_SAF_ACCINPSN" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccInPsnPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="name" column="C_NAME"/>
+		<property name="sex" column="C_SEX"/>
+		<property name="age" column="C_AGE"/>
+		<property name="regAddress" column="C_REGADDRESS"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="tel" column="C_TEL"/>
+		<many-to-one name="duty" column="C_DUTY" class="AccDuty" lazy="false"/>
+		<property name="desc" column="C_DESC"/>
+		<property name="status" column="C_STATUS"/>
+		<set name="accInPsnPays" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+				<column name="C_NO" not-null="false"/>
+			</key>
+			<one-to-many class="AccInPsnPay"/>
+		</set>
+		<many-to-one name="fkAccident" insert="false" update="false" class="Accident">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 客伤人员赔偿表 -->
+	<class name="AccInPsnPay" table="T_SAF_ACCINPSNPAY" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccInPsnPayPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-property name="no" column="C_NO"/>
+			<key-property name="payDate" column="C_PAYDATE"/>
+		</composite-id>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="payDesc" column="C_PAYDESC"/>
+		<many-to-one name="payPsn" column="C_PAYPSN" class="com.gc.common.po.Person" lazy="false"/>
+		<many-to-one name="fkAccInPsn" insert="false" update="false" class="AccInPsn">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+			<column name="C_NO"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 撞击人员表 -->
+	<class name="AccOutPsn" table="T_SAF_ACCOUTPSN" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccOutPsnPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="name" column="C_NAME"/>
+		<property name="sex" column="C_SEX"/>
+		<property name="age" column="C_AGE"/>
+		<property name="regAddress" column="C_REGADDRESS"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="tel" column="C_TEL"/>
+		<many-to-one name="duty" column="C_DUTY" class="AccDuty" lazy="false"/>
+		<property name="desc" column="C_DESC"/>
+		<property name="status" column="C_STATUS"/>
+		<set name="accOutPsnPays" inverse="true" lazy="false">
+			<key>
+				<column name="C_BELONG" not-null="false"/>
+				<column name="C_ACCID" not-null="false"/>
+				<column name="C_NO" not-null="false"/>
+			</key>
+			<one-to-many class="AccOutPsnPay"/>
+		</set>
+		<many-to-one name="fkAccident" insert="false" update="false" class="Accident">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 撞击人员赔偿表 -->
+	<class name="AccOutPsnPay" table="T_SAF_ACCOUTPSNPAY" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccOutPsnPayPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-property name="no" column="C_NO"/>
+			<key-property name="payDate" column="C_PAYDATE"/>
+		</composite-id>
+		<many-to-one name="payPsn" column="C_PAYPSN" class="com.gc.common.po.Person" lazy="false"/>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="payDesc" column="C_PAYDESC"/>
+		<many-to-one name="fkAccOutPsn" insert="false" update="false" class="AccOutPsn">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+			<column name="C_NO"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 撞击对象表 -->
+	<class name="AccOutObj" table="T_SAF_ACCOUTOBJ" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccOutObjPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="obj" column="C_OBJID" class="AccObject" lazy="false"/>
+		<property name="tel" column="C_TEL"/>
+		<property name="address" column="C_ADDRESS"/>
+		<many-to-one name="duty" column="C_DUTY" class="AccDuty" lazy="false"/>
+		<property name="desc" column="C_DESC"/>
+		<property name="payFee" column="C_PAYFEE"/>
+		<property name="payDate" column="C_PAYDATE"/>
+		<property name="payDesc" column="C_PAYDESC"/>
+		<many-to-one name="payPsn" column="C_PAYPSN" class="com.gc.common.po.Person" lazy="false"/>
+		<many-to-one name="fkAccident" insert="false" update="false" class="Accident">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 报案表 -->
+	<class name="GuaReport" table="T_SAF_ACCGUAREPORT" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="GuaReportPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="accId" column="C_ACCID"/>
+			<key-many-to-one name="insurer" column="C_INSURER" class="Insurer" lazy="false"/>
+		</composite-id>
+		<property name="reportNo" column="C_REPORTNO"/>
+		<property name="closeNo" column="C_CLOSENO"/>
+	</class>
+	
+	<!-- 三责理赔赔付表 -->
+	<class name="AccOutGua" table="T_SAF_ACCOUTGUA" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccOutGuaPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="refNo" column="C_REFNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="accId" column="C_ACCID"/>
+		<many-to-one name="accident" class="Accident" update="false" insert="false">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+		</many-to-one>
+		<many-to-one name="insurer" column="C_INSURER" class="Insurer"/>
+		<property name="appDate" column="C_APPDATE"/>
+		<property name="objSum" column="C_OBJSUM"/>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="appDesc" column="C_APPDESC"/>
+		<many-to-one name="appPsn" column="C_APPPSN" class="com.gc.common.po.Person"/>
+		<many-to-one name="fkGuaReport" class="GuaReport" insert="false" update="false">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+			<column name="C_INSURER"/>
+		</many-to-one>
+	</class>
+	
+	<class name="AccOutGuaPay" table="T_SAF_ACCOUTGUAPAY" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccOutGuaPayPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="refNo" column="C_REFNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="payDate" column="C_PAYDATE"/>
+		<property name="objSum" column="C_OBJSUM"/>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="payDesc" column="C_PAYDESC"/>
+		<many-to-one name="payPsn" column="C_PAYPSN" class="com.gc.common.po.Person"/>
+		<property name="appRefNo" column="C_APPREFNO"/>
+		<property name="appNo" column="C_APPNO"/>
+		<many-to-one name="fkAccOutGua" class="AccOutGua" insert="false" update="false">
+			<column name="C_BELONG"/>
+			<column name="C_APPREFNO"/>
+			<column name="C_APPNO"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 客伤理赔赔付表 -->
+	<class name="AccInPsnGua" table="T_SAF_ACCINPSNGUA" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccInPsnGuaPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="refNo" column="C_REFNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="accId" column="C_ACCID"/>
+		<many-to-one name="accident" class="Accident" insert="false" update="false">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+		</many-to-one>
+		<many-to-one name="insurer" column="C_INSURER" class="Insurer"/>
+		<property name="appDate" column="C_APPDATE"/>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="appDesc" column="C_APPDESC"/>
+		<many-to-one name="appPsn" column="C_APPPSN" class="com.gc.common.po.Person"/>
+		<many-to-one name="fkGuaReport" class="GuaReport" insert="false" update="false">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+			<column name="C_INSURER"/>
+		</many-to-one>
+		<property name="cstmNo" column="C_CSTMNO"/>
+		<many-to-one name="fkAccInPsn" class="AccInPsn" insert="false" update="false">
+			<column name="C_BELONG"/>
+			<column name="C_ACCID"/>
+			<column name="C_CSTMNO"/>
+		</many-to-one>
+	</class>
+	
+	<class name="AccInPsnGuaPay" table="T_SAF_ACCINPSNGUAPAY" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="AccInPsnGuaPayPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="refNo" column="C_REFNO"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="payDate" column="C_PAYDATE"/>
+		<property name="mediFee" column="C_MEDIFEE"/>
+		<property name="other1" column="C_OTHER1"/>
+		<property name="other2" column="C_OTHER2"/>
+		<property name="payDesc" column="C_PAYDESC"/>
+		<many-to-one name="payPsn" column="C_PAYPSN" class="com.gc.common.po.Person"/>
+		<property name="appRefNo" column="C_APPREFNO"/>
+		<property name="appNo" column="C_APPNO"/>
+		<many-to-one name="fkAccInPsnGua" class="AccInPsnGua" update="false" insert="false">
+			<column name="C_BELONG"/>
+			<column name="C_APPREFNO"/>
+			<column name="C_APPNO"/>
+		</many-to-one>
+	</class>
+	
+	<!-- 里程表 -->
+	<class name="MeterReading" table="T_METERREADING" dynamic-insert="false" dynamic-update="false">
+		<composite-id name="id" class="MeterReadingPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-many-to-one name="equipment" column="C_METERID" class="com.gc.common.po.Equipment"/>
+			<key-property name="type" column="C_TYPE"/>
+			<key-property name="readTime" column="C_READ_TIME"/>
+		</composite-id>
+		<property name="reading" column="C_READING"/>
+		<property name="oilrate" column="C_OILRATE"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+	<!-- 结账表 -->
+	<class name="SafetyClose" table="T_SAF_CLOSECONTROL" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="SafetyClosePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="date" column="C_DATE"/>
+		</composite-id>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+	
+	<!-- 取安全凭证号 -->
+	<sql-query name="SAFETY_NO">SELECT FUN_GET_NEXT_SAFNO(:branchId, :type, :accHead) FROM DUAL</sql-query>
+	<!-- 读取服务器时间-->
+	<sql-query name="NOW">SELECT SYSDATE FROM DUAL</sql-query>
+	<!-- 安全结账 -->
+	<sql-query name="SAFETY_CLOSE" callable="true">
+		{ ? = call Fun_Safety_Close(:branchId, :date, :comment, :type, :user) }
+	</sql-query>
+	<!-- 安全树中已报废的车的最后一次调度信息 -->
+	<sql-query name="EQUONLINE_LAST">
+	<return class="com.gc.common.po.EquOnline"/>
+	select eol.*
+	  from t_online eol,
+	       (select eo.c_onlineequid eid, max(eo.c_ondate) odate
+	          from t_online eo
+	         where eo.c_belong = :branchId
+	           and eo.c_onlineequid in
+	               (select e.c_equid
+	                  from t_equipment e
+	                 where e.c_equdowndate &lt;= :now
+	                   and e.c_equdowndate &gt;= :thisYear)
+	         group by eo.c_onlineequid) ei
+	 where eol.c_belong = :branchId
+	   and ei.eid = eol.c_onlineequid
+	   and ei.odate = eol.c_ondate
+   </sql-query>
+   <!--sql-query name="EQUONLINE_LAST_ALL">
+   <return class="com.gc.common.po.EquOnline"/>
+	select eol.*
+	  from t_online eol,
+	       (select eo.c_onlineequid eid, max(eo.c_ondate) odate
+	          from t_online eo
+	         where eo.c_belong = :branchId
+	         group by eo.c_onlineequid) ei
+	 where eol.c_belong = :branchId
+	   and ei.eid = eol.c_onlineequid
+	   and ei.odate = eol.c_ondate
+   </sql-query-->
+</hibernate-mapping>

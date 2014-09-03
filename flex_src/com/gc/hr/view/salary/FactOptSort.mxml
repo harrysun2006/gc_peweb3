@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" autoLayout="true" paddingLeft="6"
+         paddingTop="6" paddingRight="6" paddingBottom="6" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" label="排序设置">
+  <mx:Label text="请选择排序的链接项目(单击箭头改变排序规则): "/>
+  <mx:HBox width="100%">
+    <mx:List id="l1" width="50%" dataProvider="{list1}" allowDragSelection="true"
+             allowMultipleSelection="true" dragEnabled="true" dragMoveEnabled="true"
+             dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList1(event)"/>
+    <mx:List id="l2" width="50%" dataProvider="{list2}" allowDragSelection="true"
+             allowMultipleSelection="true" dragEnabled="true" dragMoveEnabled="true"
+             dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList2(event)"
+             iconField="icon$" click="onClickList2(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.listClasses.ListItemRenderer;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.CommonEvent;
+      import com.gc.common.model.Person;
+
+      [Bindable]
+      private var list1:ArrayCollection;
+      [Bindable]
+      private var list2:ArrayCollection;
+
+      [Embed(source="assets/icons/16x16/up2.png")]
+      public static const asc:Class;
+      [Embed(source="assets/icons/16x16/down2.png")]
+      public static const desc:Class;
+
+      private function onPreinitialize():void
+      {
+        list1 = ObjectUtil.copy(Person.LINK_ITEMS) as ArrayCollection;
+        list2 = new ArrayCollection();
+        for each (var obj:Object in list1)
+        {
+          obj.icon$ = asc;
+          obj.s = 1;
+        }
+        addEventListener(CommonEvent.CLOSED, closed);
+      }
+
+      private function onCreationComplete():void
+      {
+        l2.height = l1.height;
+        l2.rowHeight = l1.rowHeight;
+      }
+
+      private function onDbClickList1(e:Event):void
+      {
+        if (l1.selectedIndex >= 0)
+        {
+          list2.addItem(l1.selectedItem);
+          list1.removeItemAt(l1.selectedIndex);
+        }
+      }
+
+      private function onDbClickList2(e:Event):void
+      {
+        if (l2.selectedIndex >= 0)
+        {
+          list1.addItem(l2.selectedItem);
+          list2.removeItemAt(l2.selectedIndex);
+        }
+      }
+
+      private function onClickList2(e:Event):void
+      {
+        if (!(e.target is ListItemRenderer))
+          return;
+        var lir:ListItemRenderer = e.target as ListItemRenderer;
+        var obj:Object = lir.data;
+        obj.s = (obj.hasOwnProperty("s") && obj.s == 1) ? 2 : 1;
+        obj.icon$ = (obj.s == 1) ? asc : desc;
+      }
+
+      private function closed(e:CommonEvent):void
+      {
+        var obj:Object, options:Object = e.data;
+        options.ss = [];
+        for each (obj in list2)
+          options.ss.push({id:0, no:obj.no, name:obj.label, t:"L", g:0, s:obj.s});
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

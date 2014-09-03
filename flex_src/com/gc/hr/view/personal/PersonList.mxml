@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*" width="100%"
+           height="100%" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+           creationComplete="onCreationComplete()" resize="onResize(event)">
+  <mx:AdvancedDataGrid id="adgPersonList" width="100%" height="100%" lockedColumnCount="3"
+                       horizontalScrollPolicy="auto" dataProvider="{personList}"
+                       labelFunction="{CommonUtil.gridLabelFunction}"
+                       keyDown="keyDownHandler(event)">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataField="workerId"/>
+      <mx:AdvancedDataGridColumn dataField="name"/>
+      <mx:AdvancedDataGridColumn dataField="pid"/>
+      <mx:AdvancedDataGridColumn dataField="sex"/>
+      <mx:AdvancedDataGridColumn dataField="people"/>
+      <mx:AdvancedDataGridColumn dataField="nativePlace"/>
+      <mx:AdvancedDataGridColumn dataField="regAddress"/>
+      <mx:AdvancedDataGridColumn dataField="birthday"/>
+      <mx:AdvancedDataGridColumn dataField="marryStatus"/>
+      <mx:AdvancedDataGridColumn dataField="paySocialInsInit"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="paySocialInsAdj"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="paySocialInsSal"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="paySocialIns$"/>
+      <mx:AdvancedDataGridColumn dataField="annuities"/>
+      <mx:AdvancedDataGridColumn dataField="accumulation"/>
+      <mx:AdvancedDataGridColumn dataField="chkGroup" dataTipField="chkGroup.name"/>
+      <mx:AdvancedDataGridColumn dataField="onDate"/>
+      <mx:AdvancedDataGridColumn dataField="downDate" dataTipField="downDate$"/>
+      <mx:AdvancedDataGridColumn dataField="downReason"/>
+      <mx:AdvancedDataGridColumn dataField="upgradeDate"/>
+      <mx:AdvancedDataGridColumn dataField="upgradeReason"/>
+      <mx:AdvancedDataGridColumn dataField="regType"/>
+      <mx:AdvancedDataGridColumn dataField="type"/>
+      <mx:AdvancedDataGridColumn dataField="salaryType"/>
+      <mx:AdvancedDataGridColumn dataField="regBelong"/>
+      <mx:AdvancedDataGridColumn dataField="party"/>
+      <mx:AdvancedDataGridColumn dataField="grade"/>
+      <mx:AdvancedDataGridColumn dataField="schooling"/>
+      <mx:AdvancedDataGridColumn dataField="allotDate"/>
+      <mx:AdvancedDataGridColumn dataField="allotReason"/>
+      <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="office"/>
+      <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+      <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+      <mx:AdvancedDataGridColumn dataField="position" dataTipField="fkPosition.name"/>
+      <mx:AdvancedDataGridColumn dataField="workType"/>
+      <mx:AdvancedDataGridColumn dataField="fillTableDate"/>
+      <mx:AdvancedDataGridColumn dataField="commend"/>
+      <mx:AdvancedDataGridColumn dataField="workDate"/>
+      <mx:AdvancedDataGridColumn dataField="retireDate"/>
+      <mx:AdvancedDataGridColumn dataField="serviceLength"/>
+      <mx:AdvancedDataGridColumn dataField="inDate"/>
+      <mx:AdvancedDataGridColumn dataField="outDate"/>
+      <mx:AdvancedDataGridColumn dataField="workLength"/>
+      <mx:AdvancedDataGridColumn dataField="groupNo"/>
+      <mx:AdvancedDataGridColumn dataField="contractNo"/>
+      <mx:AdvancedDataGridColumn dataField="contr1From"/>
+      <mx:AdvancedDataGridColumn dataField="contr1End" dataTipField="contr1End$"/>
+      <mx:AdvancedDataGridColumn dataField="contractReason"/>
+      <mx:AdvancedDataGridColumn dataField="contr2From"/>
+      <mx:AdvancedDataGridColumn dataField="contr2End"/>
+      <mx:AdvancedDataGridColumn dataField="level" formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="techLevel"/>
+      <mx:AdvancedDataGridColumn dataField="responsibility"/>
+      <mx:AdvancedDataGridColumn dataField="cert1No"/>
+      <mx:AdvancedDataGridColumn dataField="cert1NoDate"/>
+      <mx:AdvancedDataGridColumn dataField="cert2No"/>
+      <mx:AdvancedDataGridColumn dataField="cert2NoHex"/>
+      <mx:AdvancedDataGridColumn dataField="serviceNo"/>
+      <mx:AdvancedDataGridColumn dataField="serviceNoDate"/>
+      <mx:AdvancedDataGridColumn dataField="frontWorkResume"/>
+      <mx:AdvancedDataGridColumn dataField="frontTrainingResume"/>
+      <mx:AdvancedDataGridColumn dataField="specification"/>
+      <mx:AdvancedDataGridColumn dataField="degree"/>
+      <mx:AdvancedDataGridColumn dataField="graduate"/>
+      <mx:AdvancedDataGridColumn dataField="skill"/>
+      <mx:AdvancedDataGridColumn dataField="lanCom"/>
+      <mx:AdvancedDataGridColumn dataField="national"/>
+      <mx:AdvancedDataGridColumn dataField="state"/>
+      <mx:AdvancedDataGridColumn dataField="city"/>
+      <mx:AdvancedDataGridColumn dataField="address"/>
+      <mx:AdvancedDataGridColumn dataField="zip"/>
+      <mx:AdvancedDataGridColumn dataField="telephone"/>
+      <mx:AdvancedDataGridColumn dataField="email"/>
+      <mx:AdvancedDataGridColumn dataField="officeTel"/>
+      <mx:AdvancedDataGridColumn dataField="officeExt"/>
+      <mx:AdvancedDataGridColumn dataField="officeFax"/>
+      <mx:AdvancedDataGridColumn dataField="comment"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.core.UIComponent;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.Base64Encoder;
+      import mx.utils.ObjectProxy;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+
+      [Bindable]
+      private var personList:Array;
+      private var p1:Person, p2:Person;
+      private var item:Object;
+      private var ancestors:Array;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgPersonList, "gcc", "person", CommonUtil.complexColumnCompare);
+        addEventListener(CommonEvent.CHANGE_VIEW, onChangeView);
+        addEventListener(CommonEvent.EXPORT, export);
+      }
+
+      public function listPersons(item:Object, ancestors:Array, orderColumns:Array):void
+      {
+        if (item == null)
+          return;
+        this.item=item;
+        this.ancestors=ancestors;
+        personList=item["children"];
+      }
+
+      private function onResize(event:Event):void
+      {
+        adgPersonList.width=this.width;
+      }
+
+      private function onChangeView(event:Event):void
+      {
+        dispatchEvent(new CommonEvent(CommonEvent.UPDATE_MENU, {id: "export", command: export}));
+      }
+
+      private function export(event:Event):void
+      {
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        var qo:Object=Person.getSearch(Person.qo, ancestors);
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "exportPersonList", [UserController.limit, qo]);
+        fr.download(ur, "persons.xls");
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

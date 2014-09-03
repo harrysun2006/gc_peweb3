@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%">
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         editable="false" selectionMode="singleRow" doubleClickEnabled="true"
+                         labelFunction="{CommonUtil.gridLabelFunction}" doubleClick="view(event)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="id" visible="false"/>
+        <mx:AdvancedDataGridColumn dataField="name" width="160"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name" width="160"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="6" paddingBottom="6">
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salTemplate.depart')}:" width="50%">
+        <mx:ComboBox id="cbDepart" width="200" itemRenderer="mx.controls.Label"
+                     change="onDepartChange(event)"/>
+      </mx:FormItem>
+      <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="refresh(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'add')}" click="add(event)"
+                 enabled="{UserController.hrSalWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'edit')}" click="edit(event)"
+                 enabled="{UserController.hrSalWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'delete')}" click="_delete(event)"
+                 enabled="{UserController.hrSalWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+      <mx:FormItem width="50%"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.Label;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalTemplate;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private var list:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(Events.ADD_SALTEMPLATE, onAddSalTemplate);
+        addEventListener(Events.DEL_SALTEMPLATE, onDelSalTemplate);
+        addEventListener(Events.EDIT_SALTEMPLATE, onEditSalTemplate);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", "salTemplate");
+        var departs:ArrayCollection=ObjectUtil.copy(BaseController.departmentList) as ArrayCollection;
+        departs.addItemAt(new Department(0, UserController.branch, resourceManager.getString("gcc", "depart.all")), 0);
+        cbDepart.dataProvider=departs;
+        cbDepart.selectedIndex=CommonUtil.indexOfKey(departs, UserController.hrDepart);
+        cbDepart.enabled=UserController.hrHead;
+        refresh();
+      }
+
+      private function onDepartChange(e:Event=null):void
+      {
+        refresh();
+      }
+
+      private function refresh(e:Event=null):void
+      {
+        var did:int=cbDepart.selectedItem ? cbDepart.selectedItem.id : 0;
+        SalaryController.getTemplates(UserController.branchId, did, function(e1:ResultEvent):void
+          {
+            list=e1.result as ArrayCollection;
+            adg.dataProvider=list;
+          });
+      }
+
+      private function add(e:Event):void
+      {
+        CommonUtil.popupWindow(TemplateAE, "", this, {h:new SalTemplate(), o:Constants.OP_ADD});
+      }
+
+      private function edit(e:Event):void
+      {
+        var po:Object=adg.selectedItem;
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "edit.not.null"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          CommonUtil.popupWindow(TemplateAE, "", this, {h:po, o:Constants.OP_EDIT});
+        }
+      }
+
+      private function _delete(e:Event):void
+      {
+        var po:SalTemplate=adg.selectedItem as SalTemplate;
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "delete.not.null"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "salTemplate.del.query", [po.departName, po.name]), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, function(e1:CloseEvent):void
+            {
+              if (e1.detail == Alert.YES)
+              {
+                SalaryController.deleteTemplate(po, function(e1:ResultEvent):void
+                  {
+                    Alert.show(resourceManager.getString("gcc_hr", "salTemplate.del1.success", [po.departName, po.name]), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+                    dispatchEvent(new Events(Events.DEL_SALTEMPLATE, po));
+                  });
+              }
+            });
+        }
+      }
+
+      private function view(e:Event):void
+      {
+        var po:Object=adg.selectedItem;
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "view.not.null"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          /*
+             SalaryController.getTemplatePersonsAndItems(po, function(e1:ResultEvent):void
+             {
+             var persons:Object=e1.result.persons;
+             var items_old:Object=e1.result.items;
+             var head_old:Object=e1.result.head;
+             var _data:Object=e1.result.data;
+             var items:Object=ObjectUtil.copy(items_old);
+             var head:Object=ObjectUtil.copy(head_old);
+             CommonUtil.popupWindow(TemplateVoucher, "", null,
+             {ps:persons, "is":items, h:head, d:_data, iso:items_old, ho:head_old, o:Constants.OP_VIEW});
+             });
+           */
+          CommonUtil.popupWindow(TemplateAE, "", this, {h:po, o:Constants.OP_VIEW});
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function onAddSalTemplate(e:Events):void
+      {
+        list.addItem(e.data);
+      }
+
+      private function onDelSalTemplate(e:Events):void
+      {
+        var k:int=CommonUtil.indexOfKey(list, e.data.id, "id");
+        if (k >= 0)
+          list.removeItemAt(k);
+      }
+
+      private function onEditSalTemplate(e:Events):void
+      {
+        var st:SalTemplate=e.data as SalTemplate;
+        for each (var obj:SalTemplate in list)
+        {
+          if (obj.id == st.id)
+          {
+            CommonUtil.copyProperties(st, obj);
+            break;
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

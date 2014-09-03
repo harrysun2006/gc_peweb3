@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="320" height="300"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox width="100%" height="100%" horizontalGap="30" paddingTop="10">
+    <mx:Form id="form" width="100%" horizontalGap="5">
+      <mx:FormItem label="事故车牌号">
+        <mx:TextInput id="tiAuthNo" width="160"/>
+      </mx:FormItem>
+      <mx:FormItem label="起始日期">
+        <mx:DateField id="dfDateFrom" formatString="{Constants.DATE_FORMAT}"
+                      yearNavigationEnabled="true" width="160"/>
+      </mx:FormItem>
+      <mx:FormItem label="终止日期">
+        <mx:DateField id="dfDateTo" formatString="{Constants.DATE_FORMAT}"
+                      yearNavigationEnabled="true" width="160"/>
+      </mx:FormItem>
+    </mx:Form>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="30" paddingBottom="20">
+      <mx:Button id="btOk" label="确定" click="ok(event)"/>
+      <mx:Label width="30"/>
+      <mx:Button id="btCancel" label="取消" click="cancel(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.AccInPsnGuaPay;
+      import com.gc.safety.model.AccOutGuaPay;
+      import com.gc.safety.model.AccInPsnGua;
+      import com.gc.safety.model.AccOutGua;
+      import com.gc.safety.model.AccOutPsnPay;
+      import com.gc.safety.model.AccInPsnPay;
+      import com.gc.safety.model.Accident;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.controller.TransController;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.util.CommonUtil;
+      import mx.managers.PopUpManager;
+
+      private function onPreinitialize():void
+      {
+
+      }
+
+      private function onCreationComplete():void
+      {
+        tiAuthNo.setFocus();
+      }
+
+      private function ok(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,[{field: "tiAuthNo",error: "事故车牌号不能为空"}]))
+          return;
+        var obj:TitleWindow = this;
+        AccidentController.getAccsByUIdOrWId(UserController.branchId, tiAuthNo.text, null, dfDateFrom.selectedDate, dfDateTo.selectedDate,function(evt:ResultEvent):void 
+          {
+            var list:Object = evt.result as ArrayCollection;
+            var accs:ArrayCollection = list[0] as ArrayCollection;
+            if(accs.length <= 0){
+              Alert.show("对不起，没有你要查询的车的事故信息",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+            var aogs:ArrayCollection = list[1] as ArrayCollection;
+            var aipgs:ArrayCollection = list[2] as ArrayCollection;
+            var aogps:ArrayCollection = list[3] as ArrayCollection;
+            var aipgps:ArrayCollection = list[4] as ArrayCollection;
+            for each(var acc:Accident in accs){
+              var outPayFee:Number = 0;
+              var outGuaFee:Number = 0;
+              var outGuaPayFee:Number = 0;
+              var inPsnPayFee:Number = 0;
+              var inPsnGuaFee:Number = 0;
+              var inPsnGuaPayFee:Number = 0;
+              //客伤赔偿
+              for each (var accInPsn:Object in acc.accInPsns)
+              {
+                for each (var accInPsnPay:AccInPsnPay in accInPsn.accInPsnPays)
+                {
+                  if (accInPsnPay.fkAccInPsn.id.accId == accInPsn.id.accId &&
+                    accInPsnPay.fkAccInPsn.id.no == accInPsn.id.no &&
+                    accInPsnPay.fkAccInPsn.id.branch.id == accInPsn.id.branch.id)
+                    inPsnPayFee += accInPsnPay.mediFee + accInPsnPay.other1 + accInPsnPay.other2;
+                }
+              }
+              //三责赔偿
+              for each (var accOutPsn:Object in acc.accOutPsns)
+              {
+                for each (var accOutPsnPay:AccOutPsnPay in accOutPsn.accOutPsnPays)
+                {
+                  if (accOutPsnPay.fkAccOutPsn.id.accId == accOutPsn.id.accId &&
+                    accOutPsnPay.fkAccOutPsn.id.no == accOutPsn.id.no &&
+                    accOutPsnPay.fkAccOutPsn.id.branch.id == accOutPsn.id.branch.id)
+                    outPayFee += accOutPsnPay.mediFee + accOutPsnPay.other1 + accOutPsnPay.other2;
+                }
+              }
+              for each (var accOutObj:Object in acc.accOutObjs)
+              {
+                outPayFee += isNaN(accOutObj.payFee) ? 0 : accOutObj.payFee;
+              }
+              //三责理赔
+              for each (var accOutGua:AccOutGua in aogs){
+                if (accOutGua.accident.id.id == acc.id.id)
+                  outGuaFee += accOutGua.objSum + accOutGua.mediFee + 
+                    accOutGua.other1 + accOutGua.other2;
+              }
+              //客伤理赔
+              for each (var accInPsnGua:AccInPsnGua in aipgs) {
+                if(accInPsnGua.accident.id.id == acc.id.id)
+                  inPsnGuaFee += accInPsnGua.mediFee + accInPsnGua.other1 + accInPsnGua.other2;
+              }
+              //三责赔付
+              for each (var accOutGuaPay:AccOutGuaPay in aogps)
+              {
+                if (accOutGuaPay.fkAccOutGua.accId == acc.id.id)
+                  outGuaPayFee += accOutGuaPay.objSum + accOutGuaPay.mediFee + accOutGuaPay.other1 + accOutGuaPay.other2;
+              }
+              //客伤赔付
+              for each (var accInPsnGuaPay:AccInPsnGuaPay in aipgps)
+              {
+                if (accInPsnGuaPay.fkAccInPsnGua.accident.id.id == acc.id.id)
+                  inPsnGuaPayFee += accInPsnGuaPay.mediFee + accInPsnGuaPay.other1 + accInPsnGuaPay.other2;
+              }
+              acc.outPayFee = outPayFee;
+              acc.outGuaFee = outGuaFee;
+              acc.outGuaPayFee = outGuaPayFee;
+              acc.inPsnPayFee = inPsnPayFee;
+              acc.inPsnGuaFee = inPsnGuaFee;
+              acc.inPsnGuaPayFee = inPsnGuaPayFee;
+              acc.statusStr = acc.status == 0 ? "登记" : acc.status == 1 ? "处理" : acc.status == 2 ? "审核" : "存档";
+              acc.reportStr = acc.report == 0 ? "不上报" : "上报";
+              acc.deptDate = (acc.deptor == null) ? null : acc.deptDate;
+              acc.compDate = (acc.compor == null) ? null : acc.compDate;
+              acc.archDate = (acc.archor == null) ? null : acc.archDate;
+            }
+            owner.dispatchEvent(new Events(Events.ADD,accs,[tiAuthNo.text]));
+            PopUpManager.removePopUp(obj);
+          });
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

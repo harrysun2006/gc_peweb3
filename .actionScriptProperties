@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<actionScriptProperties mainApplicationPath="index.mxml" version="3">
+  <compiler additionalCompilerArguments="-locale zh_CN -locale+=en_US -default-size 800 600 -show-unused-type-selector-warnings=false" copyDependentFiles="true" enableModuleDebug="true" generateAccessible="false" htmlExpressInstall="true" htmlGenerate="false" htmlHistoryManagement="true" htmlPlayerVersion="10.0.0" htmlPlayerVersionCheck="true" outputFolderPath="www" rootURL="http://localhost/" sourceFolderPath="flex_src" strict="true" useApolloConfig="false" verifyDigests="true" warn="true">
+    <compilerSourcePath>
+      <compilerSourcePathEntry kind="1" linkType="1" path="locale/{locale}"/>
+    </compilerSourcePath>
+    <libraryPath defaultLinkType="3">
+      <libraryPathEntry kind="4" path=""/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/AlivePDF.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/flexlib.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/map_flex_1_20.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/skins_flex.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/swiz-0.6.4-flex3.swc" sourcepath="flex_lib_src/swiz-0.6.4-flex3" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/eval-1.0.0.swc" useDefaultLinkType="false"/>
+      <libraryPathEntry kind="3" linkType="1" path="flex_lib/fxl-1.0.0.swc" useDefaultLinkType="false"/>
+    </libraryPath>
+    <sourceAttachmentPath>
+      <sourceAttachmentPathEntry kind="3" linkType="1" path="flex_lib/swiz-0.6.4-flex3.swc" sourcepath="flex_lib_src/swiz-0.6.4-flex3" useDefaultLinkType="false"/>
+    </sourceAttachmentPath>
+  </compiler>
+  <applications>
+    <application path="test.mxml"/>
+    <application path="index.mxml"/>
+  </applications>
+  <modules>
+    <module application="flex_src/index.mxml" destPath="modules.swf" optimize="true" sourcePath="flex_src/modules.mxml"/>
+    <module application="flex_src/index.mxml" destPath="login.swf" optimize="true" sourcePath="flex_src/login.mxml"/>
+    <module application="flex_src/index.mxml" destPath="hr.swf" optimize="true" sourcePath="flex_src/hr.mxml"/>
+    <module application="flex_src/index.mxml" destPath="safety.swf" optimize="true" sourcePath="flex_src/safety.mxml"/>
+  </modules>
+  <buildCSSFiles>
+    <buildCSSFileEntry destPath="www" sourcePath="flex_src/skins/flex.css"/>
+    <buildCSSFileEntry destPath="www" sourcePath="flex_src/skins/gcc.css"/>
+  </buildCSSFiles>
+</actionScriptProperties>

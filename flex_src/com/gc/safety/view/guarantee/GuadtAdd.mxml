@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         xmlns:guarantee="com.gc.safety.view.guarantee.*" horizontalAlign="center"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+         keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox width="90%" id="vbox">
+    <mx:Label text="{resourceManager.getString('gcc_safety','gua.title.register')}" width="100%"
+              textAlign="center" fontSize="16" fontWeight="bold"/>
+    <guarantee:GuaView id="guaView" width="100%"/>
+    <mx:Label text="{resourceManager.getString('gcc_safety','gua.detail')}" width="100%"
+              textAlign="left"/>
+    <mx:AdvancedDataGrid id="adgGuarInfo" width="100%"
+                         labelFunction="{CommonUtil.gridLabelFunction}" rowCount="12"
+                         dataProvider="{guarInfoList}" editable="true" sortableColumns="false"
+                         keyDown="keyDownHandler(event)" itemEditEnd="onItemEditEnd(event)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" editable="false"
+                                   labelFunction="setNo" width="64"/>
+        <mx:AdvancedDataGridColumn dataField="guaNo" width="140"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"
+                                   itemEditor="{busAutoComboBox}" editorDataField="selectedItem"
+                                   width="140"/>
+        <mx:AdvancedDataGridColumn dataField="lineNo" itemEditor="{lineNoAutoComboBox}"
+                                   editorDataField="selectedItem"/>
+        <mx:AdvancedDataGridColumn dataField="useId"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="sits" itemEditor="{intInput}"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="archNo"/>
+        <mx:AdvancedDataGridColumn dataField="powerNo" itemEditor="{powerNoAutoComboBox}"
+                                   editorDataField="selectedItem" width="140"/>
+        <mx:AdvancedDataGridColumn dataField="guaCost" itemEditor="{numberInput}"/>
+        <mx:AdvancedDataGridColumn dataField="fee" itemEditor="{numberInput}"/>
+        <mx:AdvancedDataGridColumn dataField="guaDesc" itemEditor="{textArea}"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox id="buttonBox" width="100%" horizontalAlign="center">
+      <mx:Button id="add" label="+" click="addItem(event)" width="55"/>
+      <mx:Button id="del" label="-" click="delItem(event)" width="55"/>
+      <mx:Button id="remove" label="{resourceManager.getString('gcc', 'clear')}"
+                 click="removeAll(event)" width="55"/>
+    </mx:HBox>
+    <mx:HBox id="hbDown" width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10">
+      <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="save(event)"
+                 width="70" height="35"/>
+      <mx:Label width="40"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)" width="70" height="35"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.ComboBox;
+      import com.gc.controls.PopUpTextArea;
+      import mx.core.IFlexDisplayObject;
+      import mx.rpc.events.FaultEvent;
+      import mx.events.CloseEvent;
+      import mx.utils.ObjectUtil;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.model.EquOnline;
+      import com.gc.common.model.Line;
+      import com.gc.common.model.Equipment;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import com.gc.safety.model.Guarantee;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.collections.ArrayCollection;
+      import com.gc.CommonEvent;
+      import mx.controls.TextInput;
+      import com.gc.controls.AutoCompleteComboBox;
+      import mx.events.FlexEvent;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.model.GuarInfo;
+
+      private var branchId:int;
+      private var guarInfo:GuarInfo;
+      [Bindable]
+      private var guar:Guarantee;
+      [Bindable]
+      private var guarInfoList:ArrayCollection;
+      [Bindable]
+      private var busAutoComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var lineNoAutoComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var powerNoAutoComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var intInput:AdvancedClassFactory;
+      [Bindable]
+      private var numberInput:AdvancedClassFactory;
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+      private var equOnlines:ArrayCollection;
+      private var busList:ArrayCollection;
+      private var lines:ArrayCollection;
+      private var lineNoList:ArrayCollection;
+      private var powerNoList:ArrayCollection;
+      private var oldData:Object;
+      private var fields:Array;
+      private var oldGuarInfos:ArrayCollection;
+      private var powerNoList2:ArrayCollection = new ArrayCollection();
+
+      private function onPreinitialize():void
+      {
+        fields = ["guaNo","bus","lineNo","useId","type","sits","archNo","powerNo","guaCost","fee","guaDesc"];
+        addEventListener(CommonEvent.CREATED,function init(event:CommonEvent):void {
+            guarInfoList = new ArrayCollection();
+            branchId = UserController.branchId;
+            CommonController.getGuaranteeNo(branchId,new Date());
+            busAutoComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            busAutoComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onBusCreateComplete}];
+            lineNoAutoComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            lineNoAutoComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onLineNoCreateComplete}];
+            powerNoAutoComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            powerNoAutoComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onPowerNoCreateComplete}];
+            intInput = new AdvancedClassFactory(TextInput);
+            intInput.properties={restrict: "0-9"};
+            numberInput = new AdvancedClassFactory(TextInput);
+            numberInput.properties={restrict: "0-9."};
+            textArea = new AdvancedClassFactory(PopUpTextArea);
+            var popup:IFlexDisplayObject = CommonUtil.popupWindow(GuaAddWin,resourceManager.getString('gcc_safety','gua.title.register'));
+            new CommonEvent(CommonEvent.ADD).stopImmediatePropagation();
+            popup.addEventListener(CommonEvent.ADD,addObject);
+//		        popup.addEventListener(Events.ADD_PO,addGuaAndInfo);
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGuarInfo, "gcc_safety", "guarInfo", function(obj:Object):void{
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+              column.editable=(fields.indexOf(column.dataField) >= 0);
+            }
+          });
+        adgGuarInfo.validateNow();
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = guarInfoList.getItemIndex(item) + 1;
+//			guarInfo.id.no = i;
+        return i;
+      }
+
+      private function onLineNoCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(lineNoList.toArray(), event.currentTarget.data["lineNo"], "label");
+        if (event.currentTarget.selectedIndex==-1)
+          event.currentTarget.dataProvider=lineNoList;
+      }
+
+      private function onPowerNoCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(powerNoList.toArray(), event.currentTarget.data["powerNo"], "label");
+        if (event.currentTarget.selectedIndex==-1)
+          event.currentTarget.dataProvider=powerNoList;
+      }
+
+      private function getBuss():void
+      {
+        if (equOnlines == null)
+        {
+          BaseController.getEquOnlinesByBD(branchId,guar.onDate,guar.downDate,successEquOnlines);
+        }
+        else
+        {
+          if (busList == null)
+          {
+            busList = new ArrayCollection();
+          }
+          if (powerNoList == null)
+          {
+            powerNoList = new ArrayCollection();
+          }
+          for (var i:int = 0; i < equOnlines.length; i++)
+          {
+            var equOnline:EquOnline = equOnlines.getItemAt(i) as EquOnline;
+            var bus:Equipment = equOnline.equipment as Equipment;
+            busList.addItem(bus);
+            powerNoList.addItem(bus.spareUse5);
+          }
+          powerNoList2 = ObjectUtil.copy(powerNoList) as ArrayCollection;
+          powerNoAutoComboBox.properties={dataProvider: powerNoList};
+          busAutoComboBox.properties={dataProvider: busList};
+        }
+        if (lines == null)
+        {
+          BaseController.getLinesByBD(branchId,guar.onDate,guar.downDate,successLines);
+        }
+        else
+        {
+          if (lineNoList == null)
+          {
+            lineNoList = new ArrayCollection();
+          }
+          for (var k:int = 0; k < lines.length; k++)
+          {
+            var line:Line = lines.getItemAt(k) as Line;
+            lineNoList.addItem(line.no);
+              //				lineNoList.addItem(line.no+"["+line.name+"]");
+          }
+          lineNoList.addItem(Constants.NULL_LABEL);
+          lineNoAutoComboBox.properties={dataProvider: lineNoList};
+        }
+      }
+
+      private function successEquOnlines(evt:ResultEvent):void
+      {
+        equOnlines = evt.result as ArrayCollection;
+        if (busList == null)
+        {
+          busList = new ArrayCollection();
+        }
+        if (powerNoList == null)
+        {
+          powerNoList = new ArrayCollection();
+        }
+        for (var i:int = 0; i < equOnlines.length; i++)
+        {
+          var equOnline:EquOnline = equOnlines.getItemAt(i) as EquOnline;
+          var bus:Equipment = equOnline.equipment as Equipment;
+          busList.addItem(bus);
+          powerNoList.addItem(bus.spareUse5);
+        }
+        powerNoList2 = ObjectUtil.copy(powerNoList) as ArrayCollection;
+        powerNoAutoComboBox.properties={dataProvider: powerNoList};
+        busAutoComboBox.properties={dataProvider: busList};
+      }
+
+      private function successLines(evt:ResultEvent):void
+      {
+        lines = evt.result as ArrayCollection;
+        if (lineNoList == null)
+        {
+          lineNoList = new ArrayCollection();
+        }
+        for (var i:int = 0; i < lines.length; i++)
+        {
+          var line:Line = lines.getItemAt(i) as Line;
+          lineNoList.addItem(line.no);
+//				lineNoList.addItem(line.no+"["+line.name+"]");
+        }
+        lineNoList.addItem(Constants.NULL_LABEL);
+        lineNoAutoComboBox.properties={dataProvider: lineNoList};
+      }
+
+      private function onBusCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(busList.toArray(), event.currentTarget.data["bus"], "authNo");
+        if (event.currentTarget.selectedIndex==-1)
+          event.currentTarget.dataProvider=busList;
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          // var clazz:Class=CommonUtil.getClass(data, property);
+          try
+          {
+            data[property]=newData;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          if (property == "bus" && data[property] != null)
+          {
+            var bus:Equipment=data[property] as Equipment;
+            for (var i:int=0; i < equOnlines.length; i++)
+            {
+              var equOnline:EquOnline=equOnlines.getItemAt(i) as EquOnline;
+              var bus1:Equipment=equOnline.equipment as Equipment;
+              if (bus.id == bus1.id)
+              {
+                if (equOnline.line != null)
+                  data["lineNo"]=equOnline.line.no;
+                else
+                  data["lineNo"]=Constants.NULL_LABEL;
+              }
+            }
+            data["useId"]=bus.useId;
+            data["type"]=bus.type.name;
+            data["sits"]=bus.outPower1;
+            data["archNo"]=bus.archNo;
+            data["powerNo"]=bus.spareUse5;
+          }
+        }
+        if (adgGuarInfo.errorString != null)
+        {
+          adgGuarInfo.errorString = null;
+        }
+      }
+
+      private function addObject(evt:CommonEvent):void
+      {
+        guar = evt.data as Guarantee;
+        oldGuarInfos = null;
+        getBuss();
+        guaView.showGuar(guar);
+        if (guar.guarInfos != null)
+        {
+          for (var i:int = 0; i<guar.guarInfos.length; i++)
+          {
+            var gi:GuarInfo = guar.guarInfos.getItemAt(i) as GuarInfo;
+            gi.id.accNo = CommonController.accNo;
+            guarInfoList.addItem(gi);
+          }
+        }
+      }
+
+//		private function addGuaAndInfo(event:Events):void {
+//			var guarInfos:ArrayCollection = event.data as ArrayCollection;
+//			guarInfoList = guarInfos;
+//		}
+
+      private function addItem(event:Event):void
+      {
+        var i:int = guarInfoList.length;
+        guarInfo = new GuarInfo();
+        guarInfo.id.branch = UserController.branch;
+        guarInfo.id.accNo = CommonController.accNo;
+        guarInfo.guaCost = 0;
+        guarInfo.fee = 0;
+        if (i >= 0 && i < guarInfoList.length)
+          guarInfoList.addItemAt(guarInfo, i);
+        else
+          guarInfoList.addItem(guarInfo);
+        adgGuarInfo.selectedItem = guarInfo;
+        adgGuarInfo.editedItemPosition = {rowIndex: adgGuarInfo.selectedIndex, columnIndex: 1};
+      }
+
+      private function delItem(event:Event):void
+      {
+        if (guarInfoList.length <= 0)
+          return;
+        if (adgGuarInfo.selectedItem != null)
+        {
+          var k:int=guarInfoList.getItemIndex(adgGuarInfo.selectedItem);
+          if (k >= 0)
+          {
+            guarInfoList.removeItemAt(k);
+            adgGuarInfo.selectedIndex=(k == guarInfoList.length) ? guarInfoList.length - 1 : k;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc','delete.not.null'),Constants.APP_NAME,
+            Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (guarInfoList.length > 0)
+        {
+          guarInfoList.removeAll();
+        }
+      }
+
+      private var i:int = 0;
+      private var alert:Alert = null;
+      private function save(event:Event):void
+      {
+        if (guarInfoList.length <= 0)
+          return;
+        var checkFields:Array=["guaNo","bus","lineNo","useId","type","sits","archNo",
+          "powerNo","guaCost","fee"];
+        if (CommonUtil.validateGrid(adgGuarInfo,checkFields).length > 0)
+          return;
+        var j:int;
+        for (i; i < guarInfoList.length; i++)
+        {
+          guarInfoList[i].id.no = i+1;
+          if (guarInfoList[i]["powerNo"] != guarInfoList[i]["bus"].spareUse5)
+          {
+            var m:int = 0;
+            for (var k:int=0; k < powerNoList2.length; k++)
+            {
+              if (guarInfoList[i]["powerNo"] == powerNoList2[k])
+              {
+                m = 1;
+                break;
+              }
+            }
+            if (m == 0)
+            {
+              Alert.show(resourceManager.getString('gcc_safety','gua.bus.no.powerNo',[i+1]),Constants.APP_NAME, Alert.OK,
+                null, null, Constants.ICON32_WARNING);
+              i = 0;
+              return;
+            }
+            alert = Alert.show(resourceManager.getString('gcc_safety','gua.powerNo.isno.bus',[i+1]),Constants.APP_NAME, 
+              Alert.YES | Alert.NO, null, function(evt:CloseEvent):void 
+              {
+                if(evt.detail == Alert.YES) {
+                  alert = null;
+                  save(event);
+                } else {
+                  i = 0;
+                  return;
+                }
+              }, Constants.ICON32_QUESTION);
+          }
+          if (alert != null)
+          {
+            if (i < guarInfoList.length)
+              i++;
+            return;
+          }
+        }
+        adgGuarInfo.errorString = null;
+        if (guaView.tiAccNo.text == resourceManager.getString('gcc_safety','gua.new.accNo') && oldGuarInfos == null)
+        {
+          guar.id.accNo = CommonController.accNo;
+          guar.id.branch = UserController.branch;
+          guar.guarInfos = guarInfoList;
+          GuaranteeController.saveGua(guar,null,successSave);
+        }
+        else if (guaView.tiAccNo.text != resourceManager.getString('gcc_safety','gua.new.accNo'))
+        {
+          if (ObjectUtil.compare(oldGuarInfos, guarInfoList, 1) == 0)
+          {
+            Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, 
+              Alert.OK, null, null, Constants.ICON32_WARNING);
+            return;
+          }
+          BaseController.saveObjects(oldGuarInfos.toArray(),guarInfoList.toArray(),
+            {"@class": CommonUtil.getAlias(GuarInfo), "@order": "id.no", 
+              "id.branch.id": UserController.branchId, "id.accNo":guar.id.accNo}, 
+            function(e:ResultEvent):void
+            {
+              i=0;
+              for(var p:int=0;p < guarInfoList.length; p++) {
+                guarInfoList[p].fkGuarantee = guar;
+                if(guarInfoList[p].guaDesc == "")
+                  guarInfoList[p].guaDesc = null;
+              }
+              oldGuarInfos=ObjectUtil.copy(guarInfoList) as ArrayCollection;
+              for each (var ogif:Object in oldGuarInfos)
+              {
+                var oldgif:GuarInfo = ogif as GuarInfo;
+                oldgif.gis = new ArrayCollection();
+                oldgif.ags = new ArrayCollection();
+                oldgif.apgs = new ArrayCollection();
+              }
+              Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, 
+                Alert.OK, null, null, Constants.ICON32_INFO);
+            });
+        }
+      }
+
+      private function successSave(event:ResultEvent):void
+      {
+        i = 0;
+        guaView.showGuar(guar);
+        guarInfoList = guar.guarInfos;
+        for (var p:int=0; p < guarInfoList.length; p++)
+        {
+          guarInfoList[p].fkGuarantee = guar;
+          if (guarInfoList[p].guaDesc == "")
+            guarInfoList[p].guaDesc = null;
+        }
+        oldGuarInfos = ObjectUtil.copy(guarInfoList) as ArrayCollection;
+        for each (var ogif:Object in oldGuarInfos)
+        {
+          var oldgif:GuarInfo = ogif as GuarInfo;
+          oldgif.gis = new ArrayCollection();
+          oldgif.ags = new ArrayCollection();
+          oldgif.apgs = new ArrayCollection();
+        }
+        oldData = ObjectUtil.copy(guar);
+        Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, 
+          Alert.OK, null, null, Constants.ICON32_INFO);
+      }
+
+      private function close(event:Event):void
+      {
+        Alert.show(resourceManager.getString('gcc_safety','gua.out.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO) return;
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          },Constants.ICON32_QUESTION);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

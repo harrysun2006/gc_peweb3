@@ -1,0 +1,1291 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*" width="100%"
+           height="100%" initialize="init()" creationComplete="created()">
+  <mx:VBox styleName="gradient" borderStyle="applicationControlBar" width="100%" height="90"/>
+  <mx:Grid paddingLeft="10" paddingTop="10">
+    <mx:GridRow>
+      <mx:GridItem toolTip="Using resourceManager!">
+        <mx:Label text="{resourceManager.getString('gcc', 'test.ui.label1')}" styleName="red"/>
+        <mx:Label text="{resourceManager.getString('gcc', 'test.ui.label2', ['James Bound'])}"
+                  styleName="red"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem toolTip="Using @Resource!">
+        <mx:Label text="@Resource(bundle='gcc', key='test.ui.label1')" styleName="red"/>
+        <mx:Label text="@Resource(bundle='gcc', key='test.ui.label2')" styleName="red"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem id="form">
+        <mx:FormItem label="Worker ID: ">
+          <mx:TextInput name="workerId" text="007"/>
+        </mx:FormItem>
+        <mx:FormItem label="Name: ">
+          <mx:TextInput name="name" text="James Bound"/>
+        </mx:FormItem>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:Box width="113" height="175" styleName="box">
+          <gc:ByteArrayImage id="img19" width="100%" height="100%" paste="paste(event)"/>
+        </mx:Box>
+        <mx:Image source="{ChkHoliday.ICON}"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:Button label="Test01" toolTip="Get Singletone Instances" click="test1()"/>
+        <mx:Button label="Test02" toolTip="New Singleton Instance" click="test2()"/>
+        <mx:Button label="Test03" toolTip="Map" click="test3()"/>
+        <mx:Button label="Test04" toolTip="Query String" click="test4()"/>
+        <mx:Button label="Test05" toolTip="Embedded" click="test5()"/>
+        <mx:FormItem label="Test DateField: ">
+          <mx:DateField width="160" editable="false"/>
+        </mx:FormItem>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:ComboBox id="cbLocale" dataProvider="{locales}" change="localeChangeHandler()"
+                     styleName="red"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'test.function.change_language')}"
+                   toolTip="Use [ResourceBundle()] TAG!" click="test6()" styleName="blue"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'test.function.change_language')}"
+                   toolTip="Use compiled resource modules!" click="test7()" styleName="blue"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'test.function.change_language')}"
+                   toolTip="Load programmatically!" click="test8()" styleName="blue"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:Button label="Test09" toolTip="&lt;,&gt;,=" click="test9()"/>
+        <mx:Button label="Test10" toolTip="CommonUtil(getAccessors, getItems)" click="test10()"/>
+        <mx:Button label="Test11" toolTip="Properties" click="test11()"/>
+        <mx:Button label="Test12" toolTip="CommonUtil.getAccessorType" click="test12()"/>
+        <mx:Button label="Test15" toolTip="Parameters" click="test15()"/>
+        <mx:Button label="Test16" toolTip="URLs" click="test16()"/>
+        <gc:HTMLButton styleName="blue"
+                       htmlLabel="&lt;font color=&quot;#FF0000&quot;&gt;&lt;u&gt;HTML Red Button&lt;/u&gt;&lt;/font&gt;"/>
+        <gc:HTMLButton>
+          <gc:htmlLabel>
+            <![CDATA[<font color="#FF0000"><u>HTML Red Button</u></font>]]>
+          </gc:htmlLabel>
+        </gc:HTMLButton>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:TextInput id="ti17"/>
+        <mx:Button label="Test17" toolTip="Socket" click="test17()"/>
+        <mx:Button label="Test18" toolTip="Serialize &amp; Deserialize" click="test18()"/>
+        <mx:Button label="Test19" toolTip="Load Bitmap(Embed)" click="test19()"/>
+        <mx:Button label="Test20" toolTip="Load Bitmap(URLRequest)" click="test20()"/>
+        <mx:Button label="Test21" toolTip="Dynamic &amp; Alias" click="test21()"/>
+        <mx:Button label="Test22" toolTip="for[each]" click="test22()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:Button id="btn23" label="Test23" toolTip="Style Property" click="test23()"/>
+        <mx:Button label="Test24" toolTip="is" click="test24()"/>
+        <mx:Button label="Test25"/>
+        <mx:Button label="Test26"/>
+        <mx:Button label="Test27" toolTip="getDefinitionByName" click="test27()"/>
+        <mx:Button label="Test28" toolTip="ObjectProxy" click="test28()"/>
+        <mx:Button label="Test29" toolTip="DateUtil" click="test29()"/>
+        <mx:Button id="btn30" label="Test30" toolTip="icon"
+                   icon="{IconUtil.getRectangleIcon(btn30, ChkHoliday.bgColor)}"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:Button label="Test31" toolTip="const" click="test31()"/>
+        <mx:Button label="Test32" toolTip="ObjectUtil.copy &amp; compare" click="test32()"/>
+        <mx:TextInput id="ti33" width="240" toolTip="Please input ID Card Number!"/>
+        <mx:Button label="Test33" toolTip="ID Card Validation" click="test33()"/>
+        <mx:Button label="Test34" toolTip="LangUtil" click="test34()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:ComboBox id="cb35" editable="false" width="400" dataProvider="{l35}"/>
+        <mx:Button label="Test35" toolTip="FaultUtil" click="test35()"/>
+        <mx:Button label="Test36" toolTip="Asynchronous" click="test36()"/>
+        <mx:Button label="Test37" toolTip="Synchronous" click="test37()"/>
+        <mx:Button label="Test38" toolTip="... Arguments" click="test38()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:ComboBox id="cb39" editable="false" width="236" dataProvider="{l39}"/>
+        <mx:Button label="Test39" toolTip="Excel1(Server)" click="test39()"/>
+        <mx:Button label="Test40" toolTip="Excel2(Client)" click="test40()"/>
+        <mx:Button label="Test41" toolTip="Excel3(Client)" click="test41()"/>
+        <mx:Button label="Test42" toolTip="isWritable" click="test42()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:TextInput id="ti43" width="240" paste="paste(event)"/>
+        <mx:Button label="Test43" toolTip="Enable Copy/Paste/Cut" click="test43()"/>
+        <mx:Button label="Test44" toolTip="Diable Copy/Paste/Cut" click="test44()"/>
+        <mx:Button label="Test45" toolTip="Move Item" click="test45()"/>
+        <mx:Button label="Test46" toolTip="Swap Item" click="test46()"/>
+        <mx:Button label="Test47" toolTip="Print(PowerBuilder)" click="test47()"/>
+        <mx:Button label="Test48" toolTip="Exit(PowerBuilder)" click="test48()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow>
+      <mx:GridItem>
+        <mx:TextInput id="ti50a" width="160"/>
+        <mx:TextInput id="ti50b" width="160"/>
+        <mx:Button label="Test50" toolTip="PinYin" click="test50()"/>
+        <mx:Button label="Test51" toolTip="Closure" click="test51()"/>
+      </mx:GridItem>
+    </mx:GridRow>
+  </mx:Grid>
+  <mx:AdvancedDataGrid id="adg1" editable="false" visible="false" includeInLayout="false"
+                       dataProvider="{list1}">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="no"/>
+      <mx:AdvancedDataGridColumn dataField="name"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:PopUpButton id="pub49" label="Test49" toolTip="PopUpButton" click="test49()"/>
+  <mx:Style>
+		.gradient
+		{
+			fillColors: #444444, #ffffff;
+			fillAlphas: 0.1,1;
+		}
+  </mx:Style>
+  <mx:Script>
+    <![CDATA[
+      import flash.utils.describeType;
+      import flash.utils.getQualifiedClassName;
+      import flash.desktop.Clipboard;
+
+      import mx.collections.ArrayCollection;
+      import mx.controls.AdvancedDataGrid;
+      import mx.controls.Alert;
+      import mx.controls.Label;
+      import mx.controls.PopUpButton;
+      import mx.core.Application;
+      import mx.core.BitmapAsset;
+      import mx.core.ByteArrayAsset;
+      import mx.core.Container;
+      import mx.core.mx_internal;
+      import mx.core.UIComponent;
+      import mx.events.ResourceEvent;
+      import mx.events.ValidationResultEvent;
+      import mx.resources.ResourceBundle;
+      import mx.resources.ResourceManager;
+      import mx.utils.Base64Decoder;
+      import mx.utils.Base64Encoder;
+      import mx.utils.DescribeTypeCache;
+      import mx.utils.DisplayUtil;
+      import mx.utils.ObjectProxy;
+      import mx.utils.ObjectUtil;
+      import mx.utils.StringUtil;
+      import mx.utils.UIDUtil;
+      import mx.utils.URLUtil;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.validators.Validator;
+      import mx.validators.ValidationResult;
+
+      import org.swizframework.Swiz;
+
+      import bee.eval.Ident;
+      import fxl.xls.Workbook;
+      import fxl.xls.Worksheet;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Person;
+      import com.gc.hr.model.ChkHoliday;
+      import com.gc.hr.model.SalFact;
+      import com.gc.hr.model.SalItem;
+      import com.gc.test.model.EmbedTest;
+      import com.gc.test.model.TestA;
+      import com.gc.test.model.TestB;
+      import com.gc.util.AideUtil;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.ExcelUtil;
+      import com.gc.util.ExprUtil;
+      import com.gc.util.IconUtil;
+      import com.gc.util.LangUtil;
+      import com.gc.util.HanZiUtil;
+      import com.gc.validators.IdCardValidator;
+
+      use namespace mx_internal;
+
+      [Bindable]
+      private var list1:ArrayCollection=new ArrayCollection();
+
+      private function init():void
+      {
+        lang=cbLocale.selectedItem.toString();
+        // cbLocale.selectedIndex=locales.indexOf(resourceManager.localeChain[0]);
+        resourceManager.localeChain=[cbLocale.selectedItem];
+        open();
+        list1.addItem({no:"AAA", name:"Tom"});
+        list1.addItem({no:"BBB", name:"Jerry"});
+      }
+
+      private function created():void
+      {
+        pub49.popUp=adg1;
+      }
+
+      private function paste(event:Event):void
+      {
+        Alert.show(event.type, "info");
+      }
+
+      /**
+       * 测试类SalFact.issueType, SalItem.flag, SalItem.type的"枚举"常量和方法
+       **/
+      private function test1():void
+      {
+        var items:Array=SalFact.ITYPE_LIST;
+        var s:String="";
+        var i:int;
+        for (i=0; i < items.length; i++)
+          s=s + items[i].valueOf() + ", ";
+        s=s + "\n";
+        items=SalItem.FLAG_LIST;
+        for (i=0; i < items.length; i++)
+          s=s + items[i].valueOf() + ", ";
+        s=s + "\n";
+        items=SalItem.TYPE_LIST;
+        for (i=0; i < items.length; i++)
+          s=s + items[i].valueOf() + ", ";
+        s=s + "\n";
+        s=s + "SalFact.TYPE_CASH=" + SalFact.ITYPE_CASH.value + "\n";
+        s=s + "SalItem.FLAG_POS=" + SalItem.FLAG_POS.value + "\n";
+        s=s + "SalItem.TYPE_WG=" + SalItem.TYPE_WG.value + "\n";
+        trace(s);
+      }
+
+      /**
+       * 类SalFactHD$Type, SalItem$Flag, SalItem$Type原先为不可外部实例的类(类似CommonUtil),
+       * 后来为了方便RPC调用映射改为可外部实例化。
+       **/
+      private function test2():void
+      {
+        try
+        {
+          var util:CommonUtil=new CommonUtil();
+        }
+        catch (e:Error)
+        {
+          trace(e.message);
+        }
+      }
+
+      /**
+       * dynamic类(如Object)的实例可以作为map使用
+       **/
+      private function test3():void
+      {
+        var map:Object=new Object();
+        map["name"]="Hello World";
+        map["value"]="James Bound";
+        trace(map["value"]);
+      }
+
+      /**
+       * url的QueryString参数可以通过Application.application.parameters访问
+       **/
+      private function test4():void
+      {
+        var s:String="";
+        for (var name:String in Application.application.parameters)
+          s=s + name + "=" + Application.application.parameters[name] + "\n";
+        trace(s);
+      }
+
+      /**
+       * 嵌入资源
+       **/
+      private function test5():void
+      {
+        var e:EmbedTest=new EmbedTest();
+        CommonUtil.debugByteArray(e, false);
+      }
+
+      [Bindable]
+      private var locales:Array=["zh_CN", "en_US"];
+      private var lang:String;
+
+      private function localeChangeHandler():void
+      {
+        this.lang=cbLocale.selectedItem.toString();
+      }
+
+      /**
+       * 多国语言
+       **/
+      private function test6():void
+      {
+        resourceManager.localeChain=[lang];
+        trace(resourceManager.getString("gcc", "test.info.msg1"));
+      }
+
+      /**
+       * 参考locale/README.TXT
+       * 1) 编译flex中文语言包: (在Flex Builder 3.2.0\sdks\3.2.0目录下)
+       * compc -locale=zh_CN -source-path=frameworks\projects\framework\bundles\zh_CN\src -include-resource-bundles=collections,
+       * 		containers,controls,core,effects,formatters,logging,SharedResources,skins,states,styles,utils,validators
+       * 		-output=frameworks/locale/zh_CN/framework_rb.swc
+       * 2) 编译应用程序资源:
+       * mxmlc -locale=en_US -source-path=locale/{locale} -include-resource-bundles=collections,containers,controls,core,effects,
+       * 		gcc,skins,styles -output=flex_src/gcc_en_US.swf
+       * mxmlc -locale=zh_CN -source-path=locale/{locale} -include-resource-bundles=collections,containers,controls,core,effects,
+       * 		gcc,skins,styles -output=flex_src/gcc_zh_CN.swf
+       **/
+      private function test7():void
+      {
+        var url:String="../gcc_" + lang + ".swf";
+        var eventDispatcher:IEventDispatcher=resourceManager.loadResourceModule(url);
+        eventDispatcher.addEventListener(ResourceEvent.COMPLETE, function(event:ResourceEvent):void
+          {
+            resourceManager.localeChain=[lang];
+            trace(resourceManager.getString("gcc", "test.info.msg1"));
+          });
+      }
+
+      /**
+       * 程序运行时可以修改资源
+       **/
+      private function test8():void
+      {
+        var rb1:ResourceBundle=new ResourceBundle("en_US", "gcc");
+        rb1.content["test.ui.label1"]="***Hello World!***";
+        rb1.content["test.ui.label2"]="***Welcome {0}!***";
+        rb1.content["test.info.msg1"]="***Good good study, day day up!!!***";
+        rb1.content["test.function.change_language"]="***Change Language!***";
+        resourceManager.addResourceBundle(rb1);
+        var rb2:ResourceBundle=new ResourceBundle("zh_CN", "gcc");
+        rb2.content["test.ui.label1"]="***大家好！***";
+        rb2.content["test.ui.label2"]="***欢迎{0}！***";
+        rb2.content["test.info.msg1"]="***好好学习，天天向上！！！***";
+        rb2.content["test.function.change_language"]="***改变语言!***";
+        resourceManager.addResourceBundle(rb2);
+        resourceManager.update();
+        resourceManager.localeChain=[lang];
+        trace(resourceManager.getString("gcc", "test.info.msg1"));
+      }
+
+      /**
+       * 测试Object(MAP)的使用等
+       * 1. Object[key]=value中, key实际使用的是字符串(如果key是Object则取key.toString()), value可以是任意对象
+       * 2. 汉字按拼音排序
+       **/
+      private function test9():void
+      {
+        var map:Object=new Object();
+        var A:Person=new Person(1, "001", "Tom");
+        var B:Person=new Person(1, "001", "Tom");
+        var C:Person=new Person(7, "007", "James");
+        var p1:Person=new Person();
+        var p2:Person=new Person();
+        var coll:ArrayCollection=new ArrayCollection();
+        var arr:Array=["X", "Y", "Z"];
+        coll.addItem("x");
+        coll.addItem("y");
+        coll.addItem("z");
+        map[A]="AAA";
+        map[C]="CCC";
+        map[1]=111;
+        map[2]=222;
+        p1["children"]=coll;
+        p2["children"]=arr;
+        trace("map[B] = " + map[B] + "; map[1] = " + map[1]);
+        trace("A==B ? " + (A == B) + "; A==C ? " + (A == C));
+        trace("map[X] = " + map["X"] + "; map[X]==null ? " + (map["X"] == null));
+        trace("p1[children] = " + p1["children"]);
+        trace("p2[children] = " + p2["children"]);
+        var ss:Array=["一车队", "二车队", "三车队"];
+        trace(ss[0] + "<" + ss[1] + ": " + (ss[0] < ss[1])
+          + "; " + ss[1] + "<" + ss[2] + ": " + (ss[1] < ss[2])
+          + "; " + ss[0] + "<" + ss[2] + ": " + (ss[0] < ss[2]));
+      }
+
+      /**
+       * 测试CommonUtil的getAccessors, getItems方法
+       **/
+      private function test10():void
+      {
+        var src:Object=form;
+        var name:String="com.gc.common.model.Person";
+        var crObj:Class=getDefinitionByName(name) as Class;
+        var ret:Object=new crObj();
+        var names:Array=new Array();
+        var accessors:Object=CommonUtil.getAccessors(ret, names);
+        var items:Array=CommonUtil.getItems(src);
+        var item:Object;
+        var s:String="";
+        var i:int;
+        for (i=0; i < names.length; i++)
+        {
+          s=s + names[i] + ":" + accessors[names[i]] + "\n";
+        }
+        trace(s);
+        s="";
+        for (i=0; i < items.length; i++)
+        {
+          item=items[i];
+          s=s + item[Constants.PROP_NAME_NAME] + "=" + item[Constants.PROP_NAME_VALUE] + "\n";
+        }
+        trace(s);
+        CommonUtil.loadInstance(src, ret);
+        trace(ret);
+      }
+
+      /**
+       * p["alias"]等价于p.alias, 二者存取的是同一内存地址
+       **/
+      private function test11():void
+      {
+        var p:Person=new Person();
+        p["alias"]="Hello World";
+        p.alias="James Bound";
+        trace(p.alias);
+        trace(p["alias"]);
+      }
+
+      /**
+       * 测试CommonUtil.getAccessorType方法
+       **/
+      private function test12():void
+      {
+        trace(CommonUtil.getAccessorType(Person, "birthday"));
+        trace(CommonUtil.getAccessorType(new Person(), "birthday"));
+        trace(Application.application.url);
+        trace("http://{server.name}:{server.port}");
+        var obj:Object={"name": "James Bound"};
+        trace(obj["name"]);
+      }
+
+      /**
+       * 1. AS中的函数调用传递的都是指针(UIDUtil.getUID)
+       * 2. t=x+y, t不是原先的对象, 而是另外一个新的对象, 所以原来的t对象值未改变
+       **/
+      private function test15():void
+      {
+        var sum:Number=0;
+        var obj:Object={name: "Tom"};
+        var f1:Function=function(x:Number, y:Number, t:Number):void
+          {
+            trace("before@f: t[" + UIDUtil.getUID(t) + "]=" + t);
+            // t.value=x+y; Number是static type, 不是dynamic type, 不可以有动态属性
+            t=x+y; // 此处+之后的t对象已经不是原来的t对象了
+            trace("ater@f: t[" + UIDUtil.getUID(t) + "]=" + t);
+          };
+        var f2:Function=function(o:Object):void
+          {
+            trace("before@f: o[" + UIDUtil.getUID(o) + "].name=" + o.name);
+            o.name="Mary";
+            trace("ater@f: o[" + UIDUtil.getUID(o) + "].name=" + o.name);
+          };
+        trace("before@main: sum[" + UIDUtil.getUID(sum) + "]=" + sum);
+        f1(1, 5, sum);
+        trace("after@main: sum[" + UIDUtil.getUID(sum) + "]=" + sum);
+        trace("before@main: obj[" + UIDUtil.getUID(obj) + "].name=" + obj.name);
+        f2(obj);
+        trace("after@main: obj[" + UIDUtil.getUID(obj) + "].name=" + obj.name);
+      }
+
+      private function test16():void
+      {
+        trace(Application.application.url);
+        trace(Application.application.loaderInfo.url);
+        trace(Constants.APPLICATION_URL);
+        trace(Constants.SERVER_PORT);
+        trace(Constants.SERVER_PROTOCOL);
+        trace(CommonUtil.getFullURL("/hr/test1.html"));
+        trace(CommonUtil.getFullURL("hr/test2.jsp"));
+        trace(CommonUtil.getFullURL("/hr/test3?id=1&name=Tom"));
+        trace(CommonUtil.getFullURL("test4?id=2&name=Jerry"));
+        trace(CommonUtil.getFullURL("http://www.google.com/test5.html"));
+        trace(CommonUtil.getFullURL("http://localhost/index.swf?username=hr1&password=0000&module=hr&branch=gjgs"));
+        trace(CommonUtil.getFullURL(""));
+        trace(CommonUtil.getFullURL("ftp://ftp.synventive.cn/test.doc"));
+        trace(URLUtil.getFullURL(Constants.APPLICATION_URL, "ftp://ftp.synventive.cn/test.doc"));
+      }
+
+      private var socket:Socket;
+
+      private function open():void
+      {
+        socket=new Socket();
+        socket.addEventListener(Event.CLOSE, function(e:Event):void
+          {
+            trace("Closed: " + e);
+          });
+        socket.addEventListener(Event.CONNECT, function(e:Event):void
+          {
+            trace("Connected: " + e);
+          });
+        socket.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          {
+            trace("IO ERROR: " + e.text);
+          });
+        socket.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function(e:SecurityErrorEvent):void
+          {
+            trace("Security ERROR:" + e.text);
+          });
+        socket.addEventListener(ProgressEvent.SOCKET_DATA, function(e:ProgressEvent):void
+          {
+            var b:Array=[];
+            while (socket.bytesAvailable)
+            {
+              b.push(socket.readMultiByte(socket.bytesAvailable, "utf8"));
+            }
+            var t:String = b.join('').replace(/\r/g, '');
+            trace(t);
+          });
+        socket.connect("localhost", 843);
+      }
+
+      private function test17():void
+      {
+        socket.writeMultiByte(ti17.text, "utf8");
+        socket.flush();
+      }
+
+      /**
+       * 测试ByteArray的readObject/writeObject方法,相当于反序列华和序列化
+       **/
+      private function test18():void
+      {
+        var b1:ByteArray=new ByteArray(), b2:ByteArray;
+        var d:Base64Decoder=new Base64Decoder();
+        var e:Base64Encoder=new Base64Encoder();
+        var p1:Person=new Person(7, "007", "James Bound"), p2:Person;
+        var s:String;
+        trace("------------------ Original Object ------------------");
+        trace(p1);
+        trace("------------------   Binary View   ------------------");
+        b1.writeObject(p1);
+        CommonUtil.debugByteArray(b1);
+        trace("------------------ Base64  Encoded ------------------");
+        e.encodeBytes(b1);
+        s=e.drain();
+        trace(s);
+        trace("------------------ Base64  Decoded ------------------");
+        d.decode(s);
+        trace("------------------  Decoded Binary ------------------");
+        b2=d.drain();
+        CommonUtil.debugByteArray(b2);
+        trace("------------------  Decoded Object ------------------");
+        p2=b2.readObject() as Person;
+        trace(p2);
+      }
+
+      [Embed(source="test1.jpg",mimeType="application/octet-stream")]
+      private var testClass:Class;
+
+      /**
+       * 从Embed资源中载入图片
+       **/
+      private function test19():void
+      {
+        var test:Object=new testClass();
+        var bytes:ByteArray=new ByteArray();
+        var baa:ByteArrayAsset=ByteArrayAsset(test);
+        baa.readBytes(bytes, 0, baa.length);
+        CommonUtil.debugByteArray(bytes);
+        img19.loadBytes(bytes);
+      }
+
+      /**
+       * 通过URLRequest载入图片
+       **/
+      private function test20():void
+      {
+        var loader:URLLoader=new URLLoader();
+        loader.addEventListener(Event.COMPLETE, function(event:Event):void {
+            var bytes:ByteArray=loader.data as ByteArray;
+            CommonUtil.debugByteArray(bytes);
+            img19.loadBytes(bytes);
+          });
+        var req:URLRequest=new URLRequest("test2.jpg");
+        loader.dataFormat=URLLoaderDataFormat.BINARY;
+        loader.load(req);
+      }
+
+      /**
+       * 测试CommonUtil的isDynamic&getAlias方法
+       **/
+      private function test21():void
+      {
+        trace(CommonUtil.isDynamic(Person.DEFAULT_SEARCH));
+        trace(CommonUtil.getAlias(Person));
+      }
+
+      /**
+       * for each和for的区别:
+       * 1. 对对象的遍历, for each是遍历值, for是遍历属性名
+       * 2. for each比for的效率高
+       **/
+      private function test22():void
+      {
+        var i:int, k:int, r:String, s:String, b:Date, e:Date, t:int=100000;
+        var value:Object, name:Object;
+        var obj:Object={}, arr:Array=[];
+        var data:Object={name: "James Bound", gender: "Male", age: 34};
+        var cc:Array=['A', 'B', 'C', 'D', 'E', 'F'];
+        for each (value in data)
+          trace(value);
+        for (name in data)
+          trace(name + "=" + data[name]);
+        for (i = 0; i < t; i++)
+        {
+          obj[i]=i;
+          arr.push(i);
+        }
+        b=new Date();
+        for (r in obj)
+        {
+          obj[r]++;
+        }
+        e=new Date();
+        trace("Object, for ... in, " + t + ": " + (e.getTime() - b.getTime()) + " ms!");
+        b=new Date();
+        for each (k in obj)
+        {
+          k++;
+        }
+        e=new Date();
+        trace("Object, for each ... in, " + t + ": " + (e.getTime() - b.getTime()) + " ms!");
+
+        b=new Date();
+        for (r in arr)
+        {
+          arr[r]++;
+        }
+        e=new Date();
+        trace("Array, for ... in, " + t + ": " + (e.getTime() - b.getTime()) + " ms!");
+        b=new Date();
+        for each (k in arr)
+        {
+          k++;
+        }
+        e=new Date();
+        trace("Array, for each ... in, " + t + ": " + (e.getTime() - b.getTime()) + " ms!");
+
+        s="";
+        for (i = 0; i < cc.length; i++)
+          s=s+cc[i]+", ";
+        trace(s);
+        s="";
+        for each (r in cc)
+          s=s+r+", ";
+        trace(s);
+      }
+
+      private function test23():void
+      {
+        var names:Array=["color", "backgroundImage", "paddingLeft"];
+        var comps:Array=[btn23, new Label()];
+        for each (var comp:UIComponent in comps)
+        {
+          for each (var name:String in names)
+          {
+            trace(comp.className + "." + name + ":" + StyleManager.isInheritingStyle(name)
+              // + ":" + StyleManager.isValidStyleValue(comp[name])
+              + ":" + comp.getClassStyleDeclarations()
+              + ":" + comp.getStyle(name)
+              + ":" + comp.inheritingStyles.hasOwnProperty(name)
+              + ":" + (name in comp.inheritingStyles)
+              + ":" + comp.nonInheritingStyles.hasOwnProperty(name)
+              + ":" + (name in comp.nonInheritingStyles)
+              + ":" + comp.styleDeclaration
+              + ":" + comp.styleName
+              + ":" + comp.inheritingStyles
+              + ":" + comp.nonInheritingStyles
+              );
+          }
+        }
+      }
+
+      /**
+       * 1. 对象obj=null时, obj==false并且obj is XXXClass==false
+       * 2. 数字i=0时， i==false
+       * 3. 字符串s=null或空时，s==false
+       **/
+      private function test24():void
+      {
+        var obj:String=null;
+        trace(obj is Object);
+        trace(obj is String);
+        trace(obj is Number);
+        var d:Date=obj as Date;
+        trace(d);
+        trace("obj=null: " + (obj ? "true" : "false"));
+        obj="";
+        trace("obj=: " + (obj ? "true" : "false"));
+        obj="...";
+        trace("obj=...: " + (obj ? "true" : "false"));
+        var i:int;
+        trace("i=?: " + (i ? "true" : "false"));
+        i=0;
+        trace("i=0: " + (i ? "true" : "false"));
+        i=2;
+        trace("i=2: " + (i ? "true" : "false"));
+        trace("NaN+99=" + (99 + NaN));
+      }
+
+      /**
+       * 输出控件的大小和位置信息
+       **/
+      private function test25(comp:UIComponent):void
+      {
+        var s:String=comp + "[width: " + comp.width
+          + ", explicitWidth: " + comp.explicitWidth;
+        if (comp is Container)
+        {
+          var con:Container=comp as Container;
+          s+=", viewMetrics: [" + con.viewMetrics.left
+            + ", " + con.viewMetrics.top
+            + ", " + con.viewMetrics.right
+            + ", " + con.viewMetrics.bottom + "]"
+            + ", borderMetrics: [" + con.borderMetrics.left
+            + ", " + con.borderMetrics.top
+            + ", " + con.borderMetrics.right
+            + ", " + con.borderMetrics.bottom + "]";
+        }
+        s+=", getVisibleRect().width: " + comp.getVisibleRect().width
+          + ", getBounds(parent).width: " + comp.getBounds(comp.parent).width
+          + ", getRect(parent).width: " + comp.getRect(comp.parent).width
+          + ", getBounds(owner).width: " + comp.getBounds(comp.owner).width
+          + ", getRect(owner).width: " + comp.getRect(comp.owner).width
+          + "]";
+        trace(s);
+      }
+
+      /**
+       * 输出对象的详细信息
+       **/
+      private function test26(obj:Object, namespaceURIs:Array=null, exclude:Array=null):void
+      {
+        if (namespaceURIs==null)
+          namespaceURIs=["mx_internal", "mx_object"];
+        trace(ObjectUtil.toString(obj, namespaceURIs, exclude));
+      }
+
+      private function test27():void
+      {
+        var types:Array=["com.gc.common.model::Branch", "com.gc.common.model::Person",
+          "com.gc.hr.model::HireType", "com.gc.hr.model::HireTypePK",
+          "com.gc.hr.model::HrClose", "com.gc.hr.model::HrClosePK",
+          ];
+        for each (var type:String in types)
+        {
+          try
+          {
+            var crObj:Class=getDefinitionByName(type) as Class;
+            trace(type + ": " + new crObj());
+          }
+          catch (err:Error)
+          {
+            trace(type + ": " + err);
+          }
+        }
+      }
+
+      private function test28():void
+      {
+        var qo:Object=new ObjectProxy();
+        qo["workerId"]="88";
+        trace(qo["workerId"]);
+        trace(qo.hasOwnProperty("workerId"));
+      }
+
+      /**
+       * 测试DateUtil的方法
+       **/
+      private function test29():void
+      {
+        var dates:Array=[new Date(2012, 1, 10, 0, 0, 0), new Date(2009, 11, 31, 23, 59, 59)
+          , new Date(2009, 1, 7, 12, 12, 12)];
+        var field:int=DateUtil.MONTH;
+        var s:String;
+        var date:Date;
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.formatDateTime(DateUtil.getBeginDate(date, field))
+            + ", " + DateUtil.formatDateTime(DateUtil.getEndDate(date, field));
+          trace(s);
+        }
+        dates=[new Date(2000, 0, 1, 0, 0, 0), new Date(2012, 11, 31, 23, 59, 59)];
+        field=DateUtil.YEAR;
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.formatDateTime(DateUtil.getBeginDate(date, field))
+            + ", " + DateUtil.formatDateTime(DateUtil.getEndDate(date, field));
+          trace(s);
+        }
+        dates=[new Date(2009, 4, 7), new Date(2009, 10, 7)];
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.getWeeksOfMonth(date, 0)
+            + " weeks(0), " + DateUtil.getWeeksOfMonth(date, 1) + " weeks(1).";
+          trace(s);
+        }
+        dates=[new Date(2009, 4, 3), new Date(2009, 4, 31), new Date(2009, 10, 6), new Date(2009, 10, 30)];
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.getWeekByMonth(date, 0)
+            + " week(0), " + DateUtil.getWeekByMonth(date, 1) + " week(1).";
+          trace(s);
+        }
+        dates=[new Date(2000, 1, 1), new Date(2009, 1, 1), new Date(2012, 1, 1), new Date(2100, 1, 1)];
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.getDaysOfYear(date)
+            + " days, " + DateUtil.getDaysOfYear(date) + " days.";
+          trace(s);
+        }
+        dates=[new Date(2000, 6, 7), new Date(2009, 6, 7), new Date(2012, 6, 7)];
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.getWeeksOfYear(date, 0)
+            + " weeks(0), " + DateUtil.getWeeksOfYear(date, 1) 
+            + " weeks(1), " + DateUtil.getWeekByYear(date, 0)
+            + " week(0), " + DateUtil.getWeekByYear(date, 1) + " week(1).";
+          trace(s);
+        }
+        dates=[new Date(2009, 6, 7, 7, 7, 7, 7)];
+        for each (date in dates)
+        {
+          s=DateUtil.formatDateTime(date)
+            + ": " + DateUtil.formatDateTime(DateUtil.add(date))
+            + " (1), " + DateUtil.formatDateTime(DateUtil.sub(date)) + " (-1).";
+          trace(s);
+        }
+      }
+
+      private function test31():void
+      {
+        var obj:Object=new Object();
+        obj.date=Constants.MAX_DATE;
+        trace("Constants.MAX_DATE: " + DateUtil.formatDateTime(Constants.MAX_DATE));
+        trace("obj.date: " + DateUtil.formatDateTime(obj.date));
+        obj.date.date++;
+        trace("Constants.MAX_DATE: " + DateUtil.formatDateTime(Constants.MAX_DATE));
+        trace("obj.date: " + DateUtil.formatDateTime(obj.date));
+      }
+
+      /**
+       * Flex的dataProvider会自动对list中的每个对象增加UID属性(mx_internal_id), 通过以下方法之一可以避免:
+       * 1. 对象中至少有一个Bindable的属性(似乎不行)
+       * 2. 对象实现IUID接口
+       * 3. 对象有一个非null值的uid属性
+       * 注意:
+       * 1. 为了使ObjectUtil.copy() as可以正确转换类型, 类必须使用[RemoteClass(alias="com.test.TestA")]修饰
+       * 2. descObj中, bindable及get/set属性可以通过accessor标签查找, 其他属性可以通过variable标签查找, CommonUtil.getAccessorNames只返回所有的accessor
+       * http://blog.feihoo.com/archives/tag/flex
+       **/
+      private function test32():void
+      {
+        var arr1:Array=[{id:1, name:"test1"}, {id:2, name:"test2", uid:999}, new TestA(3, "test3"), new TestB(4, "test4")];
+        var arr2:Array=ObjectUtil.copy(arr1) as Array;
+        var f1:Function=function(obj:Object):String
+          {
+            var s:String="";
+            var p:String;
+            var names:Array=new Array(); // CommonUtil.getAccessorNames(obj);
+            var descObj:XML=DescribeTypeCache.describeType(obj).typeDescription;
+            var accessors:XMLList=descObj..accessor;
+            var variables:XMLList=descObj..variable;
+            for each (var accessor:Object in accessors)
+            {
+              names.push(accessor.@name.toString());
+            }
+            for each (var variable:Object in variables)
+            {
+              names.push(variable.@name.toString());
+            }
+            for (p in obj) s+=p+":"+obj[p]+", ";
+            for each (p in names) s+=p+":"+obj[p]+", ";
+            if (s.length > 0) s=s.substring(0, s.length-2);
+            return s;
+          };
+        var f2:Function=function(a:Object, b:Object):String
+          {
+            return ObjectUtil.compare(a, b) ? "NO" : "YES";
+          };
+        /*
+           trace(ObjectUtil.toString(obj1));
+           trace(ObjectUtil.toString(obj2));
+           trace(ObjectUtil.toString(p1));
+           trace(ObjectUtil.toString(p2));
+         */
+        var f3:Function=function():void
+          {
+            var r:String="{0}{{1}} == {2}{{3}}: {4},{5},{6}";
+            for (var i:int=0; i < arr1.length; i++)
+            {
+              trace(StringUtil.substitute(r, [getQualifiedClassName(arr1[i]), f1(arr1[i]), 
+                getQualifiedClassName(arr2[i]), f1(arr2[i]), 
+                f2(arr1[i], arr2[i]), f2([arr1[i]], [arr2[i]]), f2([arr2[i]], [arr1[i]])]));
+            }
+            trace("********************************************************************************************************************");
+          };
+        f3();
+        for (var i:int=0; i < arr1.length; i++)
+        {
+          adg1.dataProvider=[arr1[i]];
+          adg1.validateProperties();
+        }
+        f3();
+      }
+
+      /**
+       * 测试IdCardValdiator类
+       **/
+      private function test33():void
+      {
+        var v:Validator=new IdCardValidator();
+        var vre:ValidationResultEvent=v.validate(ti33.text);
+        if (vre.type == ValidationResultEvent.VALID)
+          ti33.errorString="";
+        else
+          ti33.errorString=(vre.results[0] as ValidationResult).errorMessage;
+      }
+
+      /**
+       * 测试LangUtil类
+       **/
+      private function test34():void
+      {
+        var s:String=LangUtil.getString("gcc", "male") + "\n"
+          + LangUtil.getString("gcc", "test.ui.label1") + "\n"
+          + LangUtil.getString("gcc", "test.ui.label2", ["James Bound"]) + "\n"
+          + LangUtil.getString("gcc_hr", "person.add.success", [6]);
+        Alert.show(s, "LangUtil", Alert.OK, null, null, Constants.ICON32_INFO);
+      }
+
+
+      [Bindable]
+      private var l35:Array=[
+        {label:"add ChkHoliday(4,10,\"01\",\"年假\")", // ORA-02291: 违反完整约束条件 (PEADMIN.FK_HRCHKHLDAY_BRANCH) - 未找到父项关键字
+          po:new ChkHoliday(new Branch(4),10,"01","年假"), fun:BaseController.addObject},
+        {label:"add ChkHoliday(2,1,\"10\",\"年假\")", // OK
+          po:new ChkHoliday(new Branch(2),1,"10","年假"), fun:BaseController.addObject},
+        {label:"add ChkHoliday(2,10,\"01\",\"年假\")", // ORA-00001: 违反唯一约束条件 (PEADMIN.IDX_HRCHK_HLDAYNO)
+          po:new ChkHoliday(new Branch(2),10,"01","年假"), fun:BaseController.addObject},
+        {label:"add ChkHoliday(2,10)", // ORA-01400: 无法将 NULL 插入 ("PEADMIN"."T_HRCHK_HLDAY"."C_NO")
+          po:new ChkHoliday(new Branch(2),10), fun:BaseController.addObject},
+        {label:"update ChkHoliday(2,8,\"01\",\"年假\")", // ORA-00001: 违反唯一约束条件 (PEADMIN.IDX_HRCHK_HLDAYNO)
+          po:new ChkHoliday(new Branch(2),8,"01","年假"), fun:BaseController.updateObject},
+        {label:"update ChkHoliday(2,8,\"01\")", // ORA-01407: 无法更新 ("PEADMIN"."T_HRCHK_HLDAY"."C_NAME") 为 NULL
+          po:new ChkHoliday(new Branch(2),8,"01"),fun:BaseController.updateObject},
+        ];
+
+      private function test35():void
+      {
+        var obj:Object=cb35.selectedItem;
+        if (obj)
+          obj.fun(obj.po);
+      }
+
+      /**
+       * callLater, setTimeout, Alert.show, xxxController方法中的函数参数都是异步执行的
+       **/
+      private function test36():void
+      {
+        var f1:Function=function():void
+          {
+            trace("closure@setTimeout: called after 3 seconds!");
+          };
+        var f2:Function=function(obj:Object):void
+          {
+            if (obj.detail == Alert.YES) trace("closeHandler@Alert.show: YES clicked!");
+            else if (obj.detail == Alert.NO) trace("closeHandler@Alert.show: NO clicked!");
+          };
+        var f3:Function=function(e3:ResultEvent):void
+          {
+            trace("successHandler@xxxController.mmm: return " + e3.result.length + " elements!");
+          };
+        var f4:Function=function(e4:FaultEvent):void
+          {
+            trace("faultHandler@xxxController.mmm: throw " + e4.fault.rootCause.message);
+          };
+        var f5:Function=function(s:String, i:int):void
+          {
+            trace("method@callLater: args(" + s + ", " + i + ")");
+          };
+        trace("1@main ...");
+        setTimeout(f1, 3000);
+        trace("2@main ...");
+        Alert.show("Hello World!", "Test", Alert.YES | Alert.NO, null, f2, Constants.ICON32_INFO);
+        trace("3@main ...");
+        BaseController.getDepartments(2, f3, f4);
+        trace("4@main ...");
+        BaseController.addObject(new Person(6, "06", "Tom"), f3, f4);
+        trace("5@main ...");
+        callLater(f5, ["Hello", 99]);
+        trace("6@main ...");
+      }
+
+      /**
+       * 注意AS是单线程执行, 所以事件的执行实际上是同步的!!!???
+       **/
+      private function test37():void
+      {
+        var f1:Function=function(e1:Event=null):void
+          {
+            trace("@f1 ...");
+          };
+        var f2:Function=function(e2:Event=null):void
+          {
+            var i:int, t:int=0;
+            for (i = 0; i < 100000; i++)
+            {
+              t+=i;
+              if (i % 10000 == 0) trace("@f2: " + i/10000);
+            }
+          };
+        var ed:EventDispatcher=new EventDispatcher();
+        trace("1@main ...");
+        ed.addEventListener(CommonEvent.CLEAR, f1);
+        ed.dispatchEvent(CommonEvent.CLEAR_EVENT);
+        ed.removeEventListener(CommonEvent.CLEAR, f1);
+        trace("2@main ...");
+        f1();
+        trace("3@main ...");
+        ed.addEventListener(CommonEvent.CLEAR, f2);
+        ed.dispatchEvent(CommonEvent.CLEAR_EVENT);
+        ed.removeEventListener(CommonEvent.CLEAR, f2);
+        // CommonUtil.popupWindow(Test1, "Hello World");
+        trace("4@main ...");
+      }
+
+      private function test38():void
+      {
+        var debug:Function=function(... vars):void
+          {
+            var s:String="";
+            for (var i:int=0; i < vars.length; i++) s += vars[i] + ",";
+            trace(s);
+          };
+        var sumf:Function=function(... nums):Number
+          {
+            var total:Number=0;
+            for (var i:int=0; i < nums.length; i++) total += nums[i];
+            return total;
+          }
+        var t:Number=sumf(1, 2, 3, 4.5);
+        trace("t="+t);
+        debug(1, "Hello World!", new Person(7, "007", "James Bound"));
+      }
+
+      [Bindable]
+      private var l39:Array=[
+        {label:"String Array", headers:["hA", "hB", "hC", "hD", "hE", "hF"]},
+        {label:"Object(MAP)", headers:{a:"hA", b:"hB", c:"hC", d:"hD", e:"hE", f:"hF"}},
+        {label:"Complex(rowspan+colspan)", headers:[
+          {colspan:2, text:"hAB", children:[
+              {rowspan:2, text:"hA"}, {rowspan:2, text:"hB"}]},
+            {colspan:4, text:"hCDEF", children:[
+              {colspan:2, text:"hCD", children:[{text:"hC"}, {text:"hD"},]},
+                {colspan:2, text:"hEF", children:[{text:"hE"}, {text:"hF"},]},
+              ]},
+          ]},
+        ];
+
+      private function test39():void
+      {
+        var data:Array=[
+          ["dA1", "dB1", "dC1", "dD1", "dE1", "dF1"],
+          ["dA2", "dB2", "dC2", "dD2", "dE2", "dF2"],
+          ["A3测", "B3试", "C3一", "D3下", "E3中", "F3文"],
+          ];
+        var obj:Object=cb39.selectedItem;
+        CommonUtil.export(data, obj.headers, null, "test1.xls");
+      }
+
+      private var book:Workbook;
+
+      private function test40():void
+      {
+        var data:Array=[
+          ["dA1", "dB1", "dC1", "dD1", "dE1", "dF1"],
+          ["dA2", "dB2", "dC2", "dD2", "dE2", "dF2"],
+          ["A3测", "B3试", "C3一", "D3下", "E3中", "F3文"],
+          ];
+        var obj:Object=cb39.selectedItem;
+        ExcelUtil.export(data, obj.headers, null, "test2.xls");
+        ExcelUtil.load("hr_sal_p01.xls", function(_book:Workbook):void{book=_book;});
+      }
+
+      // 注意: 由于Flash的安全限制, loader和fr的方法必须由用户触发
+      private function test41():void
+      {
+        var sheet:Worksheet=book.sheets[0] as Worksheet;
+        sheet.name="中文报表";
+        sheet.setCell(2, 1, "007");
+        sheet.setCell(2, 2, "James Bound");
+        ExcelUtil.save(book, "test3.xls");
+      }
+
+      private function test42():void
+      {
+        trace("text: " + CommonUtil.isWritable(ti43, "text") + "; className: " + CommonUtil.isWritable(ti43, "className"));
+        trace(Clipboard.generalClipboard.formats);
+      }
+
+      private function onKeyDown(event:KeyboardEvent):void
+      {
+        if (event.ctrlKey)
+        {
+          switch (event.keyCode)
+          {
+            case 67: // 'C'
+            case 99: // 'c'
+              CommonUtil.copy();
+              trace("copy");
+              event.preventDefault();
+              break;
+            case 86: // 'V'
+            case 118: // 'v'
+              // CommonUtil.paste();
+              trace("paste");
+              event.preventDefault();
+              break;
+            case 88: // 'X'
+            case 120: // 'x'
+              // CommonUtil.cut();
+              trace("cut");
+              event.preventDefault();
+              break;
+            default:
+              trace(event.keyCode);
+              break;
+          }
+        }
+      }
+
+      private function test43():void
+      {
+        systemManager.addEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+      }
+
+      private function test44():void
+      {
+        systemManager.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyDown);
+      }
+
+      private function test45():void
+      {
+        var arr:Array=[0,1,2,3,4,5,6,7,8,9];
+        var list:ArrayCollection=new ArrayCollection(arr);
+        trace(arr);
+        trace("3 ==> 6: " + CommonUtil.moveItem(arr, 3, 6));
+        trace("6 ==> 3: " + CommonUtil.moveItem(arr, 6, 3));
+        trace("2 ==> 8: " + CommonUtil.moveItem(list, 2, 8));
+        trace("8 ==> 2: " + CommonUtil.moveItem(list, 8, 2));
+      }
+
+      private function test46():void
+      {
+        var arr:Array=[0,1,2,3,4,5,6,7,8,9];
+        var list:ArrayCollection=new ArrayCollection(arr);
+        trace(arr);
+        trace("3 <=> 6: " + CommonUtil.swapItem(arr, 3, 6));
+        trace("6 <=> 3: " + CommonUtil.swapItem(arr, 6, 3));
+        trace("2 <=> 8: " + CommonUtil.swapItem(list, 2, 8));
+        trace("8 <=> 2: " + CommonUtil.swapItem(list, 8, 2));
+      }
+
+      private function test47():void
+      {
+        AideUtil.print(["test","报告期"],
+          [4,"qsgj","上海强生公共交通"],
+          ["D10-000003"],
+          [10,"X01","工资"],
+          [2,6,"Q00001","张三",2500,0,0,2500,"Q00002","李四",2600,100,0,2700]);
+      }
+
+      private function test48():void
+      {
+        AideUtil.closeAidep();
+      }
+
+      private function test49():void
+      {
+        var s1:Object=getStyle("popUpStyleName");
+        var s2:Object=getStyle("popUpGap");
+        trace(s1);
+        trace(s2);
+        if (adg1.visible)
+          pub49.close();
+        else
+          pub49.open();
+      }
+
+      // "苏州 ", "韦毛头", "潘国强", "丁伟1", "岑晁褚嵇郏蔺闵缪沐裘邰瞿璩滕邬奚胥荀闫於"
+      private function test50():void
+      {
+        // b.compress压缩率很高,将近1:10
+        var r:Object=new Branch(4);
+        var b:ByteArray=new ByteArray();
+        b.writeObject(r);
+        b.compress();
+        CommonUtil.debugByteArray(b);
+        b.clear();
+        b.writeObject(UserController.branch);
+        b.compress();
+        CommonUtil.debugByteArray(b);
+        b.clear();
+        b.writeObject({a:"123",b:true});
+        b.compress();
+        CommonUtil.debugByteArray(b);
+        b.clear();
+        b.writeObject({a:"123"});
+        b.compress();
+        CommonUtil.debugByteArray(b);
+        ti50b.text=HanZiUtil.pinyin(ti50a.text);
+      }
+
+      private function test51():void
+      {
+        var f:Function=function(x:Object):Function
+          {
+            var z:Object=ObjectUtil.copy(x)
+            var fc:Function=function(y:int):int 
+              {
+                trace(x.id+":"+z.id);
+                return x.value*y+z.value;
+              };
+            return fc;
+          }
+        var x:Object={id:6, value:3};
+        var t:Function=f(x);
+        trace(t(3));
+        x.id=7;
+        x.value=5;
+        trace(t(4));
+        x={id:8, value:7};
+        trace(t(3));
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

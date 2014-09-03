@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+                showCloseButton="true" close="PopUpManager.removePopUp(this);"
+                creationComplete="init()">
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+      import com.gc.test.model.ObjectHierarchicalData;
+
+      [Bindable]
+      private var ohd:ObjectHierarchicalData;
+
+      /* here's the huge object that we're going to use to populate our
+       ObjectHierarchicalData object */
+      private var largeObject:Object =
+        [
+        {id:"1", "name":"Misc", "type":"parent", "parentTask":"0"},
+        {"id":"2", "name":"Clean the kitchen", "type":"parent", "parentTask":"0"},
+        {"id":"3", "name":"Pay the bills", "type":"parent", "parentTask":"0"},
+        {"id":"4", "name":"Paint the shed", "type":"parent", "parentTask":"1"},
+        {"id":"5", "name":"Get ready for party", "type":"parent", 
+          "parentTask":"1"},
+        {"id":"6", "name":"Do the dishes", "type":"child", "parentTask":"2"},
+        {"id":"7", "name":"Take out trash", "type":"child", "parentTask":"2"},
+        {"id":"8", "name":"Gas Bill", "type":"child", "parentTask":"3"},
+        {"id":"9", "name":"Registration", "type":"child", "parentTask":"3"},
+        {"id":"10", "name":"Fix the car", "type":"parent", "parentTask":"0"},
+        {"id":"11", "name":"New tires", "type":"child", "parentTask":"10"},
+        {"id":"12", "name":"Emissions test", "type":"child", "parentTask":"10"},
+        {"id":"13", "name":"Get new paint", "type":"child", "parentTask":"4"},
+        {"id":"14", "name":"Buy brushes", "type":"child", "parentTask":"4"},
+        {"id":"15", "name":"Buy Drinks", "type":"child", "parentTask":"5"},
+        {"id":"16", "name":"clean living room", "type":"child", "parentTask":"5"},
+        {"id":"16", "name":"finish invitations", "type":"child", 
+          "parentTask":"5"} ];
+
+      private function init():void
+      {
+        ohd = new ObjectHierarchicalData(largeObject);
+      }
+    ]]>
+  </mx:Script>
+  <mx:AdvancedDataGrid dataProvider="{ohd}" width="100%" height="100%">
+    <mx:columns>
+      <!-- all we want to display of the object is the name, the ADG will
+           take care of displaying the parent child relationship -->
+      <mx:AdvancedDataGridColumn dataField="name"/>
+      <mx:AdvancedDataGridColumn dataField="id"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+</mx:TitleWindow>

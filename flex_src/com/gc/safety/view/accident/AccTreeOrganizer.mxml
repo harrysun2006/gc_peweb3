@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" verticalGap="1"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:List id="lstAllColumns" width="100%" height="50%" dataProvider="{arrAllColumns}"
+           allowDragSelection="true" allowMultipleSelection="true" doubleClickEnabled="true"
+           doubleClick="onItemDoubleClick(event)" dragEnabled="true" dragMoveEnabled="true"
+           dropEnabled="true"/>
+  <mx:HBox id="hboxTreeOrganizeToolBar" width="100%">
+    <mx:Image source="{Constants.ICON16_DOWN_DOWN}"
+              click="moveItems(event, arrAllColumns, arrOrderColumns, arrAllColumns.toArray())"
+              toolTip="{resourceManager.getString('gcc_hr', 'add.all.items')}"/>
+    <mx:Image source="{Constants.ICON16_DOWN1}"
+              click="moveItems(event, arrAllColumns, arrOrderColumns, lstAllColumns.selectedItems)"
+              toolTip="{resourceManager.getString('gcc_hr', 'add.selected.items')}"/>
+    <mx:Image width="100%"/>
+    <mx:Image source="{Constants.ICON16_UP1}"
+              click="moveItems(event, arrOrderColumns, arrAllColumns, lstOrderColumns.selectedItems)"
+              toolTip="{resourceManager.getString('gcc_hr', 'remove.selected.items')}"/>
+    <mx:Image source="{Constants.ICON16_UP_UP}"
+              click="moveItems(event, arrOrderColumns, arrAllColumns, arrOrderColumns.toArray())"
+              toolTip="{resourceManager.getString('gcc_hr', 'remove.all.items')}"/>
+    <mx:Image source="{Constants.ICON16_UP2}"
+              click="moveItem(event, arrOrderColumns, lstOrderColumns, -1)"
+              toolTip="{resourceManager.getString('gcc_hr', 'move.up')}"/>
+    <mx:Image source="{Constants.ICON16_DOWN2}"
+              click="moveItem(event, arrOrderColumns, lstOrderColumns, 1)"
+              toolTip="{resourceManager.getString('gcc_hr', 'move.down')}"/>
+  </mx:HBox>
+  <mx:List id="lstOrderColumns" width="100%" height="50%" dataProvider="{arrOrderColumns}"
+           doubleClickEnabled="true" doubleClick="onItemDoubleClick(event)" dragMoveEnabled="true"
+           dragEnabled="true" dropEnabled="true" allowDragSelection="true"
+           allowMultipleSelection="true"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.Events;
+      import com.gc.hr.Events;
+      import com.gc.CommonEvent;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.Constants;
+      import mx.collections.ArrayCollection;
+
+      [Bindable]
+      private var arrAllColumns:ArrayCollection = new ArrayCollection();
+      [Bindable]
+      private var arrOrderColumns:ArrayCollection = new ArrayCollection();
+
+      private function onPreinitialize():void
+      {
+        loadList();
+      }
+
+      private function onCreationComplete():void
+      {
+        // 监听Toolbar-Apply按钮事件
+        addEventListener(CommonEvent.APPLY, onApply);
+        addEventListener(CommonEvent.RESET, onReset);
+      }
+
+      private function loadList():void
+      {
+        var allColumns:Array = AccidentController.All_ACC_ORDER_COLUMNS;
+        var orderColumns:Array = AccidentController.DEFAULT_ACC_ORDER_COLUMNS;
+        if (lstAllColumns)
+          lstAllColumns.invalidateDisplayList();
+        arrAllColumns.removeAll();
+        var column:String;
+        for each (column in allColumns)
+        {
+          if (orderColumns.indexOf(column) >= 0)
+            continue;
+          arrAllColumns.addItem({data: column, label: resourceManager.getString('gcc_safety','organize.acc.'+ column)});
+        }
+        if (lstAllColumns)
+          lstAllColumns.validateNow();
+        if (lstOrderColumns)
+          lstOrderColumns.invalidateDisplayList();
+        arrOrderColumns.removeAll();
+        for each (column in orderColumns)
+        {
+          arrOrderColumns.addItem({data: column, label: resourceManager.getString('gcc_safety','organize.acc.' + column)});
+        }
+        if (lstOrderColumns)
+          lstOrderColumns.validateNow();
+      }
+
+      private function onItemDoubleClick(event:Event):void
+      {
+        if (!event.currentTarget is List)
+          return;
+        var list:List = event.currentTarget as List;
+        var col1:ArrayCollection = (list == lstAllColumns) ? arrAllColumns : arrOrderColumns;
+        var col2:ArrayCollection = (list == lstAllColumns) ? arrOrderColumns : arrAllColumns;
+        moveItems(null, col1,col2, [list.selectedItem]);
+      }
+
+      private function moveItems(event:Event, col1:ArrayCollection, col2:ArrayCollection, items:Array):void
+      {
+        if (items == null || items.length <= 0)
+          return;
+        for each (var item:Object in items)
+        {
+          col2.addItem(item);
+          col1.removeItemAt(col1.getItemIndex(item));
+        }
+      }
+
+      private function moveItem(event:Event, col:ArrayCollection, list:List, dir:int):void
+      {
+        var index:int = list.selectedIndex;
+        var nindex:int = index + dir;
+        if (nindex < 0 || nindex >= col.length)
+          return;
+        var item:Object = col.removeItemAt(index);
+        col.addItemAt(item,nindex);
+        list.invalidateDisplayList();
+        list.selectedIndex = nindex;
+      }
+
+      public function get orderColumns():Array
+      {
+        var arr:Array = new Array();
+        for each (var item:Object in arrOrderColumns)
+        {
+          arr.push(item["data"]);
+        }
+        return arr;
+      }
+
+      private function onApply(event:CommonEvent):void
+      {
+        var arr:Array = orderColumns;
+        dispatchEvent(new Events(Events.PERSON_TREE_REORGANIZING, null, arr));
+      }
+
+      private function onReset(event:CommonEvent):void
+      {
+        loadList();
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

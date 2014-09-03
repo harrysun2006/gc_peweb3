@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox id="vbox" width="100%" height="100%" autoLayout="true">
+    <mx:ToolBar id="form" percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.allotDate')}:"/>
+        <mx:TextInput name="allotDate" editable="false" width="160"
+                      text="{DateUtil.formatDate(pp.allotDate, Constants.DATE_FORMAT)}"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         sortableColumns="false" variableRowHeight="false"
+                         labelFunction="{CommonUtil.gridLabelFunction}"
+                         itemRenderer="mx.controls.Label" keyDown="keyDownHandler(event)">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="workerId"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="office"/>
+        <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="pid"/>
+        <mx:AdvancedDataGridColumn dataField="address"/>
+        <mx:AdvancedDataGridColumn dataField="telephone"/>
+        <mx:AdvancedDataGridColumn dataField="onDate"/>
+        <mx:AdvancedDataGridColumn dataField="downDate"/>
+        <mx:AdvancedDataGridColumn dataField="cert2No" width="120"/>
+        <mx:AdvancedDataGridColumn dataField="cert2NoHex"/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.events.CloseEvent;
+      import mx.managers.PopUpManager;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.PsnOnline;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.AideUtil;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var pp:Person=new Person();
+      private var query:Alert;
+      private var list0:ArrayCollection;
+      private var cert2No:String, cert2NoHex:String, newCert2No:String, newCert2NoHex:String;
+
+      private function init():void
+      {
+        AideUtil.openCardReader(onReadData, onReadError);
+      }
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc", "person");
+        this.setFocus();
+        adg.width=vbox.width=width-viewMetricsAndPadding.left-viewMetricsAndPadding.right;
+      }
+
+      private function onReadError(e:Event):void
+      {
+        Alert.show(resourceManager.getString("gcc_hr", "person.manage.cert2no.reader.error"), Constants.APP_NAME, Alert.OK, this, null, Constants.ICON32_ERROR);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        if (e.args == null)
+          return;
+        var obj:Object=e.args[0];
+        pp.allotDate=obj.date;
+        pp.allotReason=obj.reason;
+        list0=e.args[1] as ArrayCollection;
+        adg.dataProvider=list0;
+        adg.selectedIndex=0;
+        adg.validateNow();
+        if (list0.length <= 0)
+        {
+          close();
+          Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        init();
+      }
+
+      private function close(e:Event=null):void
+      {
+        AideUtil.closeCardReader();
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function onReadData(ss:Array):void
+      {
+        if (adg.selectedItem == null)
+          return;
+        var t:String = ss.join("").replace(/\r/g, "");
+        if (t == "ERR")
+        {
+          onReadError(null);
+        }
+        else if (t == "OK")
+        {
+        }
+        else if (query == null)
+        {
+          var s:Array=t.split("#");
+          if (s.length == 2)
+          {
+            var p0:Person=adg.selectedItem as Person;
+            var qo:Object={date:pp.allotDate, person:p0, newCert2No:s[0], newCert2NoHex:s[1]};
+            adg.selectable=false;
+            cert2No=p0.cert2No;
+            cert2NoHex=p0.cert2NoHex;
+            newCert2No=s[0];
+            newCert2NoHex=s[1];
+            PersonalController.getPersonByCert2(qo, getPersonByCert2SuccessHandler, getPersonByCert2FaultHandler);
+          }
+          else
+          {
+            Alert.show(resourceManager.getString("gcc_hr", "person.manage.cert2no.no.error"), Constants.APP_NAME, Alert.OK, this, null, Constants.ICON32_ERROR);
+          }
+        }
+      }
+
+      private function getPersonByCert2FaultHandler(e:FaultEvent):void
+      {
+        PersonalController.getFaultHandler(null)(e);
+        adg.selectable=true;
+      }
+
+      private function getPersonByCert2SuccessHandler(e:ResultEvent):void
+      {
+        if (adg.selectedItem == null)
+          return;
+        var p1:Person=e.result.p1 as Person; // 指定使用此卡号c1的人员
+        var p2:Person=e.result.p2 as Person; // 目前使用此卡号c1的人员
+        var pos:ArrayCollection=e.result.pos as ArrayCollection; // 包含allotDate(b)的使用过卡号(c1, c2)的历史记录
+        var self:Sprite=this;
+        adg.selectable=true;
+        var op:int=0, q:String, r:String="", s:String;
+        var f1:Function=function(e1:ResultEvent):void // 刷卡处理成功后刷新本地对象并提示信息
+          {
+            var p1:Person=adg.selectedItem as Person;
+            if (op >= 1 && op <= 5)
+            {
+              p1.cert2No=newCert2No;
+              p1.cert2NoHex=newCert2NoHex;
+              p1.allotDate=pp.allotDate;
+            }
+            if (p2 != null && p2.id != p1.id) // 如果被互换卡号的人员在列表中,则刷新
+            {
+              var i:int=CommonUtil.indexOfKey(list0.source, p2, "id");
+              if (i >= 0)
+              {
+                var p3:Person=list0.getItemAt(i) as Person;
+                p3.cert2No=cert2No;
+                p3.cert2NoHex=cert2NoHex;
+                p3.allotDate=pp.allotDate;
+              }
+            }
+            Alert.show(r, Constants.APP_NAME, Alert.OK, self, null, Constants.ICON32_INFO);
+            adg.selectedIndex=(adg.selectedIndex >= list0.length - 1) ? 0 : adg.selectedIndex + 1;
+          };
+        var f2:Function=function(e2:CloseEvent):void // 刷卡处理 
+          {
+            if (e2.detail == Alert.YES)
+            {
+              if (p1) 
+              {
+                p1.allotDate=pp.allotDate;
+                p1.cert2No=(newCert2No == null) ? "-" : newCert2No;
+                p1.cert2NoHex=(newCert2NoHex == null) ? "-" : newCert2NoHex;
+              }
+              if (p2)
+              {
+                p2.allotDate=pp.allotDate;
+                p2.cert2No=cert2No;
+                p2.cert2NoHex=cert2NoHex;
+              }
+              PersonalController.updatePersonsCert2([p1, p2], f1);
+            }
+            query=null;
+          };
+        var f3:Function=function(code:String):String
+          {
+            var po:PsnOnline;
+            var d1:Date, d2:Date;
+            var s1:String="",s2:String="";
+            var c1:String=cert2No ? cert2No : "-";
+            var c2:String=newCert2No ? newCert2No : "-";
+            for each (po in pos)
+            {
+              d1=po.onDate > pp.allotDate ? po.onDate : pp.allotDate;
+              d2=po.downDate;
+              if (po.cert2No == cert2No)
+                s1+=resourceManager.getString("gcc_hr", "psnOnline.format01.pnpwod", [po.personName, po.personWorkerId, DateUtil.formatDate(d1), DateUtil.formatDate(d2)])+"\n";
+              if (po.cert2No == newCert2No)
+                s2+=resourceManager.getString("gcc_hr", "psnOnline.format01.pnpwod", [po.personName, po.personWorkerId, DateUtil.formatDate(d1), DateUtil.formatDate(d2)])+"\n";
+            }
+            if (s1.length > 0)
+            {
+              s1=s1.substring(0, s1.length-1);
+              s1=resourceManager.getString("gcc_hr", code, [c1, c2, s1])+"\n";
+            }
+            if (s2.length > 0)
+            {
+              s2=s2.substring(0, s2.length-1);
+              s2=resourceManager.getString("gcc_hr", code, [c2, c1, s2]);
+            }
+            return s1+s2;
+          };
+        if (!UserController.canWritePerson(p2)) // 如果对人员p2没有权限, 抛错
+        {
+          r=resourceManager.getString("gcc", "person.error.no.access", [p2.name, p2.workerId, p2.depart.name]);
+        }
+        else if (p1.allotDate > pp.allotDate) // 只允许对卡号当前为有效的线段进行互换或移交
+        {
+          r=resourceManager.getString("gcc_hr", "person.manage.cert2no.err1", [p1.name, p1.workerId, DateUtil.formatDate(p1.allotDate), DateUtil.formatDate(pp.allotDate)]);
+        }
+        else if (query == null)
+        {
+          // 空空匹配, 直接发卡
+          if (p1.cert2No == "-" && p2 == null)
+          {
+            q=resourceManager.getString("gcc_hr", "person.manage.cert2no.op1", [p1.name, p1.workerId, newCert2No]);
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.ok1", [p1.name, p1.workerId, newCert2No]);
+            op=1;
+          }
+          // 收卡(p1 == p2 && newCert2No == cert2No)
+          else if (p1.cert2No != "-" && p1.cert2No == newCert2No && p2 != null && p1.id == p2.id)
+          {
+            q=resourceManager.getString("gcc_hr", "person.manage.cert2no.op2", [p1.name, p1.workerId, p1.cert2No]);
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.ok2", [p1.name, p1.workerId, p1.cert2No]);
+            newCert2No="-";
+            newCert2NoHex="-";
+            p2=null; // 后台仅update p1
+            op=2;
+          }
+          // 作废原卡重发卡
+          else if (p1.cert2No != "-" && p1.cert2No != newCert2No && p2 == null)
+          {
+            q=resourceManager.getString("gcc_hr", "person.manage.cert2no.op3", [p1.name, p1.workerId, newCert2No, p1.cert2No]);
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.ok3", [p1.name, p1.workerId, newCert2No, p1.cert2No]);
+            op=3;
+          }
+          // 互换卡号
+          else if (p1.cert2No != "-" && p2 != null && p2.cert2No == newCert2No)
+          {
+            q=resourceManager.getString("gcc_hr", "person.manage.cert2no.op4", [p1.name, p1.workerId, p1.cert2No, p2.name, p2.workerId, p2.cert2No]);
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.ok4", [p1.name, p1.workerId, p1.cert2No, p2.name, p2.workerId, p2.cert2No]);
+            op=4;
+          }
+          // 移交
+          else if (p1.cert2No == "-" && p2 != null && p2.cert2No == newCert2No)
+          {
+            q=resourceManager.getString("gcc_hr", "person.manage.cert2no.op5", [p1.name, p1.workerId, p2.name, p2.workerId, p2.cert2No]);
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.ok5", [p1.name, p1.workerId, p2.name, p2.workerId, p2.cert2No]);
+            op=5;
+          }
+          else
+          {
+            r=resourceManager.getString("gcc_hr", "person.manage.cert2no.err0");
+            p1=null;
+            p2=null;
+          }
+        }
+        if (op >= 1 && op <= 5)
+        {
+          s=f3("person.manage.cert2no.changing");
+          q=q+"\n"+s;
+          s=f3("person.manage.cert2no.changed");
+          r=r+"\n"+s;
+          query=Alert.show(q, Constants.APP_NAME, Alert.YES | Alert.NO, this, f2, Constants.ICON32_QUESTION);
+        }
+        else
+          Alert.show(r, Constants.APP_NAME, Alert.OK, this, null, Constants.ICON32_ERROR);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

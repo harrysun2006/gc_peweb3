@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%">
+    <mx:AdvancedDataGrid id="adgGuaReport" width="100%"
+                         labelFunction="{CommonUtil.gridLabelFunction}" rowCount="5"
+                         dataProvider="{guaReports}" editable="true" keyDown="keyDownHandler(event)"
+                         sortableColumns="false" horizontalScrollPolicy="auto"
+                         itemEditEnd="onItemEditEnd(event)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="no" editable="false" width="64" labelFunction="setNo"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.insurer.name"
+                                   itemEditor="{comboBox}" editorDataField="selectedItem"/>
+        <mx:AdvancedDataGridColumn dataField="reportNo"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox id="buttonBox" width="100%" horizontalAlign="center" paddingBottom="5">
+      <mx:Button id="add" label="+" click="addItem(event)" width="55"/>
+      <mx:Button id="del" label="-" click="delItem(event)" width="55"/>
+      <mx:Button id="remove" label="{resourceManager.getString('gcc', 'clear')}"
+                 click="removeAll(event)" width="55"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.CloseEvent;
+      import com.gc.safety.Events;
+      import com.gc.safety.model.Insurer;
+      import com.gc.safety.model.GuaReportPK;
+      import mx.events.ListEvent;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.rpc.events.ResultEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.collections.IList;
+      import mx.controls.Alert;
+      import com.gc.safety.model.AccDuty;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.ComboBox;
+      import mx.controls.TextArea;
+      import mx.controls.TextInput;
+      import mx.events.FlexEvent;
+      import mx.controls.Label;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.safety.model.GuaReport;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.ArrayCollection;
+      import mx.events.AdvancedDataGridEvent;
+
+      [Bindable]
+      private var comboBox:AdvancedClassFactory;
+      private var branchId:int;
+      private var ids:ArrayCollection;
+      [Bindable]
+      public var guaReports:ArrayCollection = new ArrayCollection();
+      private var guaReport:GuaReport;
+      private var guarInfos:ArrayCollection = new ArrayCollection();
+      private var alerted:Boolean;
+      private var fields:Array;
+
+      private function onPreinitialize():void
+      {
+        branchId = UserController.branchId;
+        comboBox=new AdvancedClassFactory(ComboBox);
+        GuaranteeController.getInsurers(branchId, successInsurer);
+//        if ([3,12].indexOf(UserController.safetyLimit) >= 0)
+//        {
+        fields=["id","reportNo"];
+//        }
+//        else
+//        {
+//          fields=[];
+//        }
+      }
+
+      private function successInsurer(event:ResultEvent):void
+      {
+        var insurers:ArrayCollection = event.result as ArrayCollection;
+        if (insurers != null)
+        {
+          ids = new ArrayCollection();
+          for (var i:int=0; i<insurers.length; i++)
+          {
+            var id:GuaReportPK = new GuaReportPK();
+            var insu:Insurer = insurers.getItemAt(i) as Insurer;
+            if (insu != null)
+            {
+              id.insurer = insu;
+              ids.addItem(id);
+            }
+          }
+        }
+        comboBox.properties={dataProvider: ids, itemRenderer: new ClassFactory(Label), labelFunction: setComboBoxLabel};
+        comboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onInsurerCreateComplete}];
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGuaReport, "gcc_safety", "accguareport", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+              column.editable=(fields.indexOf(column.dataField) >= 0);
+            }
+          });
+      }
+
+      private function setComboBoxLabel(item:Object):String
+      {
+        return item.insurer.name;
+      }
+
+      private function onInsurerCreateComplete(event:Event):void
+      {
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = guaReports.getItemIndex(item) + 1;
+        return i;
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+//            if (newData == "" && CommonUtil.getAccessorValue(data, property) == null)
+//              event.reason=AdvancedDataGridEventReason.CANCELLED;
+//            else
+            data[property]=newData;
+            if (data[property] == "")
+              data[property] = null;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          if (property == "id" && data[property] != null && !alerted)
+          {
+            if (guarInfos.length > 0)
+            {
+              var m:int = 0;
+              for (var i:int=0; i < guarInfos.length; i++)
+              {
+                if (guarInfos[i]["fkGuarantee"]["insurer"]["name"] == data[property]["insurer"]["name"])
+                {
+                  m = 1;
+                  break;
+                }
+              }
+              if (m == 0)
+              {
+                alerted = true;
+                Alert.show(resourceManager.getString('gcc_safety','acc.accguareport.no.guainfo'),Constants.APP_NAME,
+                  Alert.YES | Alert.NO,this,function(evt:CloseEvent):void 
+                  {
+                    if(evt.detail == Alert.NO)
+                    {
+                      data[property] = null;
+                    }
+                    alerted = false;
+                  },Constants.ICON32_QUESTION);
+
+              }
+            }
+            else
+            {
+              alerted = true;
+              Alert.show(resourceManager.getString('gcc_safety','acc.accguareport.no.guainfo'),Constants.APP_NAME,
+                Alert.YES | Alert.NO,this,function(evt:CloseEvent):void 
+                {
+                  if(evt.detail == Alert.NO)
+                  {
+                    data[property] = null;
+                  }
+                  alerted = false;
+                },Constants.ICON32_QUESTION);
+            }
+          }
+          if (property == "reportNo" && data[property] != null && data["id"] != null)
+          {
+            var arr:Array=[data["id"]["insurer"]["name"],data[property]];
+            dispatchEvent(new Events(Events.ADD_REPORTNO,arr));
+          }
+          if (property == "id" && data[property] != null && data["reportNo"] != null)
+          {
+            var arr1:Array=[data[property]["insurer"]["name"],data["reportNo"]]
+            dispatchEvent(new Events(Events.ADD_REPORTNO,arr1));
+          }
+        }
+        if (adgGuaReport.errorString != null)
+        {
+          adgGuaReport.errorString = null;
+        }
+      }
+
+      public function getGuarInfos(gis:ArrayCollection):void
+      {
+        guarInfos.removeAll();
+        if (gis != null)
+        {
+          if (gis.length > 0)
+            guarInfos = gis;
+        }
+      }
+
+      public function getGuaReports(grs:ArrayCollection):void
+      {
+        guaReports.removeAll();
+        if (grs != null)
+        {
+          if (grs.length > 0)
+            guaReports = grs;
+        }
+      }
+
+      private function addItem(event:Event):void
+      {
+        guaReport = new GuaReport();
+        guaReport.id.branch = UserController.branch;
+        guaReports.addItem(guaReport);
+        adgGuaReport.selectedItem = guaReport;
+        adgGuaReport.editedItemPosition = {rowIndex: adgGuaReport.selectedIndex, columnIndex:1};
+      }
+
+      private function delItem(event:Event):void
+      {
+        if (guaReports.length <= 0)
+          return;
+        if (adgGuaReport.selectedItem != null)
+        {
+          var k:int=guaReports.getItemIndex(adgGuaReport.selectedItem);
+          if (k >= 0)
+          {
+            guaReports.removeItemAt(k);
+            adgGuaReport.selectedIndex=(k == guaReports.length) ? guaReports.length - 1 : k;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc','delete.not.null'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (guaReports != null)
+        {
+          if (guaReports.length > 0)
+          {
+            guaReports.removeAll();
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

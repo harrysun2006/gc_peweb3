@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%" 
+	preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+	<mx:VBox width="100%">
+		<mx:AdvancedDataGrid id="adgGuaReport" width="100%" labelFunction="{CommonUtil.gridLabelFunction}"
+			 rowCount="5" dataProvider="{guaReports}" editable="true" keyDown="keyDownHandler(event)">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn dataField="no" editable="false" width="64" labelFunction="setNo"/>
+				<mx:AdvancedDataGridColumn dataField="id" dataTipField="id.insurer.name"/>
+				<mx:AdvancedDataGridColumn dataField="reportNo"/>
+				<mx:AdvancedDataGridColumn dataField="closeNo"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+	</mx:VBox>
+<mx:Script>
+	<![CDATA[
+		import com.gc.util.CommonUtil;
+		import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+		import mx.collections.ArrayCollection;
+		
+		[Bindable]
+		public var guaReports:ArrayCollection = new ArrayCollection();
+		private var fields:Array;
+		
+		private function onPreinitialize():void {
+			fields=["closeNo"];
+		}
+		
+		private function onCreationComplete():void {
+			CommonUtil.setDataGridColumns(adgGuaReport, "gcc_safety", "accguareport", function(obj:Object):void
+				{
+					if (obj is AdvancedDataGridColumn)
+		            {
+		              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+		              column.editable=(fields.indexOf(column.dataField) >= 0);
+		            }
+				});
+		}
+		
+		private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+	    {
+	      column.setStyle("backgroundColor", 0xD8D8D8);
+	      return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+	    }
+		
+		private function setNo(item:Object, column:AdvancedDataGridColumn):int {
+			column.styleFunction = serialStyleFunction;
+			var i:int = guaReports.getItemIndex(item) + 1;
+			return i;
+		}
+		
+		public function getGuaReports(grs:ArrayCollection):void {
+			guaReports.removeAll();
+			if(grs != null){
+				if(grs.length > 0)
+					guaReports = grs;
+			}
+		}
+	]]>
+</mx:Script>	
+</mx:Canvas>

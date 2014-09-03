@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                layout="vertical" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:ToolBar width="100%">
+    <mx:GridItem>
+      <mx:Label text="{resourceManager.getString('gcc', 'depart')}:"/>
+      <mx:Label text="{depart.name}"/>
+    </mx:GridItem>
+    <mx:GridItem>
+      <mx:Label text="{resourceManager.getString('gcc', 'date')}:"/>
+      <mx:Label 
+                text="{DateUtil.formatDate(date, resourceManager.getString('gcc', 'date.format.y'))}"/>
+    </mx:GridItem>
+  </mx:ToolBar>
+  <gc:StyledDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                     lockedColumnCount="3" editable="false" selectionMode="singleRow"
+                     labelFunction="{CommonUtil.gridLabelFunction}" sortableColumns="false"
+                     resizableColumns="false" visible="false" draggableColumns="false">
+    <gc:columns>
+      <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'serial')}"
+                                 dataField="{Constants.PROP_NAME_SERIAL}" width="42"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn 
+                                 headerText="{resourceManager.getString('gcc', 'person.contractNo')}"
+                                 dataField="person" dataTipField="person.contractNo" width="100"/>
+      <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'person.name')}"
+                                 dataField="person" dataTipField="person.name" width="80"/>
+    </gc:columns>
+  </gc:StyledDataGrid>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'print')}" click="print(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.Alert;
+      import mx.controls.Label;
+      import mx.rpc.events.ResultEvent;
+      import mx.skins.ProgrammaticSkin;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.StyledDataGridHeaderRenderer;
+      import com.gc.controls.advancedDataGridClasses.StyledDataGridItemRenderer;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.model.ChkDisp;
+      import com.gc.hr.model.ChkExtra;
+      import com.gc.hr.model.ChkFactD;
+      import com.gc.hr.model.ChkHoliday;
+      import com.gc.hr.model.ChkWork;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.PrintUtil;
+
+      private const FONT_SIZE:int=12;
+
+      private var reportHeaderRenderer:AdvancedClassFactory;
+      private var reportItemRenderer:AdvancedClassFactory;
+      [Bindable]
+      private var depart:Department;
+      [Bindable]
+      private var date:Date;
+      private var qo:Object;
+
+      private function onPreinitialize():void
+      {
+        reportItemRenderer=new AdvancedClassFactory(StyledDataGridItemRenderer);
+        reportHeaderRenderer=new AdvancedClassFactory(StyledDataGridHeaderRenderer);
+        reportHeaderRenderer.properties={labelStyle: "planHeaderLabel", sortItemRenderer: Constants.ZERO_RENDERER};
+        reportHeaderRenderer.styles={color: Constants.Blue};
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        adg.itemRenderer=reportItemRenderer;
+        adg.headerRenderer=reportHeaderRenderer;
+        adg.setStyle("headerSortSeparatorSkin", ProgrammaticSkin);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        qo=e.args[0];
+        var data:ArrayCollection=e.args[1] as ArrayCollection;
+        depart=qo["depart"];
+        date=qo["date_from"];
+        title=resourceManager.getString("gcc_hr", "chkFactD.report.depart");
+        callLater(function():void
+          {
+            adg.columns=adg.columns.concat(getColumns());
+            load(data);
+          });
+      }
+
+      private function columnField(item:Object):String
+      {
+        var s:String=item is ChkWork ? "w" : item is ChkHoliday ? "h" : item is ChkExtra ? "e" : item is ChkDisp ? "d" : "";
+        return item && item.hasOwnProperty("id") ? s+item.id : "";
+      }
+
+      private function getColumns():Array
+      {
+        var r:Array=[];
+        var column:AdvancedDataGridColumn;
+        var items:Array=[];
+        items=items
+          .concat(CheckController.workList.toArray())
+          .concat(CheckController.holidayList.toArray())
+          .concat(CheckController.extraList.toArray())
+          .concat(CheckController.dispList.toArray());
+        var cw:int=(width-80)/items.length-1;
+        cw=cw > 36 ? cw : 36;
+        for each (var item:Object in items)
+        {
+          column=new AdvancedDataGridColumn();
+          column.headerText=item.name;
+          column.width=cw;
+          column.showDataTips=true;
+          column.dataField=columnField(item);
+          column.formatter=Constants.NUMBER_FORMATTER_N0;
+          column.setStyle("textAlign", "center");
+          r.push(column);
+        }
+        column=new AdvancedDataGridColumn();
+        column.width=1;
+        r.push(column);
+        return r;
+      }
+
+      private function load(data:ArrayCollection):void
+      {
+        var list:ArrayCollection=new ArrayCollection();
+        var style:Object={bgColor:Constants.Silver};
+        var row:Object, stat:Object, item:Object;
+        for each (var obj:Object in data)
+        {
+          row=new Object();
+          row.serial={style: style};
+          row.person=obj.person;
+          stat=obj.stat;
+          for each (var s:Object in stat)
+          {
+            row[columnField(s.item)]=s.count;
+          }
+          list.addItem(row);
+        }
+        adg.dataProvider=list;
+        adg.visible=true;
+      }
+
+      private function export(event:Event):void
+      {
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_CHECK, "reportDepartCheck", [qo]);
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.fail"),
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          });
+        fr.download(ur, resourceManager.getString("gcc_hr", "chkFactD.report.depart.filename", [depart.name]));
+      }
+
+      private function print(event:Event):void
+      {
+        PrintUtil.print(adg);
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

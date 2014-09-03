@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+        preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+        horizontalAlign="center">
+  <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.query')}" textAlign="center"
+            width="100%" fontSize="16" fontWeight="bold"/>
+  <mx:AdvancedDataGrid id="adgTrans" dataProvider="{transList}"
+                       labelFunction="{CommonUtil.gridLabelFunction}" width="90%" height="100%"
+                       horizontalScrollPolicy="auto" sortableColumns="false" lockedColumnCount="4">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn headerText="序号" labelFunction="{CommonUtil.serialLabelFunction}"
+                                 width="64" color="0x0000FF" backgroundColor="0xD8D8D8"
+                                 fontWeight="bold" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                 textAlign="center"/>
+      <mx:AdvancedDataGridColumn dataField="transDate"/>
+      <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+      <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.name"/>
+      <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+      <mx:AdvancedDataGridColumn dataField="code"/>
+      <mx:AdvancedDataGridColumn dataField="transType" dataTipField="transType.name"/>
+      <mx:AdvancedDataGridColumn dataField="upFee" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="point"/>
+      <mx:AdvancedDataGridColumn dataField="penalty"/>
+      <mx:AdvancedDataGridColumn dataField="inputer" dataTipField="inputer.name"/>
+      <mx:AdvancedDataGridColumn dataField="inputDate"/>
+      <mx:AdvancedDataGridColumn dataField="doDate"/>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.accNo"/>
+      <mx:AdvancedDataGridColumn dataField="confirmObj" dataTipField="confirmObj.label" width="80"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+           horizontalGap="20">
+    <mx:Button id="btExport" label="导出" click="export(event)"/>
+    <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.TransInfo;
+      import com.gc.Constants;
+      import com.gc.util.DateUtil;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var transList:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        var obj:DisplayObject=this;
+        addEventListener(CommonEvent.CREATED,function(event:CommonEvent):void
+          {
+            CommonUtil.popupWindow(TransQueryWin,"违章查询条件",obj);
+            new Events(Events.GET).stopImmediatePropagation();
+            addEventListener(Events.GET,function(evt:Events):void
+              {
+                transList = evt.data as ArrayCollection;
+                for each (var ti:TransInfo in transList)
+                {
+                  ti.confirmObj=(ti.confirm=="1")? Constants.CONFIRMOBJ[1] : Constants.CONFIRMOBJ[0];
+                }
+              });
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgTrans,"gcc_safety","transinfo");
+      }
+
+      private function export(event:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adgTrans),CommonUtil.getGridHeaders(adgTrans),null,DateUtil.formatDate(new Date())+"违章信息.xls");
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:Box>

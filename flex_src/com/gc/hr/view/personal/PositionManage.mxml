@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:flexlib="http://code.google.com/p/flexlib/" xmlns:view="com.gc.hr.view.*"
+                verticalAlign="top" layout="vertical" width="800" height="600"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:HDividedBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg" width="100%" height="100%" tabEnabled="false"
+                           labelFunction="{CommonUtil.gridLabelFunction}" change="onChange(event)"
+                           valueCommit="onValueCommit(event)" keyDown="keyDownHandler(event)">
+        <mx:columns>
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="60"
+                                     formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+          <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" width="40"/>
+          <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'name')}"
+                                     dataField="name" width="100"/>
+        </mx:columns>
+      </mx:AdvancedDataGrid>
+      <mx:ViewStack id="vsPosition" width="100%" height="100%" minWidth="300" creationPolicy="all">
+        <mx:Canvas/>
+        <mx:VBox id="viewPosition" width="100%" height="100%" paddingLeft="10" paddingTop="10"
+                 paddingRight="10" keyDown="CommonUtil.keyDown(event)">
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.id.no')}:"/>
+            <mx:TextInput id="tiNo" name="id.no" text="{position.id.no}" maxChars="1"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.name')}:"/>
+            <mx:TextInput name="name" text="{position.name}"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.responsibility')}:"/>
+            <mx:TextArea name="responsibility" wordWrap="false" text="{position.responsibility}"
+                         height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.reqDescription')}:"/>
+            <mx:TextArea name="reqDescription" text="{position.reqDescription}" height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.reqCert')}:"/>
+            <mx:TextArea name="reqCert" text="{position.reqCert}" height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.reqPersonCount')}:"/>
+            <mx:TextInput name="reqPersonCount" text="{position.reqPersonCount}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.genLevel')}:"/>
+            <mx:TextInput name="genLevel" text="{position.genLevel}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.salaryLevel')}:"/>
+            <mx:TextInput name="salaryLevel" text="{position.salaryLevel}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.techLevel')}:"/>
+            <mx:TextInput name="techLevel" text="{position.techLevel}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.techDescription')}:"/>
+            <mx:TextArea name="techDescription" text="{position.techDescription}" height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.securityLevel')}:"/>
+            <mx:TextInput name="securityLevel" text="{position.securityLevel}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.securityDescription')}:"/>
+            <mx:TextArea name="securityDescription" text="{position.securityDescription}"
+                         height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'position.comment')}:" height="80"/>
+            <mx:TextArea name="comment" text="{position.comment}"/>
+          </mx:GridItem>
+        </mx:VBox>
+      </mx:ViewStack>
+    </mx:HDividedBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10"
+             paddingLeft="10">
+      <mx:Button id="btnAdd" label="{resourceManager.getString('gcc', 'add')}" click="add(event)"/>
+      <mx:Button id="btnDelete" label="{resourceManager.getString('gcc', 'delete')}"
+                 click="_delete(event)"/>
+      <mx:Button id="btnMerge" label="{resourceManager.getString('gcc', 'merge')}"
+                 click="merge(event)" includeInLayout="false" visible="false"/>
+      <mx:Button id="btnSave" label="{resourceManager.getString('gcc', 'save')}" click="save(event)"
+                 enabled="false"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Label;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import org.swizframework.Swiz;
+
+      import com.gc.ArrayHierarchy;
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Position;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var position:Position;
+      private var newPosition:Position;
+      private var user:SecurityUser;
+      private var positionList:ArrayCollection;
+      private var labelItemRenderer:IFactory=new ClassFactory(Label);
+      private var operation:String;
+
+      private function onPreinitialize():void
+      {
+        user=UserController.user;
+      }
+
+      private function onCreationComplete():void
+      {
+        loadPositions(user.limit.id.branch.id);
+        CommonUtil.setDataGridColumns(adg, "gcc", "position", CommonUtil.complexColumnCompare);
+        CommonUtil.visit(viewPosition, setItem);
+        CommonUtil.show([btnAdd, btnDelete, btnMerge, btnSave], UserController.hrWrite);
+        this.setFocus();
+      }
+
+      /**
+       * 树的相关方法和事件
+       **/
+      private function loadPositions(branchId:int):void
+      {
+        PersonalController.getPositions(branchId, onGetPositionsSuccess);
+      }
+
+      private function onGetPositionsSuccess(e:ResultEvent):void
+      {
+        positionList=e.result as ArrayCollection;
+        buildPositionTree(positionList);
+      }
+
+      private function buildPositionTree(coll:ArrayCollection):void
+      {
+        var _root:Branch=user.limit.id.branch;
+        var count:int=0;
+        for (var i:int=0; i < coll.length; i++)
+        {
+          coll[i][Constants.PROP_NAME_SERIAL]=++count;
+        }
+        _root["children"]=coll;
+        adg.dataProvider=new ArrayHierarchy(_root);
+        adg.validateNow();
+        adg.expandItem(_root, true);
+        callLater(function():void{adg.selectedItem=_root;});
+      }
+
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      private function onValueCommit(event:Event):void
+      {
+        clickTreeNode(adg.selectedItem);
+      }
+
+      private function clickTreeNode(node:Object):void
+      {
+        btnAdd.enabled=false;
+        btnDelete.enabled=false;
+        btnMerge.enabled=false;
+        btnSave.enabled=false;
+        position=null;
+        if (node is Branch)
+        {
+          vsPosition.selectedIndex=0;
+          btnAdd.enabled=true;
+          tiNo.editable=true;
+          operation=Constants.OP_ADD;
+        }
+        else if (node is Position)
+        {
+          vsPosition.selectedIndex=1;
+          btnDelete.enabled=true;
+          btnMerge.enabled=true;
+          tiNo.editable=false;
+          position=node as Position;
+          if (position != null && position.comment != null)
+            position.comment=position.comment.replace(/\r\n/g, "\n");
+          if (position != null && position.responsibility != null)
+            position.responsibility=position.responsibility.replace(/\r\n/g, "\n");
+          operation=Constants.OP_EDIT;
+        }
+      }
+
+      /**
+       * 表单的相关方法和事件
+       **/
+      private function setItem(comp:Object):void
+      {
+        if (comp is Label)
+        {
+          comp.width=80;
+          comp.setStyle("textAlign", "right");
+        }
+        else if (comp is TextInput || comp is TextArea)
+        {
+          comp.percentWidth=100;
+          comp.addEventListener(Event.CHANGE, function(event:Event):void
+            {
+              btnSave.enabled=true;
+            });
+        }
+        else if (comp is GridItem)
+        {
+          comp.percentWidth=100;
+        }
+      }
+
+      /**
+       * Add, Delete, Merge, Save, Close
+       **/
+      private function add(event:Event):void
+      {
+        if (adg.selectedItem is Branch)
+        {
+          vsPosition.selectedChild=viewPosition;
+          var branch:Branch=adg.selectedItem as Branch;
+          position=new Position(branch);
+          btnSave.enabled=true;
+        }
+      }
+
+      private function _delete(event:Event):void
+      {
+        if (position != null)
+        {
+          BaseController.deleteObject(position, deletePositionSuccessHandler);
+        }
+      }
+
+      private function deletePositionSuccessHandler(event:ResultEvent):void
+      {
+        CommonUtil.visit(positionList, deleteNode, [position], {cancel: false});
+        adg.selectedIndex=0;
+      }
+
+      private function deleteNode(obj:Object, args:Array=null, flag:Object=null):void
+      {
+        if (obj is ArrayCollection)
+        {
+          var coll:ArrayCollection=obj as ArrayCollection;
+          var node:Object=(args != null && args.length > 0) ? args[0] : null;
+          var k:int=coll.getItemIndex(node);
+          if (k >= 0)
+          {
+            coll.removeItemAt(k);
+            if (flag != null && flag.hasOwnProperty("cancel"))
+              flag.cancel=true;
+          }
+        }
+      }
+
+      private function merge(event:Event):void
+      {
+      }
+
+      private function save(event:Event):void
+      {
+        if (!CommonUtil.validateForm(viewPosition, ["id.no", "name"]))
+          return;
+        newPosition=new Position(new Branch(position.id.branch.id));
+        CommonUtil.loadInstance(viewPosition, newPosition);
+        if (operation == Constants.OP_ADD)
+        {
+          newPosition.onDate=new Date();
+          newPosition.downDate=Constants.MAX_DATE;
+          BaseController.addObject(newPosition, addPositionSuccessHandler);
+        }
+        else if (operation == Constants.OP_EDIT)
+        {
+          BaseController.updateObject(newPosition, updatePositionSuccessHandler);
+        }
+      }
+
+      private function addPositionSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        positionList.addItem(newPosition);
+        // adg.selectedItem=newPosition;
+        // adg.scrollToIndex(adg.selectedIndex);
+      }
+
+      private function updatePositionSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        CommonUtil.copyProperties(newPosition, position);
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

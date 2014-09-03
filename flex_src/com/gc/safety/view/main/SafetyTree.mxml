@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           xmlns:controls="com.gc.controls.*" xmlns:main="com.gc.safety.view.main.*"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+           keyDown="onKeyDown(event)">
+  <mx:HDividedBox height="100%" width="100%">
+    <mx:VBox height="100%" minWidth="300" maxWidth="400" verticalGap="0">
+      <controls:ToolBarNavigator id="stnAccTree" creationPolicy="all" width="100%" height="100%"
+                                 popUpButtonPolicy="off" borderStyle="none" paddingTop="0"
+                                 change="onToolBarNavigatorChange(event)" toolBars="{toolBars}"
+                                 closePolicy="{SuperTab.CLOSE_NEVER}">
+        <main:AccTree id="viewAccTree" label="事故"
+                      toolTip="{resourceManager.getString('gcc_safety', 'tree.acc')}"/>
+        <main:GuaTree id="viewGuaTree" label="保单"
+                      toolTip="{resourceManager.getString('gcc_safety', 'tree.gua')}"/>
+        <main:TransTree id="viewTransTree" label="违章"
+                        toolTip="{resourceManager.getString('gcc_safety', 'tree.transinfo')}"/>
+      </controls:ToolBarNavigator>
+    </mx:VBox>
+    <mx:VBox height="100%">
+      <mx:HBox width="100%">
+        <mx:Button id="btExport" label="导出" click="export(event)"/>
+        <mx:Label text="  起始日期："/>
+        <mx:Label id="lDateFrom"/>
+        <mx:Label text=" - 当前日期："/>
+        <mx:Label id="lDateTo"/>
+        <mx:Label id="lDir"/>
+      </mx:HBox>
+      <mx:ViewStack id="vsMain" width="100%" height="100%" minWidth="400" minHeight="488"
+                    creationPolicy="auto" horizontalCenter="true" change="onChange(event)">
+        <main:AccTreeNode id="viewAccTreeNode"/>
+        <main:GuaTreeNode id="viewGuaTreeNode"/>
+        <main:TransTreeNode id="viewTransTreeNode"/>
+      </mx:ViewStack>
+    </mx:VBox>
+  </mx:HDividedBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+      import com.gc.safety.Events;
+      import mx.rpc.events.ResultEvent;
+      import mx.controls.DateField;
+      import com.gc.common.controller.BaseController;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import mx.collections.ArrayCollection;
+      import com.gc.util.CommonUtil;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import flexlib.controls.tabBarClasses.SuperTab;
+
+      [Bindable]
+      private var toolBars:ArrayCollection=new ArrayCollection();
+      private var modified:Boolean=false;
+      private var preloadList:Array; // 先装载的树的列表
+      private var equOnlineAC:ArrayCollection = new ArrayCollection(); // 部门-线路-车辆公共数据
+      [Bindable]
+      private var dateFrom:Date=new Date();
+      private var item:Object;
+
+      private function onPreinitialize():void
+      {
+        var allItems:Array=[{icon: Constants.ICON16_TREE_EXPAND, toolTip: resourceManager.getString("gcc", "tree.expand.selected"), click: expand},
+          {icon: Constants.ICON16_TREE_EXPANDALL, toolTip: resourceManager.getString("gcc", "tree.expand.all"), click: expandAll}, 
+          {icon: Constants.ICON16_TREE_COLLAPSE, toolTip: resourceManager.getString("gcc", "tree.collapse.selected"), click: collapse}, 
+          {icon: Constants.ICON16_TREE_COLLAPSEALL, toolTip: resourceManager.getString("gcc", "tree.collapse.all"), click: collapseAll}, 
+          {icon: Constants.ICON16_REFRESH, toolTip: resourceManager.getString("gcc", "refresh"), click: refresh},
+//          {icon: Constants.ICON16_RESET, toolTip: resourceManager.getString("gcc", "reset"), click: reset},
+//          {icon: Constants.ICON16_APPLY, toolTip: resourceManager.getString("gcc", "apply"), click: apply},
+          ];
+        // toolBars: 每个SuperTab对应的ToolBar
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[0], allItems[1], allItems[2], allItems[3], allItems[4]]));
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[0], allItems[1], allItems[2], allItems[3], allItems[4]]));
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[0], allItems[1], allItems[2], allItems[3], allItems[4]]));
+        //双击导航，接到后再派发给AccTree,展开节点
+        addEventListener(CommonEvent.DBLCLICKED,onADGDBClicked);
+      }
+
+      private function onCreationComplete():void
+      {
+        // initialize dateFrom, defautl current year
+        dateFrom.setMonth(0, 1);
+        lDateFrom.text = DateField.dateToString(dateFrom,Constants.DATE_FORMAT);
+        lDateTo.text = DateField.dateToString(CommonController.now,Constants.DATE_FORMAT);
+        addEventListener(CommonEvent.CLICKED, onTreeNodeClicked);
+        preloadList=[viewAccTree,viewGuaTree, viewTransTree];
+//        initParm();
+        stnAccTree.setClosePolicyForTab(0, SuperTab.CLOSE_NEVER);
+        addEventListener(Events.UPDATE,function(evt:Events):void 
+          {
+            evt.stopImmediatePropagation();
+            item = evt.data;
+          });
+        if (lDateTo.text == "")
+          lDateTo.text = DateField.dateToString(new Date,Constants.DATE_FORMAT);
+        lDateTo.validateNow();
+      }
+//      private var time1:Number;
+      // 刷新基础数据
+      private function initParm():void
+      {
+        dateFrom=DateField.stringToDate(lDateFrom.text,Constants.DATE_FORMAT);
+        // BaseController.getDeptsLinesBusesForSafetyTree(UserController.limit, CommonController.DEFAULT_SAFETY_ORDER_COLUMNS, dateFrom, onGetDeptsLinesBusesSuccess);
+//        if (!Constants.DEBUG)
+//time1=new Date().getTime();
+        BaseController.getEquOnlinesForSafetyTree(UserController.limit, dateFrom, CommonController.DEFAULT_SAFETY_ORDER_COLUMNS, onGetDeptsLinesBusesSuccess);
+      }
+
+      private function onGetDeptsLinesBusesSuccess(e:ResultEvent):void
+      {
+//      	trace("前台车、里程从查询调用到返回结果到前台："+(new Date().getTime()-time1));
+//      	trace("前台车、里程从查询到时当前时间："+new Date().getTime());
+        equOnlineAC.removeAll();
+        equOnlineAC=e.result as ArrayCollection;
+        // 刷新树,刷新全部树
+        for each (var obj:Object in preloadList)
+        {
+          obj.dispatchEvent(new CommonEvent(CommonEvent.GET_SUCCESS, {equOnline: equOnlineAC, dateFrom: dateFrom}));
+        }
+        //刷新选中的树
+//        stnAccTree.selectedChild.dispatchEvent(new CommonEvent(CommonEvent.GET_SUCCESS, {equOnline: equOnlineAC, dateFrom: dateFrom}));
+      }
+
+      //向下派发事件
+      private function onADGDBClicked(event:CommonEvent):void
+      {
+        stnAccTree.selectedChild.dispatchEvent(event);
+      }
+
+      /**
+       * 左侧工具条
+       */
+      private function expand(event:Event):void
+      {
+        stnAccTree.selectedChild.dispatchEvent(CommonEvent.EXPAND_EVENT);
+      }
+
+      private function expandAll(event:Event):void
+      {
+        stnAccTree.selectedChild.dispatchEvent(CommonEvent.EXPAND_ALL_EVENT);
+      }
+
+      private function collapse(event:Event):void
+      {
+        stnAccTree.selectedChild.dispatchEvent(CommonEvent.COLLAPSE_EVENT);
+      }
+
+      private function collapseAll(event:Event):void
+      {
+        stnAccTree.selectedChild.dispatchEvent(CommonEvent.COLLAPSE_ALL_EVENT);
+      }
+
+      private function refresh(event:Event):void
+      {
+        var rdwin:RefreshDateWin = CommonUtil.popupWindow(RefreshDateWin,"确定查询日期范围",null,
+          DateField.stringToDate(lDateFrom.text,Constants.DATE_FORMAT)) as RefreshDateWin;
+        rdwin.dispatchEvent(new Events(Events.ADD,DateField.stringToDate(lDateFrom.text,Constants.DATE_FORMAT)));
+        rdwin.addEventListener(Events.GET,function(evt:Events):void 
+          {
+            lDateFrom.text = DateField.dateToString(evt.data as Date,Constants.DATE_FORMAT);
+            for each(var obj:Object in vsMain.getChildren())
+            {
+              obj.dispatchEvent(CommonEvent.REFRESH_EVENT);
+            }
+            initParm();
+            evt.stopImmediatePropagation();
+            PopUpManager.removePopUp(rdwin);
+          });
+      }
+
+      private function export(event:Event):void
+      {
+        switch (vsMain.selectedChild)
+        {
+          case viewAccTreeNode:
+            viewAccTreeNode.vsNodeView.selectedChild.dispatchEvent(new CommonEvent(CommonEvent.EXPORT,item));
+            break;
+          case viewTransTreeNode:
+            viewTransTreeNode.vsNodeView.selectedChild.dispatchEvent(new CommonEvent(CommonEvent.EXPORT,item));
+            break;
+          case viewGuaTreeNode:
+            viewGuaTreeNode.vsNodeView.selectedChild.dispatchEvent(new CommonEvent(CommonEvent.EXPORT,item));
+            break;
+        }
+      }
+
+      /** 树节点点击事件 */
+      private function onTreeNodeClicked(event:CommonEvent):void
+      {
+        event.stopImmediatePropagation();
+        switch (stnAccTree.selectedChild)
+        {
+          case viewAccTree:
+            vsMain.selectedChild=viewAccTreeNode;
+            break;
+          case viewTransTree:
+            vsMain.selectedChild=viewTransTreeNode;
+            break;
+          case viewGuaTree:
+            vsMain.selectedChild=viewGuaTreeNode;
+            break;
+        }
+        vsMain.selectedChild.dispatchEvent(event);
+        var item:Object = event.data;
+        var args:Array = event.args;
+        event.stopImmediatePropagation();
+        if (item == null || args == null || args.length != 2)
+          return;
+        var ancestors:Array = args[0] as Array;
+        lDir.text = "--";
+        for each (var point:Object in ancestors)
+        {
+          lDir.text += point.label + "/";
+        }
+        lDir.text = lDir.text.substring(0,lDir.text.length -1);
+      }
+
+      private function onChange(event:Event):void
+      {
+      }
+
+      private function onToolBarNavigatorChange(e:Event):void
+      {
+        switch (stnAccTree.selectedChild)
+        {
+          case viewAccTree:
+            vsMain.selectedChild=viewAccTreeNode;
+            item = viewAccTree.treeAcc.selectedItem;
+//            if (viewAccTree.treeAcc.selectedIndex == -1)
+//              viewAccTree.treeAcc.selectedIndex = 0;
+            break;
+          case viewTransTree:
+            vsMain.selectedChild=viewTransTreeNode;
+            item = viewTransTree.treeTrans.selectedItem;
+//            if (viewTransTree.treeTrans.selectedIndex == -1)
+//              viewTransTree.treeTrans.selectedIndex = 0;
+            break;
+          case viewGuaTree:
+            vsMain.selectedChild=viewGuaTreeNode;
+            item = viewGuaTree.treeGua.selectedItem;
+//            if (viewGuaTree.treeGua.selectedIndex == -1)
+//              viewGuaTree.treeGua.selectedIndex = 0;
+            break;
+        }
+        lDir.text = "";
+      }
+
+      private function onKeyDown(event:KeyboardEvent):void
+      {
+        var p:Object=event.currentTarget;
+        switch (event.keyCode)
+        {
+          case Keyboard.F5:
+            refresh(event);
+            break;
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

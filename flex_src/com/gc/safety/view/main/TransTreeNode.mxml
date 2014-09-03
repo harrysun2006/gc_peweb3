@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:main="com.gc.safety.view.main.*"
+           creationComplete="onCreationComplete()" width="100%" height="100%">
+  <mx:ViewStack id="vsNodeView" width="100%" height="100%" creationPolicy="all"
+                change="onChange(event)">
+    <mx:ModuleLoader id="loaderMain"/>
+    <main:TransList id="viewList"/>
+    <main:TransStat id="viewStat"/>
+  </mx:ViewStack>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.common.model.EquOnline;
+      import com.gc.CommonEvent;
+
+      private function onCreationComplete():void
+      {
+        addEventListener(CommonEvent.CLICKED, onTreeNodeClick);
+        addEventListener(CommonEvent.REFRESH,function(evt:CommonEvent):void
+          {
+            vsNodeView.selectedIndex=0;
+            evt.stopImmediatePropagation();
+          });
+      }
+
+      private function onTreeNodeClick(e:CommonEvent):void
+      {
+        var data:Object=e.data;
+        var args:Array=e.args;
+        e.stopImmediatePropagation();
+        if (data == null || args == null || args.length != 2)
+          return;
+        var ancestors:Array=args[0] as Array;
+        var orders:Array=args[1] as Array;
+        if (data is EquOnline)
+        {
+          vsNodeView.selectedChild=viewList;
+          viewList.listTrans(data, ancestors, orders);
+        }
+        else
+        {
+          vsNodeView.selectedChild=viewStat;
+          viewStat.statTrans(data, ancestors, orders);
+        }
+      }
+
+      private function onChange(e:Event):void
+      {
+
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

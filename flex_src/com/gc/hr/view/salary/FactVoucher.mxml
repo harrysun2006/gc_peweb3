@@ -1,0 +1,1464 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" horizontalAlign="center"
+           verticalGap="0">
+    <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         keyDown="{CommonUtil.gridKeyDown(event)}" scroll="onScroll(event)"
+                         itemEditBegin="onItemEditBegin(event)" itemEditEnd="onItemEditEnd(event)"
+                         columnStretch="onColumnStretch(event)" headerShift="onHeaderShift(event)"
+                         focusIn="onFocusIn(event)" keyFocusChange="onKeyFocusChange(event)"
+                         sortableColumns="true" sortExpertMode="true" selectionMode="multipleRows">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <gc:StyledDataGrid id="adg2" width="100%" height="24" showHeaders="false" editable="false"
+                       horizontalScrollPolicy="auto" verticalScrollPolicy="on"
+                       resizableColumns="false" selectable="false" sortableColumns="false">
+      <gc:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+      </gc:columns>
+    </gc:StyledDataGrid>
+    <mx:Label id="note" textAlign="left" width="100%"/>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="6" paddingBottom="6">
+      <mx:FormItem label="{resourceManager.getString('gcc', 'search')}:" textAlign="right">
+        <mx:TextInput id="tiSearch" width="120" keyDown="onSearchKeyDown(event)"/>
+      </mx:FormItem>
+      <mx:PopUpButton id="pub0" visible="false" includeInLayout="false"
+                      label="{resourceManager.getString('gcc_hr', 'salItem.formula.xxItems')}"/>
+      <mx:Button id="b1" label="{resourceManager.getString('gcc', 'insert')}" click="insert(event)"/>
+      <mx:Button id="b2" label="{resourceManager.getString('gcc', 'append')}" click="append(event)"/>
+      <mx:Button id="b3" label="{resourceManager.getString('gcc', 'delete')}" click="_delete(event)"/>
+      <mx:PopUpButton id="pub1" label="{resourceManager.getString('gcc', 'other')}"/>
+      <mx:PopUpButton id="pub2" label="{resourceManager.getString('gcc', 'print.preview')}"/>
+      <mx:PopUpButton id="pub3" label="{resourceManager.getString('gcc', 'print')}"/>
+      <mx:Button id="b4" label="{resourceManager.getString('gcc', 'import')}" click="_import(event)"/>
+      <mx:Button id="b5" label="{resourceManager.getString('gcc', 'save')}" click="save(event)"/>
+      <mx:Button id="b6" label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      /**
+       * 计算逻辑:
+       * 1. 设置xx参数返回后(CommonEvent.RETURN), 自动重算不可编辑的公式项目+公式中调用xx参数项目的值(rr_e)。
+       * 2. 编辑单元格(onItemEditEnd), 插入/添加一行数据(add), 删除一行数据(_delete)或清空(clear)时,
+       *    自动重算不可编辑的公式项目值(rr_c)。
+       * 3. 点击重新计算按钮(recalc), 自动重算所有公式项目的值(rr_a), 可编辑的公式项目值将被重置。
+       * 4. 载入时, 如果是新建凭证, 自动计算不可编辑公式项目的初始值(rr_c); 否则不计算任何项目(rr_d)。
+       * 5. 2和3中, 自动重算后带xx参数的项目值可能会被清零, 需要重新设置相关xx参数。
+       * rr_变量用于控制计算的公式项目, 定义如下:
+       * rr_a: 所有公式
+       * rr_b: 可编辑公式
+       * rr_c: 不可编辑公式
+       * rr_d: 空
+       *
+       * 如果公式中使用了avg函数, 则可能需要多次计算, 如下列项目:
+       * X1, X2, X3=X1+X2, X4=avg(xx001,X1)+link(xx002)+X2, X5=avg(xx003,X4)+X3, 计算过程为:
+       * 1. 计算X1, X2, X3以及这些项目的合计项
+       * 2. 计算X4及X4的合计项
+       * 3. 计算X5及X5的合计项
+       * ... ...
+       * 终止条件为: 所有项目均合计
+       * 公式计算为按行计算, 合计只能是按列合计,
+       * 公式计算时计算顺序是X18, X20, ..., 但计算某一行时list1$中并非所有的X18都已经计算出值, 而X20又依赖于所有X18的和,
+       * 因此此时即使在avg函数中传递了list1$也无法计算出正确的结果!!!
+       * 暂时avg项目不要连锁定义, 否则计算值可能会不正确!!!
+       * FIX: 定义计算数组,结构: [[X1, X2, X3],[X4],[X5]]
+       * mm: 计算数组, mm_t: 每次计算时使用的计算数组(mm==>[]}
+       * 计算终止条件: mm_t.length == 0
+       * 数据比较多(>500*20)的时候, 需要控制单元格编辑之后的计算范围: 一般(无avg函数)只需要计算本行和合计行。
+       *
+       * 编辑控制:
+       * 选择某单元格(后面的列),拖动滚动条后,按TAB键或者切换窗口,程序会死. 由AdvancedDataGridBaseEx控件bug(4441行)引起
+       * editedItemPosition对象在scroll,keyDown事件中均为null, 跟踪AdvancedDataGridBaseEx代码:
+       * 按TAB键==>(focusInHandler==>)keyFocusChangeHandler==>findNextItemRenderer
+       * 切换窗口==>focusInHandler==>_editedItemPosition = lastEditedItemPosition==>setEditedItemPosition
+       *        ==>invalidateDisplayList==>updateDisplayList==>commitEditedItemPosition
+       **/
+      import bee.eval.ast.CallExpression;
+      import bee.eval.ast.IdentExpression;
+      import bee.eval.Ident;
+
+      import mx.collections.ArrayCollection;
+      import mx.collections.Sort;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridHeaderRenderer;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.listClasses.IListItemRenderer;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.Label;
+      import mx.controls.Menu;
+      import mx.controls.TextInput;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.IndexChangedEvent;
+      import mx.events.ListEvent;
+      import mx.events.MenuEvent;
+      import mx.events.ToolTipEvent;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+      import mx.validators.Validator;
+      import mx.validators.ValidationResult;
+
+      import fxl.xls.Workbook;
+      import fxl.xls.Worksheet;
+      // 无法支持多列
+      // import com.hillelcoren.components.AdvancedAutoComplete;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.Print;
+      import com.gc.common.view.PrintDialog;
+      import com.gc.controls.advancedDataGridClasses.StyledDataGridItemRenderer;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.AutoCompleteComboBox;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.FlexController;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.hr.model.SalFact;
+      import com.gc.hr.model.SalFactD;
+      import com.gc.hr.model.SalFixOnline;
+      import com.gc.hr.model.SalItem;
+      import com.gc.util.AideUtil;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.ExcelUtil;
+      import com.gc.util.ExprUtil;
+      import com.gc.util.HanZiUtil;
+      import com.gc.validators.ValidatorEx;
+
+      [Bindable]
+      private var personComboBox:AdvancedClassFactory;
+      private var persons:ArrayCollection; // 本部门的发薪人员
+      private var items:ArrayCollection; // 所有发薪凭证明细中的项目(SalFactD.item)合集
+      private var head:SalFact; // 当前add/edit的薪资凭证SalFact(fetched: depart,issuer)
+      private var _data:ArrayCollection; // OP_EDIT: 发薪凭证明细, {items:items, head:head, data:[{person:p1, sfds:[sfd11, ..., sfd1n], sfos:[sfo11, ..., sfo1n]}, ..., {person:pn, sfds:[sfdn1, ..., sfdnn], sfos:[sfon1, ..., sfonn]}]}
+      private var head_old:SalFact; // 薪资凭证SalFact(修改前)
+      private var op:String; // 操作(add/edit/view)
+      private var ix0:Array; // 项目的顺序(修改前)
+      private var ix1:Array; // 项目的顺序(修改后)
+      private var writable:Boolean=false;
+      private var list0:ArrayCollection; // 3维,原始表数据
+      private var list1:ArrayCollection; // 3维,当前表数据(=unpack(list1$))
+      private var list0$:ArrayCollection; // 2维,原始前界面数据
+      private var list1$:ArrayCollection; // 2维,当前界面数据
+      private var list2$:ArrayCollection; // 2维,当前合计
+      private var map_no:Object=new Object();
+      private var map_id:Object=new Object();
+      private var map_li:Object=new Object();
+      private var rr_a:Object, rr_b:Object, rr_c:Object, rr_d:Object;
+      private var items_link:ArrayCollection; // 选择显示的链接项目, 工号和姓名必选
+      private var mm:ArrayCollection, mm_t:ArrayCollection;
+      private var pmap:Object=new Object();
+      private static const COLOR_FF:Object={color:Constants.Maroon, value:"#800000"};
+      private static const COLOR_FN:Object={color:Constants.Blue, value:"#0000FF"};
+      private static const COLOR_FE:Object={color:Constants.Orange, value:"#FFA500"};
+      private static const COLOR_NN:Object={color:Constants.Black, value:"#000000"};
+
+      private function onPreinitialize():void
+      {
+        list0=new ArrayCollection();
+        list1=new ArrayCollection();
+        list0$=new ArrayCollection();
+        list1$=new ArrayCollection();
+        list2$=new ArrayCollection();
+        personComboBox=new AdvancedClassFactory(AutoCompleteComboBox);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.RETURN, onReturn);
+      }
+
+      private function onCreationComplete():void
+      {
+        var efs:Array=["person"];
+        var sfs:Array=["person#name", "person#departName", "person#positionName"];
+        adg1.dataTipFunction=salTip;
+        adg2.lockedColumnCount=adg1.lockedColumnCount=3;
+        adg2.labelFunction=adg1.labelFunction=CommonUtil.gridLabelFunction;
+        adg2.styleFunction=adg1.styleFunction=salStyle;
+        adg2.visible=adg1.visible=false;
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "salFact", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              obj.editable=efs.indexOf(obj.dataField) >= 0;
+              obj.sortable=sfs.indexOf(obj.dataField) >= 0;
+            }
+          });
+        CommonUtil.setDataGridColumns(adg2, "gcc_hr", "salFact");
+        note.htmlText=resourceManager.getString("gcc_hr", "sal.style.note.html", [COLOR_FF.value, COLOR_FN.value, COLOR_FE.value, COLOR_NN.value]);
+        note.toolTip=resourceManager.getString("gcc_hr", "sal.style.note.text");
+        note.width=this.width-60;
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        writable=UserController.hrSalWrite;
+        var error:String=e.data.hasOwnProperty("e") ? e.data.e : null;
+        persons=e.data.ps as ArrayCollection;
+        items=e.data["is"] as ArrayCollection;
+        head=e.data.h as SalFact;
+        op=head.no ? (writable ? Constants.OP_EDIT : Constants.OP_VIEW) : Constants.OP_ADD;
+        _data=e.data.d as ArrayCollection;
+        head_old=e.data.ho as SalFact;
+        if (e.data.hasOwnProperty("o") && e.data.o == Constants.OP_VIEW)
+        {
+          op=Constants.OP_VIEW;
+          writable=false;
+        }
+        ix0=e.data.hasOwnProperty("ix") && e.data.ix is Array ? e.data.ix as Array : [];
+        adg1.editable=writable && !error ? "true" : "false";
+        adg1.dragEnabled=adg1.dropEnabled=adg1.dragMoveEnabled=writable;
+        pub0.enabled=b1.enabled=b2.enabled=b3.enabled=b4.enabled=b5.enabled=writable;
+        var arr2:Array=[
+          {label:resourceManager.getString("gcc_hr", "salFact.format1"), format:1},
+          {label:resourceManager.getString("gcc_hr", "salFact.format2"), format:2},
+          {label:resourceManager.getString("gcc_hr", "salFact.format3"), format:3},
+          // {label:resourceManager.getString("gcc_hr", "salFact.format4"), format:4},
+          ];
+        var arr1:Array=[
+          {label:resourceManager.getString("gcc", "clear"), enabled:writable, click:clear},
+          {label:resourceManager.getString("gcc", "export"), children:arr2},
+          {label:resourceManager.getString("gcc", "calc"), enabled:writable, click:calc},
+          {label:resourceManager.getString("gcc", "set.batch"), enabled:writable, click:batch},
+          {label:resourceManager.getString("gcc", "unsort"), enabled:writable, click:unsort},
+          {label:resourceManager.getString("gcc", "recalc"), enabled:writable, click:recalc},
+          ];
+        CommonUtil.createPopUpMenu(pub1, arr1, export);
+        CommonUtil.createPopUpMenu(pub2, arr2, preview);
+        CommonUtil.createPopUpMenu(pub3, arr2, print);
+        // CommonUtil.createPopUpMenu(pub4, arr2, export);
+        var f:String=resourceManager.getString("gcc", "date.format.ym");
+        if (op == Constants.OP_ADD)
+        {
+          title=resourceManager.getString("gcc_hr", "salFact.add2", [head.departName, DateUtil.formatDate(head.issueDate, f)]);
+        }
+        else if (op == Constants.OP_EDIT)
+        {
+          title=resourceManager.getString("gcc_hr", "salFact.edit", [head.departName, head.no]);
+        }
+        else if (op == Constants.OP_VIEW)
+        {
+          title=resourceManager.getString("gcc_hr", "salFact.view", [head.departName, head.no]);
+        }
+        var p:Person, si:SalItem;
+        for each (p in persons)
+        {
+          pmap[p.id]=p;
+        }
+        for each (si in items)
+        {
+          map_no[si.no]=si;
+          map_id[si.id]=si;
+        }
+        rr_a=e.data.hasOwnProperty("rr") ? e.data.rr : SalItem.validate(items, [SalItem.EVALF_ITEMS]);
+        rr_b=SalItem.validate(items, [SalItem.EVALF_ITEMS], function(_si:SalItem):Boolean
+          {
+            return _si.editable;
+          });
+        rr_c=SalItem.validate(items, [SalItem.EVALF_ITEMS], function(_si:SalItem):Boolean
+          {
+            return !_si.editable;
+          });
+        rr_d=SalItem.validate(items, [SalItem.EVALF_ITEMS], false);
+        rr_d.sylla=rr_c.sylla=rr_b.sylla=rr_a.sylla;
+        items_link=e.data.hasOwnProperty("lis") ? e.data.lis : new ArrayCollection();
+        adg2.lockedColumnCount=adg1.lockedColumnCount=3;
+        mm=mmItems(items);
+        if (rr_a.sylla.xxq.length > 0)
+          xxInit(rr_a);
+        callLater(function():void
+          {
+            adg1.columns=adg1.columns.concat(getColumns());
+            adg2.columns=adg2.columns.concat(getColumns());
+            // if (op == Constants.OP_ADD) xxItems(rr);
+            if (op != Constants.OP_VIEW)
+            {
+              personComboBox.properties={dataProvider:Person.ALL, itemRenderer:new ClassFactory(Label), labelField:"workerId", editable:true};
+              // personComboBox.properties={dataProvider:Person.ALL, itemRenderer:new ClassFactory(Label), labelField:"workerId"
+              //    , matchType:"anyPart", browserFields:["name", "sex"], useListBuilder:true};
+              personComboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onPersonBoxCreateComplete},
+                {type:ListEvent.CHANGE, listener:onPersonBoxChange}];
+            }
+            if (op == Constants.OP_ADD) addFact();
+            else loadFact();
+          });
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var obj:Object = e.data;
+        if (obj == null || !obj.hasOwnProperty("type"))
+          return;
+        if (obj.type.indexOf("xx.items") >= 0)
+          onXXItems(obj);
+        else if (obj.type == "batch.set")
+          onBatchSet(obj);
+        else if (obj.type == "recalc")
+          onRecalc(obj);
+        else if (obj.type == "import")
+          onImport(obj);
+        else if (obj.type == "preview")
+          pp(obj);
+        else if (obj.type == "print")
+          pp(obj);
+        else if (obj.type == "export")
+          pp(obj);
+      }
+
+      private function mmItems(sis:ArrayCollection):ArrayCollection
+      {
+        var coll:ArrayCollection=new ArrayCollection();
+        var si:SalItem, arr:Array=[];
+        for each (si in items)
+          arr.push(si);
+        coll.addItem(arr);
+        return coll;
+      }
+
+      private function xxInit(rr:Object):void
+      {
+        var xx:Object=rr.sylla.xx;
+        var xxq:Array=rr.sylla.xxq as Array;
+        var n:String, tip:String, si:SalItem, arr:Array=[];
+        for each (n in xxq)
+        {
+          si=map_no[xx[n].ino];
+          tip=si.formula ? resourceManager.getString("gcc_hr", "salItem.formula.xxItems.tip", [si.formula]) : "";
+          arr.push({label:n+" ("+si.no+"["+si.name+"])", item:n, tip:tip});
+        }
+        pub0.visible=pub0.includeInLayout=true;
+        CommonUtil.createPopUpMenu(pub0, arr, xxItem);
+      }
+
+      private function xxItem(e:Event, obj:Object):void
+      {
+        xxItems(rr_a, [obj.item]);
+      }
+
+      private function onXXItems(obj:Object):void
+      {
+        var list:ArrayCollection=obj.items as ArrayCollection;
+        var mm:Object={}, obj:Object, n:String;
+        var tt:Object=(list2$.length > 0) ? list2$.getItemAt(0) : {};
+        var pp:Object={"#total":tt};
+        for each (obj in list)
+          mm[obj.no]=map_no[obj.no];
+        var rr_e:Object=SalItem.validate(items, [SalItem.EVALF_ITEMS], function(_si:SalItem):Boolean
+          {
+            return !_si.editable || mm.hasOwnProperty(_si.no);
+          });
+        rr_e.sylla=rr_a.sylla;
+        calculate(rr_e);
+        // 设置所有的rr_x.dep中xx参数的值!!!
+        for (n in rr_a.dep)
+          cc1(rr_a, rr_a.dep[n], pp);
+        for (n in rr_b.dep)
+          cc1(rr_b, rr_b.dep[n], pp);
+        for (n in rr_c.dep)
+          cc1(rr_c, rr_c.dep[n], pp);
+        for (n in rr_d.dep)
+          cc1(rr_d, rr_d.dep[n], pp);
+      }
+
+      private static const XX_POPUPS:Object={avg:XXAvgItems, link:XXLinkItems};
+
+      /**
+       * 弹出窗口,设置xx001, ...参数
+       * 目前根据函数类型弹出不同的窗口,窗口传递参数为{rr:rr, xxs:["xx001", "xx003"], map_no:{}, map_id:{}}
+       **/
+      private function xxItems(rr:Object, xxids:Array=null):void
+      {
+        var xx:Object=rr.sylla.xx;
+        var n1:String;
+        var xxs:Object={};
+        xxids=(!xxids) ? rr.sylla.xxq as Array : xxids;
+        for each (n1 in xxids)
+        {
+          if (xx[n1])
+          {
+            if (!xxs.hasOwnProperty(xx[n1].fun))
+              xxs[xx[n1].fun]=[];
+            xxs[xx[n1].fun].push(n1);
+          }
+        }
+        for (n1 in xxs)
+        {
+          if (XX_POPUPS.hasOwnProperty(n1))
+            CommonUtil.popupWindow(XX_POPUPS[n1], "", this, {rr:rr, xxs:xxs[n1], map_no:map_no, map_id:map_id, head:head});
+        }
+      }
+
+      private function onPersonBoxCreateComplete(e:Event):void
+      {
+        if (e.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=e.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData)
+          {
+            var d:Object=cbox.data;
+            cbox.selectedIndex=Person.indexOfAll(d.person);
+          }
+        }
+      }
+
+      private function onPersonBoxChange(e:Event):void
+      {
+        var cb:ComboBox=e.target as ComboBox;
+        var p:Person=cb.selectedItem as Person;
+        var obj:Object=cb.data;
+        if (p == null || obj == null)
+          return;
+        var qo:Object={head:head, pwids:[p.workerId]};
+        var f:Function=function(e1:ResultEvent):void
+          {
+            var _dd:ArrayCollection=e1.result.data;
+            var _c:Object, _p:Person, _obj:Object;
+            for each (_c in _dd)
+            {
+              _p=_c.person as Person;
+              if (p.id != _p.id) continue;
+              one(_c, obj);
+              list1$.itemUpdated(obj);
+            }
+          };
+        SalaryController.createFactPersonsAndItems(qo, f);
+      }
+
+      private function getColumns():Array
+      {
+        var r:Array=[];
+        var cc:AdvancedDataGridColumn;
+        // 添加链接项目列
+        for each (var li:Object in items_link)
+        {
+          cc=new AdvancedDataGridColumn();
+          cc.headerText=li.label;
+          cc.dataTipField=li.dtf;
+          cc.showDataTips=true;
+          cc.editable=false;
+          cc.sortable=writable;
+          if (li.hasOwnProperty("align"))
+            cc.setStyle("textAlign", li.align);
+          if (li.hasOwnProperty("df"))
+            cc.dataField=li.df;
+          if (li.hasOwnProperty("scf"))
+            cc.sortCompareFunction=li.scf;
+          if (li.name == "workerId")
+          {
+            cc.editable=true;
+            cc.editorDataField="selectedItem";
+            cc.itemEditor=personComboBox;
+          }
+          map_li[li.dtf]=li;
+          r.push(cc);
+        }
+        // 增加薪资列, 按xi中的项目顺序
+        var si:SalItem, id:int;
+        var mm:Object={};
+        var ix2:Array=ObjectUtil.copy(ix0) as Array;
+        for each (id in ix2)
+          mm[id]=true;
+        for each (si in items)
+          if (!mm[si.id])
+            ix2.push(si.id);
+        for each (id in ix2)
+        {
+          si=map_id[id];
+          cc=new AdvancedDataGridColumn();
+          cc.headerText=si.name+"["+si.no+"]";
+          cc.dataField=String(si.id);
+          // cc.dataTipField="t#"+si.id;
+          cc.setStyle("textAlign", "right");
+          cc.showDataTips=true;
+          cc.dataTipFunction=salTip;
+          // cc.itemRenderer=renderer;
+          cc.editable=si.editable;
+          cc.sortable=false;
+          r.push(cc);
+        }
+        cc=new AdvancedDataGridColumn();
+        cc.width=1;
+        cc.editable=false;
+        r.push(cc);
+        return r;
+      }
+
+      private function salStyle(data:Object,column:AdvancedDataGridColumn):Object
+      {
+        if (column == null)
+          return null;
+        var df:String=column.dataField;
+        var si:SalItem=map_id[df];
+        return data.ff && data.ff.hasOwnProperty(df) ? COLOR_FF : 
+          si && si.formula ? (si.editable ? COLOR_FE : COLOR_FN) : COLOR_NN;
+      }
+
+      private function salTip(obj:Object):String
+      {
+        if (obj is AdvancedDataGridColumn)
+        {
+          var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+          var df:String=column.dataField, tip:String;
+          if (map_id.hasOwnProperty(df))
+          {
+            var si:SalItem=map_id[df];
+            tip=resourceManager.getString("gcc_hr", "salItem.header.tip", [si.no, si.name, si.etype$.label, si.formula ? si.formula : ""]);
+          }
+          else
+            tip=column.headerText;
+          return tip;
+        }
+        return null;
+      }
+
+      private function onScroll(e:Event):void
+      {
+        callLater(function():void{adg2.horizontalScrollPosition=adg1.horizontalScrollPosition;});
+      }
+
+      /**
+       * 修复editedItemPosition不可见时切换窗口引起程序死掉的问题(AdvancedDataGridBaseEx控件bug,4441)
+       **/
+      private function onFocusIn(e:Event):void
+      {
+        var rc:Object=adg1.editedItemPosition;
+        if (rc != null && rc.columnIndex + adg1.maxHorizontalScrollPosition > adg1.columnCount + adg1.horizontalScrollPosition)
+          // adg1.horizontalScrollPosition = rc.columnIndex + adg1.maxHorizontalScrollPosition - adg1.columnCount;
+          adg1.editedItemPosition=null;
+      }
+
+      /**
+       * 修复editedItemPosition不可见时按TAB键引起程序死掉的问题(AdvancedDataGridBaseEx控件bug,4441)
+       **/
+      private function onKeyFocusChange(e:Event):void
+      {
+        e.preventDefault();
+      }
+
+      private function onColumnStretch(e:AdvancedDataGridEvent):void
+      {
+        var columnIndex:int=e.columnIndex;
+        var adg:AdvancedDataGrid=e.currentTarget as AdvancedDataGrid;
+        adg2.columns[columnIndex].width=adg.columns[columnIndex].width;
+      }
+
+      private function onHeaderShift(e:IndexChangedEvent):void
+      {
+        if (e.oldIndex != e.newIndex)
+          adg2.columns=CommonUtil.moveItem(adg2.columns, e.oldIndex, e.newIndex);
+      }
+
+      /**
+       * 注意:
+       * 1. e.column和e.item=null, 无法直接使用
+       * 2. adg.itemEditorInstance需等到原先的event listener处理完之后才会被实例化, 只有在callLater回调函数中可以调用到
+       * 3. 此时e.itemRenderer可以取到
+       **/
+      private function onItemEditBegin(e:AdvancedDataGridEvent):void
+      {
+        var columnIndex:int=e.columnIndex;
+        var rowIndex:int=e.rowIndex;
+        if (columnIndex < 3)
+          return;
+        var adg:AdvancedDataGrid=e.currentTarget as AdvancedDataGrid;
+        var column:AdvancedDataGridColumn=adg.columns[columnIndex];
+        var ir:IListItemRenderer=e.itemRenderer;
+        var data:Object=ir.data; // =list1$.getItemAt(rowIndex);
+        var r:Rectangle=new Rectangle(ir.x, ir.y, ir.width, ir.height);
+        var error:String=null;
+        if (data.ff.hasOwnProperty(column.dataField))
+        {
+          error=resourceManager.getString("gcc_hr", "salFactD.error.amount.fix");
+        }
+        if (error)
+        {
+          e.reason=AdvancedDataGridEventReason.CANCELLED;
+          r.offset(r.width, 0);
+          r.topLeft=adg.contentToGlobal(r.topLeft);
+          r.bottomRight=adg.contentToGlobal(r.bottomRight);
+          CommonUtil.showError(r, 2000, error);
+        }
+        callLater(function():void
+          {
+            adg2.horizontalScrollPosition=adg1.horizontalScrollPosition;
+            // trace("adg1: " + adg1.horizontalScrollPosition + "/" + adg1.maxHorizontalScrollPosition 
+            //  + ", adg2: " + adg2.horizontalScrollPosition + "/" + adg2.maxHorizontalScrollPosition);
+            var ti:TextInput=adg.itemEditorInstance as TextInput;
+            if (!(ti is TextInput)) return;
+            ti.selectionBeginIndex=0;
+            ti.selectionEndIndex=ti.text.length;
+          });
+      }
+
+      private function onItemEditEnd(e:AdvancedDataGridEvent):void
+      {
+        if (e.itemRenderer && e.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var columnIndex:int=e.columnIndex;
+          var rowIndex:int=e.rowIndex;
+          if (columnIndex < 3)
+            return;
+          var adg:AdvancedDataGrid=e.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[columnIndex];
+          var ir:IListItemRenderer=e.itemRenderer;
+          var data:Object=ir.data;
+          var n0:Number=Number(data[column.dataField]);
+          var n1:Number=Number(adg.itemEditorInstance[column.editorDataField]);
+          var error:String=null;
+          if (isNaN(n1))
+          {
+            error=resourceManager.getString("gcc_hr", "salFactD.error.amount.nan");
+          }
+          if (error)
+          {
+            e.reason=AdvancedDataGridEventReason.CANCELLED;
+            CommonUtil.showError(adg.itemEditorInstance, 2000, error);
+          }
+          else if (data.ff.hasOwnProperty(column.dataField))
+          {
+            e.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          else if (n1 != n0)
+          {
+            // calculate(rr_c);
+            calculate2(rr_c, data, map_id[column.dataField], n0, n1);
+          }
+        }
+      }
+
+      // 对xx函数设置参数
+      private function cc1(rr:Object, ids:Object, pp:Object):void
+      {
+        var n:String, id:Ident;
+        for (n in ids)
+        {
+          id=ids[n];
+          if (id.isF && SalItem.xxFunc(id.id))
+            SalItem.xxArg(id, rr, pp);
+        }
+      }
+
+      // 在计算环境cc中设置xx变量的值, 并将一行数据obj设置到xx变量的属性中
+      private function cc2(rr:Object, cc:Object, obj:Object):void
+      {
+        var n:String;
+        for (n in rr.sylla.xx)
+        {
+          if (!cc[n] && rr.expr[n] is Object)
+            cc[n]=rr.expr[n];
+          if (cc[n])
+            cc[n]["#dd"]=obj;
+        }
+      }
+
+      // 计算合计项, tt:{si1.no:t1, ..., sin.no:tn}
+      private function cc3(tt:Object, arr:Array=null):void
+      {
+        var si:SalItem, obj:Object;
+        arr=arr ? arr : items.source;
+        for each (si in arr)
+        {
+          tt[si.no]=0;
+          for each (obj in list1$)
+            tt[si.no]+=obj[si.id];
+        }
+      }
+
+      // 返回显示使用的合计对象, r:{si1.id:t1, ..., sin.id:tn}
+      private function cc4(tt:Object):Object
+      {
+        var si:SalItem, r:Object={};
+        for each (si in items)
+          r[si.id]=tt[si.no];
+        return r;
+      }
+
+      // 计算所有单元格及合计项的值
+      private function calculate(rr:Object):void
+      {
+        var obj:Object; // 凭证中的一行数据, {branch:{}, hd:{}, person:{}, uid:"p#3_sfds", ff:{}, si1.id:v1, ..., sin.id:vn}
+        var r:Object; // 使用rr计算得到的值, {si1.no:v1, ..., sin.no:vn}
+        var tt1:Object={}; // 公式计算使用的合计对象, 公式中项目的标识为si.no, {si1.no:t1, ..., sin.no:tn}
+        var tt2:Object={}; // 凭证显示使用的合计对象, adg2中的dataField为si.id, {si1.id:t1, ..., sin.id:tn}
+        var cc:Object={}; // 计算时使用的上下文对象(context), 从obj中取值
+        var pp:Object; // 设置avg函数时传递tt1的参数对象, 可扩展
+        var n:String, si:SalItem, arr:Array;
+        adg1.invalidateDisplayList();
+        mm_t=new ArrayCollection(mm.source.slice(0));
+        while (mm_t.length > 0)
+        {
+          arr=mm_t.removeItemAt(0) as Array;
+          cc3(tt1, arr);
+          pp={"#total":tt1};
+          for (n in rr.dep)
+          {
+            cc1(rr, rr_a.dep[n], pp);
+          }
+          for each (obj in list1$)
+          {
+            for each (si in items)
+            {
+              cc[si.no]=obj[si.id];
+            }
+            cc2(rr, cc, obj);
+            r=SalItem.evaluate(rr, cc);
+            // r2=(rr == rr_a) ? r1 : SalItem.evaluate(rr_a, cc);
+            obj.error=r.valid ? null : r.error;
+            for (n in r.value)
+            {
+              si=map_no[n];
+              if (si && si.formula && rr.comp.hasOwnProperty(n) && !obj.ff.hasOwnProperty(si.id))
+                // obj["t#"+si.id]=resourceManager.getString("gcc_hr", "salItem.formula.result", [r.value[n]]);
+                obj[si.id]=r.value[n];
+            }
+            // 此句+adg1.validateDisplayList()可以正确刷新单元格，且不会引起焦点乱跑的问题。
+            list1$.itemUpdated(obj);
+          }
+        }
+        cc3(tt1);
+        adg1.validateDisplayList();
+        // 此处如调用list1$.refresh(), 则当list1$中记录较多时adg1编辑时会有乱跳的现象!!!
+        // list1$.refresh();
+        tt2=cc4(tt1);
+        tt2[Constants.PROP_NAME_SERIAL]=resourceManager.getString("gcc", "total");
+        list2$.removeAll();
+        list2$.addItem(tt2);
+      }
+
+      // 当某行(obj)某项(item)的值改变时进行本行及合计项计算
+      private function calculate2(rr:Object, obj:Object, item:SalItem, n0:Number, n1:Number):void
+      {
+        var old:Object=ObjectUtil.copy(obj);
+        var cc:Object={}, r:Object, tt:Object;
+        var n:String, si:SalItem, arr:Array;
+        obj[item.id]=n1;
+        for each (si in items)
+        {
+          cc[si.no]=obj[si.id];
+        }
+        cc2(rr, cc, obj);
+        r=SalItem.evaluate(rr, cc);
+        for (n in r.value)
+        {
+          si=map_no[n];
+          if (si && si.formula && rr.comp.hasOwnProperty(n) && !obj.ff.hasOwnProperty(si.id))
+            obj[map_no[n].id]=r.value[n];
+        }
+        // 此句+adg1.validateDisplayList()可以正确刷新单元格，且不会引起焦点乱跑的问题。
+        list1$.itemUpdated(obj);
+        adg1.validateDisplayList();
+        if (list2$.length > 0)
+        {
+          tt=list2$.getItemAt(0);
+          for each (si in items)
+            tt[si.id]+=obj[si.id]-old[si.id];
+          list2$.itemUpdated(tt);
+          adg2.validateDisplayList();
+        }
+      }
+
+      private function one(d:Object, obj:Object, xx:Object=null, callback:Function=null):void
+      {
+        var ff:Object={}, dd:Object={};
+        var sfd:SalFactD, sfo:SalFixOnline, si:SalItem;
+        obj.branch=head.branch;
+        obj.person=d.person;
+        obj.sdp=d.sdp;
+        obj.hd=head;
+        obj.uid="p#"+d.person.id+"_sfds";
+        for each (sfo in d.sfos)
+        {
+          // if (!sfo.item.formula)
+          ff[sfo.itemId]=sfo.amount;
+        }
+        for each (sfd in d.sfds)
+        {
+          dd[sfd.itemId]=sfd;
+        }
+        for each (si in items)
+        {
+          obj[si.id]=ff.hasOwnProperty(si.id) ? ff[si.id] : dd[si.id] ? dd[si.id].amount : xx && xx[si.id] ? xx[si.id] : 0;
+          if (dd[si.id] && callback is Function)
+            callback(dd[si.id]);
+        }
+        obj.ff=ff;
+      }
+
+      private function load(callback:Function=null):void
+      {
+        // _data:[{person:p1, sfds:[sfd11, ..., sfd1n], sfos:[sfo11, ..., sfo1n]}, ..., {person:pn, sfds:[sfdn1, ..., sfdnn], sfos:[sfon1, ..., sfonn]}]
+        var d:Object, obj:Object;
+        list0.removeAll();
+        list0$.removeAll();
+        list1$.removeAll();
+        for each (d in _data)
+        {
+          obj=new Object();
+          one(d, obj, null, callback);
+          list1$.addItem(obj);
+        }
+        adg1.dataProvider=list1$;
+        adg1.visible=true;
+
+        calculate(op == Constants.OP_ADD ? rr_c : rr_d);
+
+        adg2.dataProvider=list2$;
+        adg2.visible=true;
+      }
+
+      private function addFact():void
+      {
+        load();
+      }
+
+      private function loadFact():void
+      {
+        load(function(sfd:SalFactD):void{list0.addItem(sfd);});
+        list0$=ObjectUtil.copy(list1$) as ArrayCollection;
+      }
+
+      private function unpack(slist:ArrayCollection):ArrayCollection
+      {
+        var rlist:ArrayCollection=new ArrayCollection();
+        var i:int, obj:Object;
+        var si:SalItem;
+        var sfd:SalFactD;
+        for (i=0; i < slist.length; i++)
+        {
+          obj=slist.getItemAt(i);
+          for each (si in items)
+          {
+            sfd=new SalFactD();
+            sfd.id.fact=head;
+            sfd.id.item=si;
+            sfd.person=obj.person;
+            sfd.amount=isNaN(obj[si.id]) ? 0 : obj[si.id];
+            sfd.id.no=i+1;
+            rlist.addItem(sfd);
+          }
+        }
+        return rlist;
+      }
+
+      private function add(i:int):Object
+      {
+        var obj:Object=new Object();
+        obj.branch=head.branch;
+        obj.hd=head;
+        for each (var si:SalItem in items)
+        {
+          obj[si.id]=0;
+        }
+        obj.ff={};
+        if (i >= 0 && i < list1$.length)
+          list1$.addItemAt(obj, i);
+        else
+          list1$.addItem(obj);
+        calculate(rr_c);
+        adg1.selectedItem=obj;
+        adg1.editedItemPosition={rowIndex: adg1.selectedIndex, columnIndex: 1};
+        return obj;
+      }
+
+      private function insert(e:Event):void
+      {
+        if (adg1.selectedItem == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "insert.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        add(adg1.selectedIndex);
+      }
+
+      private function append(e:Event):void
+      {
+        add(list1$.length);
+      }
+
+      private function _delete2(arr:Array, refresh:Boolean=true):void
+      {
+        var obj:Object, k:uint;
+        for each (obj in arr)
+        {
+          k=list1$.getItemIndex(obj);
+          if (k >= 0)
+            list1$.removeItemAt(k);
+        }
+        if (refresh)
+          calculate(rr_c);
+      }
+
+      private function _delete(e:Event):void
+      {
+        var df:Function=function(e2:CloseEvent):void
+          {
+            if (e2.detail != Alert.YES) return;
+            _delete2(adg1.selectedItems);
+          };
+        if (adg1.selectedItems.length <= 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "delete.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          Alert.show(resourceManager.getString("gcc", "delete.items"), Constants.APP_NAME, Alert.YES | Alert.NO, 
+            null, df, Constants.ICON32_QUESTION);
+        }
+      }
+
+      private function clear(e:Event, data:Object):void
+      {
+        if (list1$.length > 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "clear.confirm"), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, function(e:CloseEvent):void
+            {
+              if (e.detail == Alert.YES)
+              {
+                list1$.removeAll();
+                calculate(rr_c);
+              }
+            }, Constants.ICON32_QUESTION);
+        }
+      }
+
+      private function batch(e:Event, data:Object):void
+      {
+        if (adg1.selectedItems.length <= 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "set.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          CommonUtil.popupWindow(BatchSetValue, "", this, {items:items});
+        }
+      }
+
+      private function onBatchSet(obj:Object):void
+      {
+        var ii:SalItem=obj.item as SalItem;
+        var ff:String=obj.formula;
+        var rr:Object=obj.rr, cc:Object={}, dd:Object, r:Object;
+        var si:SalItem;
+        for each (dd in adg1.selectedItems)
+        {
+          for each (si in items)
+          {
+            cc[si.no]=dd[si.id];
+          }
+          r=SalItem.evaluate(rr, cc);
+          if (!dd.ff.hasOwnProperty(ii.id))
+          {
+            dd[ii.id]=r.value["$$"];
+          }
+          list1$.itemUpdated(dd);
+        }
+        calculate(rr_c);
+      }
+
+      private function unsort(e:Event, data:Object):void
+      {
+        list1$.sort=null;
+        list1$.refresh();
+      }
+
+      private function calc(e:Event, data:Object):void
+      {
+        calculate(rr_c);
+      }
+
+      private function recalc(e:Event, data:Object):void
+      {
+        if (adg1.selectedItems.length <= 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "set.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          CommonUtil.popupWindow(RecalcSelect, "", this, {items:items});
+        }
+      }
+
+      private function onRecalc(obj:Object):void
+      {
+        var ii:SalItem=obj.item as SalItem;
+        var zz:Boolean=obj.zero as Boolean;
+        var cc:Object={}, dd:Object, r:Object;
+        var si:SalItem;
+        for each (dd in adg1.selectedItems)
+        {
+          for each (si in items)
+          {
+            cc[si.no]=dd[si.id];
+          }
+          r=SalItem.evaluate(rr_a, cc);
+          if (!dd.ff.hasOwnProperty(ii.id))
+          {
+            dd[ii.id]=(dd[ii.id] == 0 && zz) ? 0 : r.value[ii.no];
+          }
+          list1$.itemUpdated(dd);
+        }
+        calculate(rr_c);
+      }
+
+      private function _import(e:Event):void
+      {
+        var _this:DisplayObject=this;
+        var f:Function=function(e1:Event):void
+          {
+            CommonUtil.popupWindow(FactDImport, "", _this, {items:items, file:e1.target});
+          };
+        CommonUtil._import(f, resourceManager.getString("gcc_hr", "salFactD.import.filter.tip"), "*.xls; *.csv");
+      }
+
+      // 导入数据并提示信息
+      private function onImport(obj:Object):void
+      {
+        var file:FileReference=obj.file;
+        var t:String=file.type.toLowerCase();
+        var ff:Array=obj.ff as Array;
+        var mm:ArrayCollection=obj.mm as ArrayCollection;
+        var dd:ArrayCollection=obj.dd as ArrayCollection;
+        var map_si:Object={}, map_pp:Object={};
+        var a:Object, b:Object, c:Object, n:String, r1:String="", r2:String="";
+        var c1:uint, c2:uint, c3:uint, c4:uint; // 计数
+        var l1:ArrayCollection=new ArrayCollection(); // 凭证中少的人员发放记录: [{type,id,bus,name,...,wid}...]
+        var l2:ArrayCollection=new ArrayCollection(); // 凭证中多余的人员发放记录: [obj$list1$,...]
+        c1=c2=c3=c4=0;
+        // map_si: 薪资编号和薪资项目对应的map, 如{J01:SalItem(岗位工资), ...}
+        for each (c in mm)
+        {
+          map_si[c.source.code]=c.dest;
+        }
+        // map_pp: 人员工号和list1$元素对应的map, 如{Q00818:Person(徐敏),...}
+        for each (c in list1$)
+        {
+          map_pp[c.person.workerId]=c;
+        }
+        // 导入数据c{wid:Q00818, gwgz:...} ==> obj@list1$, 同时将c转换成格式c{wid:Q00818, si1, si2,...}的格式
+        for each (c in dd)
+        {
+          // 转换c==>a
+          a={type:c.type, wid:c.wid, name:c.name};
+          for each (n in ff)
+          {
+            if (map_si.hasOwnProperty(n) && map_si[n].id)
+              a[map_si[n].id]=Number(c[n]); // 更新此人员的各薪资项目值
+          }
+          // 根据工号定位到obj@list1$: map_pp==>obj@list1$
+          if (map_pp.hasOwnProperty(a.wid))
+          {
+            if (a.type==1)
+              c1++;
+            else if (a.type==2)
+              c2++;
+            b=map_pp[a.wid];
+            for (n in a)
+            {
+              if (b.hasOwnProperty(n))
+                b[n]=a[n];
+            }
+            list1$.itemUpdated(b);
+            map_pp.setPropertyIsEnumerable(a.wid, false);
+          }
+          // 凭证中缺少的人员
+          else
+          {
+            r1 += a.name+",";
+            l1.addItem(a);
+            c3++;
+            if (c3%6==0)
+              r1 += "\n";
+          }
+        }
+        for (n in map_pp)
+        {
+          r2 += map_pp[n].person.name+",";
+          l2.addItem(map_pp[n]);
+          c4++;
+          if (c4%6==0)
+            r2 += "\n";
+        }
+        // 全部计算
+        var f0:Function=function(e0:CloseEvent):void{calculate(rr_c);adg1.validateDisplayList();};
+        var f2:Function=function():void
+          {
+            Alert.show(resourceManager.getString("gcc_hr", "salFactD.import.r4"), Constants.APP_NAME, Alert.OK, null, f0, Constants.ICON32_INFO);
+          };
+        var f1s:Function=function(e1s:ResultEvent):void
+          {
+            var _dd:ArrayCollection=e1s.result.data;
+            var _a:Object, _c:Object, _p:Person, _xx:Object, _sfos:ArrayCollection, _obj:Object;
+            var _map_pp:Object={};
+            // _map_pp: 人员工号和l1元素对应的map, 如{Q00818:{type,wid,name,...},...}
+            for each (_a in l1) _map_pp[_a.wid]=_a;
+            for each (_c in _dd)
+            {
+              _p=_c.person as Person;
+              _sfos=_c.hasOwnProperty("sfos") ? _c.sfos as ArrayCollection : null;
+              _xx=_map_pp.hasOwnProperty(_p.workerId) ? _map_pp[_p.workerId] : null;
+              if (_xx == null && _sfos == null) continue;
+              _obj=new Object();
+              one(_c, _obj, _xx);
+              list1$.addItem(_obj);
+            }
+            f2();
+          };
+        // 删除凭证中多余的记录并增加凭证中缺失的记录
+        var f1:Function=function(e1:CloseEvent):void
+          {
+            if (e1.detail != Alert.YES) return;
+            var _c:Object, qo:Object={head:head, pwids:[]};
+            _delete2(l2.source, false);
+            if (l1.length <= 0) {f2();return;}
+            for each (_c in l1) qo.pwids.push(_c.wid);
+            SalaryController.createFactPersonsAndItems(qo, f1s);
+          };
+        if (c3 > 0 || c4 > 0)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "salFactD.import.r2", [c1,c2,c3,r1,c4,r2]), 
+            Constants.APP_NAME, Alert.YES | Alert.NO, null, f1, Constants.ICON32_QUESTION);
+        }
+        else
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "salFactD.import.r3", [c1,c2,list1$.length]),
+            Constants.APP_NAME, Alert.OK, null, f0, Constants.ICON32_INFO);
+        }
+      }
+
+      /**
+       * 传递到aidep的数据接口:
+       * [code, 报告期] - 报告期在打印凭证时未用
+       * [branch.id,branch.useId,branch.name] - 机构
+       * [head.no,head.departId,head.departName,head.date,...] - 凭证
+       * _ii - 项目数组
+       * _datas - 数据
+       * _print - 打印设置
+       * _gg - 分组汇总
+       * _ss - 排序
+       *
+       * _ii: 所有项目_items的一维数组形式, 项目的格式为{id:, no:, name:, t:, g:, s:, v:}
+       *   id - SalItem的id, 或0(链接项目)
+       *   no - SalItem或链接项目的no
+       *   name - SalItem或链接项目的name
+       *   t - 类型, SalItem("S"), 链接项目("L")
+       *   g - 分组汇总, 0(不分组), 1(分组不分页), 2(分组并分页)
+       *   s - 排序, 0(不排序), 1(升序), 2(降序)
+       *   v - 是否显示, 0(不显示), 1(显示), 分组或排序时可能用到不显示的项目
+       * _datas: 带行数列数的一维数组, [rows, cols, ...], cols=_ii.length
+       * _print: 打印设置, 格式为[mode, orientation, size, isAll, pages, copies, onebyone]
+       *   isAll和onebyone按(true=1/false=0)传递
+       * _gg: 分组汇总, 存放分组汇总项目在_items中的序号, 如:[12,2], 1开始
+       * _ss: 排序, 存放排序项目在_items中的序号, 如:[9,6], 1开始
+       **/
+      private function pp(obj:Object):void
+      {
+        var mode:String=obj.type;
+        var data:Object=obj.data;
+        var print:Print=obj.print as Print;
+        var options:Object=print.options;
+        var branch:Branch=UserController.branch;
+        var code:String=data.format == 1 ? "sf11" // 薪资条
+          : data.format == 2 ? "sf12" // 留底清单(凭证底稿)
+          : data.format == 3 ? "sf13" // 部门汇总清单
+          : data.format == 4 ? "sf14" // 银行联
+          : "";
+        var _items:Array=[], _datas:Array=[], _ii:Array=[], _gg:Array=[], _ss:Array=[];
+        var xi:Object, obj:Object, ll0:Object={}, ll1:Object={};
+        var f:Function=mode == "print" ? AideUtil.print
+          : mode == "preview" ? AideUtil.preview
+          : mode == "export" && print.isExcel ? AideUtil.excel : null;
+        if (!(f is Function))
+          return;
+        // 链接项目初始化
+        for each (xi in Person.LINK_ITEMS)
+        {
+          obj={id:0, no:xi.no, name:xi.label, t:"L", g:0, s:0, v:0, prop:xi.dtf};
+          ll0[xi.no]=obj; // map: 所有链接项目
+          ll1[xi.no]=obj; // map: 不显示的链接项目
+        }
+        // 列可以拖动, _items按adg1的列顺序存放项目
+        for each (var column:AdvancedDataGridColumn in adg1.columns)
+        {
+          if (map_id.hasOwnProperty(column.dataField)) // 薪资项目
+          {
+            xi=map_id[column.dataField];
+            obj=xi.printable ? {id:xi.id, no:xi.no, name:xi.name, t:"S", g:0, s:0, v:1} : null;
+          }
+          else if (map_li.hasOwnProperty(column.dataTipField)) // 链接项目
+          {
+            xi=map_li[column.dataTipField];
+            obj=ll0[xi.no];
+            obj.v=1;
+            ll1.setPropertyIsEnumerable(xi.no, false);
+          }
+          else
+          {
+            obj=null;
+          }
+          if (obj != null)
+          {
+            _items.push(obj);
+          }
+        }
+        // 加入其它不显示的链接项目
+        for each (xi in ll1)
+          _items.push(xi);
+        // 设置_gg及_items中分组的链接项目
+        var _ogg:Array=(options && options.hasOwnProperty("gg")) ? options.gg as Array : null;
+        for each (xi in _ogg)
+        {
+          obj=ll0[xi.no];
+          obj.g=xi.g;
+          _gg.push(_items.indexOf(obj)+1);
+        }
+        // 设置_ss及_items中排序的链接项目
+        var _oss:Array=(options && options.hasOwnProperty("ss")) ? options.ss as Array : null;
+        for each (xi in _oss)
+        {
+          obj=ll0[xi.no];
+          obj.s=xi.s;
+          _ss.push(_items.indexOf(obj)+1);
+        }
+        // 一维化_items ==> _ii
+        for each (xi in _items)
+        {
+          _ii.push(xi.id, xi.no, xi.name, xi.t, xi.g, xi.s, xi.v);
+        }
+        // 生成_datas
+        _datas.push(list1$.length, _items.length);
+        for each (obj in list1$)
+        {
+          for each (xi in _items)
+          {
+            if (xi.t == "S") // 薪资项目
+              _datas.push(obj.hasOwnProperty(xi.id) ? obj[xi.id] : 0);
+            else if (xi.t == "L") // 链接项目
+              _datas.push(xi.hasOwnProperty("prop") ? CommonUtil.getAccessorValue(obj, xi.prop) : "");
+            else
+              _datas.push("");
+          }
+        }
+        f([code,""],
+          [branch.id,branch.useId,branch.name],
+          [head.no,head.departId,head.departName,head.date,head.issueDate,head.itype$.label,head.summary,head.issuerId,head.issuerName,head.comment],
+          _ii,
+          _datas,
+          [print.mode, print.orientation, print.size, print.isAll ? 1 : 0, print.pages, print.copies, print.onebyone ? 1 : 0],
+          _gg,
+          _ss
+          );
+      }
+
+      private function preview(e:Event, data:Object):void
+      {
+        var print:Print = new Print(Print.MO_PREVIEW);
+        CommonUtil.popupWindow(PrintDialog, "", this, {type:"preview", options:[new FactOptGroup(), new FactOptSort()], print:print, data:data});
+      }
+
+      private function print(e:Event, data:Object):void
+      {
+        var print:Print = new Print();
+        CommonUtil.popupWindow(PrintDialog, "", this, {type:"print", options:[new FactOptGroup(), new FactOptSort()], print:print, data:data});
+      }
+
+      private function export(e:Event, data:Object):void
+      {
+        var print:Print = new Print(Print.MO_EXCEL);
+        CommonUtil.popupWindow(PrintDialog, "", this, {type:"export", options:[new FactOptGroup(), new FactOptSort()], print:print, data:data});
+        // pp({type:"export", print:print, data:data});
+      }
+
+      // 按工号/姓名查找定位
+      private function onSearchKeyDown(e:KeyboardEvent):void
+      {
+        if (e.keyCode == Keyboard.ENTER)
+        {
+          var ss:String=tiSearch.text;
+          var obj:Object, p:Person;
+          for each (obj in list1$)
+          {
+            p=obj.person as Person;
+            if (p.workerId.indexOf(ss) >= 0 || p.name.indexOf(ss) >= 0)
+            {
+              adg1.selectedItems=[obj];
+              adg1.scrollToIndex(list1$.getItemIndex(obj));
+              return;
+            }
+          }
+        }
+      }
+
+      private function get changed():Boolean
+      {
+        ix1=six;
+        return op != Constants.OP_VIEW && 
+          (ObjectUtil.compare(head, head_old, 1) != 0
+          || ObjectUtil.compare(list0$, list1$, 1) != 0
+          || ObjectUtil.compare(ix0, ix1, 1) != 0);
+      }
+
+      // 返回列表中薪资项目的序号, 如: [10,16,6,...]
+      private function get six():Array
+      {
+        var arr:Array=[];
+        for each (var column:AdvancedDataGridColumn in adg1.columns)
+        {
+          if (map_id.hasOwnProperty(column.dataField)) // 薪资项目
+          {
+            arr.push(Number(column.dataField));
+          }
+        }
+        return arr;
+      }
+
+      private function save(e:Event, list:ArrayCollection=null, bclose:Boolean=false):void
+      {
+        calculate(rr_c);
+        list1=list ? list : unpack(list1$);
+        if (!changed)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME,
+            Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        var p:Person, obj:Object, m1:Object={}, m2:Object={};
+        for each (obj in list1$)
+        {
+          p=obj.person ? obj.person : null;
+          if (p)
+          {
+            if (!m1[p.id])
+              m1[p.id]=p;
+            if (!m2[p.workerId])
+              m2[p.workerId]=p;
+          }
+        }
+        var _d1:Date=DateUtil.getBeginDate(head.date);
+        var _d2:Date=DateUtil.getEndDate(head.date);
+        var pf:Function=function(value:Object, source:Object, property:String, subFields:Array):ValidationResult
+          {
+            var p:Person=source && source.person ? source.person : null;
+            var e:Object=source && source.error ? source.error : null;
+            var n:String, s:String;
+            if (p)
+            {
+              if (p != m1[p.id]) return new ValidationResult(true, null, "salFact.error.duplicated.id", resourceManager.getString("gcc_hr", "salFact.error.duplicated.id", [p.workerId, p.name]));
+              else if (p != m2[p.workerId]) return new ValidationResult(true, null, "salFact.error.duplicated.workerId", resourceManager.getString("gcc_hr", "salFact.error.duplicated.workerId"));
+              // 按当月的首日或末日来限制, 如2011-1-15注销的人员或在2011-15注册的人员在2011-1可以发放薪资
+              else if (p.onDate > _d2 || _d1 > p.downDate) return new ValidationResult(true, null, "salFact.error.expired.person", resourceManager.getString("gcc_hr", "salFact.error.expired.person", 
+                  [DateUtil.formatDate(head.date), p.workerId, p.name, DateUtil.formatDate(p.onDate), DateUtil.formatDate(p.downDate)]));
+            }
+            if (e)
+            {
+              s="";
+              for (n in e) s+=n+": "+e[n]+"\n";
+              return new ValidationResult(true, null, null, s.substring(0, s.length-2));
+            }
+            return null;
+          };
+        var pv:Validator=new ValidatorEx(pf);
+        if (CommonUtil.validateGrid(adg1, [{field:"person.workerId", validator:pv}], null, 1, 5000).length > 0)
+          return;
+        var s:String="";
+        for each (obj in list1$)
+        {
+          p=obj.person ? obj.person : null;
+          if (p && !pmap[p.id])
+          {
+            s+=p.name+", ";
+          }
+        }
+        var sh:Function=function(e1:ResultEvent):void
+          {
+            var sf:SalFact=e1.result as SalFact;
+            var info:String;
+            var type:String;
+            if (sf == null) {
+              info=resourceManager.getString("gcc_hr", "salFact.del2.success", [head.departName, head.no]);
+              type=Events.DEL_SALFACT;
+            } else if (op == Constants.OP_ADD) {
+              info=resourceManager.getString("gcc_hr", "salFact.add.success", [sf.departName, sf.no]);
+              type=Events.ADD_SALFACT;
+              CommonUtil.copyProperties(sf, head);
+            } else if (op == Constants.OP_EDIT) {
+              info=resourceManager.getString("gcc_hr", "salFact.edit.success", [sf.departName, sf.no]);
+              type=Events.EDIT_SALFACT;
+              CommonUtil.copyProperties(sf, head);
+            }
+            Alert.show(info, Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                if (bclose) _close();
+                else 
+                {
+                  head_old=ObjectUtil.copy(head) as SalFact;
+                  list0=ObjectUtil.copy(list1) as ArrayCollection;
+                  list0$=ObjectUtil.copy(list1$) as ArrayCollection;
+                  ix0=ObjectUtil.copy(ix1) as Array;
+                }
+                owner.dispatchEvent(new Events(type, head));
+              }, Constants.ICON32_INFO);
+          };
+        var f:Function=function():void
+          {
+            SalaryController.saveFact(head_old, ix0, list0.source, head, ix1, list1.source, sh);
+          };
+        if (s.length > 0)
+        {
+          s=resourceManager.getString("gcc_hr", "salFact.query.other.persons", [s.substr(0, s.length-2)]);
+          Alert.show(s, Constants.APP_NAME, Alert.YES | Alert.NO, null, function(e3:CloseEvent):void
+            {
+              if (e3.detail == Alert.YES) f();
+            }, Constants.ICON32_QUESTION);
+        }
+        else
+        {
+          f();
+        }
+      }
+
+      private function _close():void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function close(e:Event=null):void
+      {
+        if (changed)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.change"), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, function(e2:CloseEvent):void
+            {
+              if (e2.detail == Alert.YES) save(e2, unpack(list1$), true);
+              else _close();
+            }, Constants.ICON32_QUESTION);
+        }
+        else
+        {
+          _close();
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+				title="{resourceManager.getString('gcc_safety', 'choose.refNo')}"
+				preinitialize="onPreinitialize()"
+				layout="vertical" horizontalAlign="center" width="330" height="248" xmlns:claims="com.gc.safety.view.claims.*">
+	<mx:HBox height="50"/>
+	<mx:VBox verticalGap="30" height="100%">
+		<mx:HBox width="100%">
+			<mx:Label text="{resourceManager.getString('gcc_safety', 'refNo')}"/>
+			<mx:TextInput id="tiRefNo"/>
+			<mx:PopUpButton id="popBtn" label="{resourceManager.getString('gcc_safety', 'choose')}" 
+							open="onPopUp(event)"
+							openAlways="true">
+				<mx:popUp>
+					<claims:QueryGuaList id="queryGuaList"/>
+				</mx:popUp>
+			</mx:PopUpButton>
+		</mx:HBox>
+		<mx:HBox textAlign="center" horizontalAlign="center" width="100%">
+			<mx:Button id="confirmBtn" label="{resourceManager.getString('gcc', 'ok')}"/>
+			<mx:Button id="cancelBtn" label="{resourceManager.getString('gcc', 'cancel')}"/>
+		</mx:HBox>
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import mx.controls.AdvancedDataGrid;
+			import mx.collections.ArrayCollection;
+			import mx.rpc.events.ResultEvent;
+		
+			import com.gc.safety.model.Insurer;
+			import com.gc.safety.model.AccOutObj;
+			import com.gc.safety.model.AccOutPsnPay;
+			import com.gc.safety.model.AccOutPsn;
+			import com.gc.safety.model.AccInPsnPay;
+			import com.gc.safety.model.AccOutGua;
+			import com.gc.safety.model.AccOutGuaPay;
+			import com.gc.safety.model.AccInPsnGua;
+			import com.gc.safety.model.AccInPsnGuaPay;
+			import com.gc.safety.controller.ClaimsController;
+			import com.gc.common.controller.UserController;
+			
+			public var accGuaAC:ArrayCollection = new ArrayCollection();
+			[Bindable]
+			public var queryListAC:ArrayCollection = new ArrayCollection();
+			
+			public var type:String;
+			public var insurer:Insurer;
+			public var appDate:Date;
+			
+			private function onPreinitialize():void
+			{
+				// 取出可供选择的凭证列表
+				ClaimsController.getAccGuaForQuery(UserController.branchId, onGetAccGuaSuccess);
+			}
+			
+			/** 查询凭证列表成功 */
+			private function onGetAccGuaSuccess(e:ResultEvent):void
+			{
+				accGuaAC.removeAll();
+				queryListAC.removeAll();
+				accGuaAC = e.result as ArrayCollection;
+				sort();
+				queryListAC.refresh();
+				var refNo:String="";
+				for each (var obj:ArrayCollection in accGuaAC)
+				{
+					var mediFee:Number = 0;
+					var other1:Number = 0;
+					var other2:Number = 0;
+					var objSum:Number = 0;
+					// 处理多次赔偿
+					if (obj.getItemAt(0, 0) is AccInPsnGua)
+					{
+						var accInPsnGua:AccInPsnGua = AccInPsnGua(obj.getItemAt(0, 0));
+						for each (var accInPsnPay:AccInPsnPay in accInPsnGua.fkAccInPsn.accInPsnPays)
+						{
+							mediFee += accInPsnPay.mediFee;
+							other1 += accInPsnPay.other1;
+							other2 += accInPsnPay.other2;
+						}
+						accInPsnGua.fkAccInPsn.mediFee = mediFee;
+						accInPsnGua.fkAccInPsn.other1 = other1;
+						accInPsnGua.fkAccInPsn.other2 = other2;
+						var accInPsnGuaPay:AccInPsnGuaPay = obj.getItemAt(3, 0) as AccInPsnGuaPay;
+						if (accInPsnGuaPay != null)
+						{
+							accInPsnGua.getDate = accInPsnGuaPay.payDate;
+							accInPsnGua.getRefNo = accInPsnGuaPay.id.refNo;
+							accInPsnGua.getSum = accInPsnGuaPay.mediFee + accInPsnGuaPay.other1 + accInPsnGuaPay.other2;
+						}
+					}
+					else if (obj.getItemAt(0, 0) is AccOutGua)
+					{
+						var accOutGua:AccOutGua = AccOutGua(obj.getItemAt(0, 0));
+						for each (var accOutObj:AccOutObj in accOutGua.accident.accOutObjs)
+						{
+							objSum += accOutObj.payFee;
+						}
+						for each (var accOutPsn:AccOutPsn in accOutGua.accident.accOutPsns)
+						{
+							for each (var accOutPsnPay:AccOutPsnPay in accOutPsn.accOutPsnPays)
+							{
+								mediFee += accOutPsnPay.mediFee;
+								other1 += accOutPsnPay.other1;
+								other2 += accOutPsnPay.other2;
+							}
+						}
+						accOutGua.payMediFee = mediFee;
+						accOutGua.payOther1 = other1;
+						accOutGua.payOther2 = other2;
+						accOutGua.payObjSum = objSum;
+						var accOutGuaPay:AccOutGuaPay =  obj.getItemAt(3, 0) as AccOutGuaPay;
+						if (accOutGuaPay != null)
+						{
+							accOutGua.getDate = accOutGuaPay.payDate;
+							accOutGua.getRefNo = accOutGuaPay.id.refNo;
+							accOutGua.getSum = accOutGuaPay.objSum;							
+						}
+					}
+					// Server传过来的结构: [AccOutGua/AccInPsnGua, '三责', 状态]
+					var ret:Object = new Object();
+					ret.refNo = (obj.getItemAt(0, 0) is AccOutGua) ? (obj.getItemAt(0, 0) as AccOutGua).id.refNo : (obj.getItemAt(0, 0) as AccInPsnGua).id.refNo;
+					if (refNo == ret.refNo)	continue;
+					refNo = ret.refNo;
+					ret.type = obj.getItemAt(1, 0) as String;
+					ret.status = obj.getItemAt(2, 0) as String;
+					ret.appDate = (obj.getItemAt(0, 0) is AccOutGua) ? (obj.getItemAt(0, 0) as AccOutGua).appDate : (obj.getItemAt(0, 0) as AccInPsnGua).appDate;
+					ret.insurer = (obj.getItemAt(0, 0) is AccOutGua) ? (obj.getItemAt(0, 0) as AccOutGua).insurer : (obj.getItemAt(0, 0) as AccInPsnGua).insurer;
+					queryListAC.addItem(ret);
+				}
+			}
+			
+			private function sort():void
+			{
+				for (var i:int = 0; i < accGuaAC.length; i ++)
+				{
+					var obj1:ArrayCollection = accGuaAC.getItemAt(i, 0) as ArrayCollection;
+					for (var j:int = i + 1; j < accGuaAC.length; j ++)
+					{
+						var obj2:ArrayCollection = accGuaAC.getItemAt(j, 0) as ArrayCollection;
+						if (ObjectUtil.compare(obj1.getItemAt(0,0).id.refNo, obj2.getItemAt(0,0).id.refNo, 1) > 0)
+						{
+							var obj:ArrayCollection = obj1;
+							obj1 = obj2;
+							obj2 = obj;
+							accGuaAC.setItemAt(obj1, i);
+							accGuaAC.setItemAt(obj2, j);
+						}
+					}
+				}
+			}
+			
+			private function onPopUp(e:Event):void
+			{
+				queryGuaList.adg.dataProvider = queryListAC;
+				if (queryGuaList.adg.hasEventListener(MouseEvent.DOUBLE_CLICK))
+					queryGuaList.adg.addEventListener(MouseEvent.DOUBLE_CLICK, onDBClick);
+			}
+			
+			private function onDBClick(e:MouseEvent):void
+			{
+				var selectedIndex:int = (e.currentTarget as AdvancedDataGrid).selectedIndex;
+				var item:Object = queryListAC.getItemAt(selectedIndex, 0);
+				tiRefNo.text = item.hasOwnProperty("refNo") ? item.refNo : "";
+				type = item.hasOwnProperty("type") ? item.type : "";
+				insurer = item.hasOwnProperty("insurer") ? item.insurer : null;
+				appDate = item.hasOwnProperty("appDate") ? item.appDate : null;
+				popBtn.close();
+			}
+		]]>
+	</mx:Script>
+	
+</mx:TitleWindow>

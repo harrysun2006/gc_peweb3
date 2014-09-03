@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="360" height="270"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:ToolBar id="form" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'branch')}:">
+      <mx:Label text="{UserController.branchName}" width="200"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'year')}:">
+      <mx:ComboBox id="cbDate" editable="true" width="200"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'depart')}:">
+      <mx:ComboBox id="cbDepart" name="depart" width="200" itemRenderer="mx.controls.Label"
+                   change="onDepartChange(event)"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person')}:">
+      <mx:ComboBox id="cbPerson" name="person" width="200" editable="true"
+                   itemRenderer="mx.controls.Label" labelField="name"/>
+    </mx:FormItem>
+  </mx:ToolBar>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="report(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private var qo:Object=new Object();
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        cbDepart.dataProvider=BaseController.departmentList;
+        cbDepart.selectedIndex=-1;
+        if (UserController.hrSub)
+        {
+          cbDepart.enabled=false;
+          cbDepart.selectedIndex=CommonUtil.indexOfKey(BaseController.departmentList, UserController.hrDepart);
+          onDepartChange();
+        }
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        var d:Date=UserController.user.systemTime;
+        var list:ArrayCollection=new ArrayCollection();
+        var y:int=d.fullYear;
+        for (var i:int=0; i<7; i++)
+        {
+          list.addItemAt(y-i, 0);
+        }
+        cbDate.dataProvider=list;
+        cbDate.selectedItem=y;
+        qo["branch.id"]=UserController.branchId;
+        qo["@order"]="workerId";
+      }
+
+      private function onDepartChange(e:Event=null):void
+      {
+        if (cbDepart.selectedItem is Department)
+        {
+          var depart:Department=cbDepart.selectedItem as Department;
+          qo["depart.id"]=depart.id;
+          checkDate();
+          CheckController.getPersonsOnlineByDepart(qo, function(e:ResultEvent):void
+            {
+              cbPerson.dataProvider=e.result;
+              cbPerson.selectedIndex=-1;
+            });
+        }
+      }
+
+      private function checkDate():Boolean
+      {
+        var y:int=int(cbDate.text);
+        var r:Boolean=(y >= 1900 && y <= 9999);
+        if (r)
+        {
+          var d:Date=new Date(y, 0, 1);
+          qo["date_from"]=DateUtil.getBeginDate(d, DateUtil.YEAR);
+          qo["date_to"]=DateUtil.getEndDate(d, DateUtil.YEAR);
+        }
+        return r;
+      }
+
+      private function report(e:Event):void
+      {
+        if (!checkDate())
+        {
+          CommonUtil.showError(cbDate, 2000, resourceManager.getString("gcc", "date.year.error"));
+          return;
+        }
+        if (cbDepart.selectedItem)
+          qo.depart=cbDepart.selectedItem;
+        if (cbPerson.selectedItem)
+          qo.person=cbPerson.selectedItem;
+        else if (cbPerson.text && cbPerson.text != "")
+        {
+          // var k:int=CommonUtil.indexOfKey(cbPerson.dataProvider, cbPerson.text, "workerId");
+          // qo.person=k >= 0 ? cbPerson.dataProvider[k] : null;
+          qo.person=new Person();
+          qo.person.workerId=cbPerson.text;
+        }
+        if (cbPerson.text && cbPerson.text != "")
+        {
+          var load:Function=function(e1:ResultEvent):void
+            {
+              var data:ArrayCollection=e1.result as ArrayCollection;
+              var po:Object=data && data.length > 0 ? data[0]["psnOnline"] : null;
+              var person:Person=po ? po.person : qo.person;
+              var depart:Department=po ? po.depart : qo.depart;
+              var n1:String=person ? person.name ? person.name : person.workerId ? person.workerId : "" : "";
+              var n2:String=depart ? depart.name : "";
+              if (data.length <= 0)
+              {
+                Alert.show(resourceManager.getString("gcc_hr", "chkFactD.report.person.empty", [cbDate.text, n1, n2])
+                  , Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+              }
+              else
+              {
+                CommonUtil.popupWindow(PersonCheckReport, null, null, [qo, data, po, person, depart], true);
+                close();
+              }
+            };
+          CheckController.getOnlinePersonsAndCFDs(qo, load);
+        }
+        else
+        {
+          CommonUtil.showError(cbPerson, 2000, resourceManager.getString("gcc_hr", "chkFactD.person.not.null"));
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

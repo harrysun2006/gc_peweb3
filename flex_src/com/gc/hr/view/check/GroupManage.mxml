@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="600" height="480"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <gc:Voucher width="100%" height="100%" autoLayout="true" buttons="full" validator="{validator}"
+              faccess="{UserController.hrWrite}">
+    <mx:AdvancedDataGrid>
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="no" width="60"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"
+                                   editorDataField="selectedItem" itemEditor="{departComboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.ComboBox;
+      import mx.controls.Label;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.PopUpTextArea;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var departComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.LIST_SUCCESS, function(e:CommonEvent):void
+          {
+            if (e.data is ArrayCollection) {
+              var list:ArrayCollection=e.data as ArrayCollection;
+              for each (var item:Object in list)
+              {
+                if (item.hasOwnProperty("depart"))
+                  item.depart=CommonUtil.getObject(BaseController.departmentList, item.depart);
+              }
+            }
+          });
+        addEventListener(CommonEvent.SAVE_SUCCESS, function(e:CommonEvent):void
+          {
+            if (e.data is ArrayCollection) {
+              CheckController.groupList=e.data as ArrayCollection;
+            }
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        departComboBox=new AdvancedClassFactory(ComboBox);
+        departComboBox.properties={dataProvider: BaseController.departmentList, itemRenderer: new ClassFactory(Label)};
+        textArea=new AdvancedClassFactory(PopUpTextArea);
+      }
+
+      /**
+       * TODO:
+       * mx:Component可以对Voucher组件定义override function
+       * 但似乎只能作为内联项目渲染器或项目编辑器用于itemRenderer标签中
+       * mx:Script中只能定义最外层组件的override function
+       **/
+      private function validator(list:ArrayCollection, grid:Object, vfields:Array):Boolean
+      {
+        trace("user-defined validator!!!");
+        return CommonUtil.validateGrid(grid, vfields).length <= 0;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

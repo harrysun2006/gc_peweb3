@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="320" height="320"
+                preinitialize="onPreinitialize()">
+  <mx:VBox width="100%" height="100%">
+    <mx:RadioButtonGroup id="rbga" change="onRadioButtonChange(event)"/>
+    <mx:Grid width="100%" height="100" borderStyle="solid" paddingLeft="5" paddingTop="5"
+             paddingRight="5" paddingBottom="5">
+      <mx:GridRow>
+        <mx:GridItem colSpan="2">
+          <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p02.select.a1')}"
+                          groupName="rbga" value="11" selected="true"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p02.select.a2')}"
+                          groupName="rbga" value="12"/>
+        </mx:GridItem>
+        <mx:GridItem>
+          <mx:ComboBox id="cbChange" enabled="false" width="120"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period')}:"/>
+    <mx:Grid id="form" width="100%">
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period.begin')}:"/>
+          <mx:DateField name="bdate" editable="true" width="160"
+                        formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period.end')}:"/>
+          <mx:DateField id="dfEndDate" name="edate" editable="true" width="160"
+                        formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.Label;
+      import mx.core.ClassFactory;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private var list:Array=[
+        {value:"on", label:"注册"}, {value:"down", label:"注销"},
+        {value:"depart", label:"部门调动"}, {value:"office", label:"车队调动"}, 
+        {value:"line", label:"线路调动"},	{value:"bus", label:"配车调动"}, 
+        {value:"cert2", label:"上岗证调动"}, {value:"regType", label:"户口类型变动"},
+        {value:"type", label:"用工类别变动"}, {value:"salaryType", label:"分配类别"}, 
+        {value:"position", label:"岗位"}, {value:"workType", label:"职位"}, 
+        {value:"regBelong", label:"所属公司"}, {value:"party", label:"政治面貌"},
+        {value:"grade", label:"职称"}, {value:"schooling", label:"学历"},
+        {value:"contract", label:"合同"},
+        ];
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        title=resourceManager.getString("gcc_hr", "report.p02");
+        cbChange.dataProvider=list;
+        cbChange.itemRenderer=new ClassFactory(Label);
+        cbChange.selectedIndex=-1;
+      }
+
+      private function onRadioButtonChange(e:Event):void
+      {
+        var rbg:RadioButtonGroup=e.currentTarget as RadioButtonGroup;
+        if (rbg == null)
+          return;
+        cbChange.enabled=false;
+        if (rbga.selectedValue == 12)
+          cbChange.enabled=true;
+      }
+
+      private function open(e:Event):void
+      {
+        var qo:Object={a:rbga.selectedValue, user:UserController.user};
+        if (qo.a == 11)
+          qo.change={value:"all", label:"全部变动"};
+        else if (qo.a == 12)
+          qo.change=cbChange.selectedItem;
+        if (qo.change == null)
+        {
+          CommonUtil.showError(cbChange, 2000, resourceManager.getString("gcc_hr", "report.p02.error.change.null"));
+          cbChange.setFocus();
+          return;
+        }
+        if (!CommonUtil.validateForm(form, ["bdate", "edate"]))
+          return;
+        CommonUtil.loadInstance(form, qo, true);
+        if (qo.bdate > qo.edate)
+        {
+          CommonUtil.showError(dfEndDate, 2000, resourceManager.getString("gcc_hr", "report.p02.error.endDate.lt.beginDate"));
+          dfEndDate.setFocus();
+          return;
+        }
+        close();
+        callLater(function():void{CommonUtil.popupWindow(ReportP02, "", owner, qo);});
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

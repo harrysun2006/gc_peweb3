@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" showCloseButton="true"
+                close="PopUpManager.removePopUp(this);" creationComplete="onCreationComplete()">
+  <mx:Tree id="tree" enabled="true" width="100%" height="100%" showRoot="true" iconField="icon"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+
+      import com.gc.CommonEvent;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.treeClasses.StyledTreeItemRenderer;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Person;
+      import com.gc.hr.model.HireType;
+
+      private var testItemRenderer:AdvancedClassFactory;
+
+      private function onCreationComplete():void
+      {
+        testItemRenderer=new AdvancedClassFactory(StyledTreeItemRenderer);
+        tree.itemRenderer=testItemRenderer;
+        var _root:Object=buildPersonTree();
+        tree.invalidateDisplayList();
+        tree.dataProvider=_root;
+      }
+
+      private function buildPersonTree():Object
+      {
+        var tree:Object;
+        var b1:Branch=new Branch(1, "gjgs", "GJGS");
+        var b2:Branch=new Branch(2, "zbbs", "ZBBS");
+        tree={label:resourceManager.getString("gcc_hr", "tree.person.root"), children:[b1, b2]};
+        var s1:Object={label:"男", 
+            children:[new Person(1, "0001", "张一"), new Person(2, "0002", "张二")], 
+            style:{color:0xFF0000, fontSize:14, fontWeight:"bold"}};
+        var s2:Object={label:"女", 
+            children:[new Person(3, "0003", "张三"), new Person(4, "0004", "张四")], 
+            style:{color:0xFFFF00, bgColor:0x0000FF, fontSize:14, fontWeight:"bold"}}
+        b1["children"]=[s1, s2];
+        var t1:HireType=new HireType(b2, "合同");
+        var t2:HireType=new HireType(b2, "临时");
+        t1["children"]=[new Person(5, "0005", "张五"), new Person(6, "0006", "张六")];
+        t2["children"]=[new Person(7, "0001", "张七"), new Person(8, "0008", "张八")];
+        var coll2:ArrayCollection=new ArrayCollection();
+        coll2.addItem(t1);
+        coll2.addItem(t2);
+        b2["children"]=coll2;
+        return tree;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

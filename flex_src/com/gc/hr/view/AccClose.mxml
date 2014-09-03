@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="600" height="480"
+                preinitialize="onPreinitialize()">
+  <gc:Voucher width="100%" height="100%" autoLayout="true" bundle="gcc_hr" code="hrClose">
+    <mx:ToolBar id="form" percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc_hr', 'hrClose.id.date')}:"/>
+        <mx:DateField name="id.date" editable="true" formatString="{Constants.DATE_FORMAT}"
+                      width="160"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc_hr', 'hrClose.comment')}:"/>
+        <mx:TextInput name="comment" width="280"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+    <mx:AdvancedDataGrid editable="false" selectionMode="none" dataProvider="{list}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="id.date"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox name="buttons" horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'close.acc')}" click="closeAcc(event)"
+                 enabled="{UserController.hrWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'declose.acc')}" click="decloseAcc(event)"
+                 enabled="{UserController.hrWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.common.controller.UserController;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.hr.model.HrClose;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var list:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+          {list=e.result as ArrayCollection});
+      }
+
+      private function closeAcc(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["id.date"]))
+          return;
+        var close:HrClose=new HrClose();
+        CommonUtil.loadInstance(form, close);
+        CommonUtil.loadInstance({"id.branch": UserController.branch}, close);
+        CommonController.closeAcc(close, UserController.userUseId, function(e:ResultEvent):void
+          {
+            CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+              {list=e.result as ArrayCollection});
+            Alert.show(resourceManager.getString("gcc", "close.acc.success"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+      }
+
+      private function decloseAcc(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["id.date"]))
+          return;
+        var close:HrClose=new HrClose();
+        CommonUtil.loadInstance(form, close);
+        CommonUtil.loadInstance({"id.branch": UserController.branch}, close);
+        CommonController.decloseAcc(close, UserController.userUseId, function(e:ResultEvent):void
+          {
+            CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+              {list=e.result as ArrayCollection});
+            Alert.show(resourceManager.getString("gcc", "declose.acc.success"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

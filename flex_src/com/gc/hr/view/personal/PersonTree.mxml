@@ -1,0 +1,383 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off"
+           creationComplete="onCreationComplete()">
+  <mx:Tree id="treePerson" enabled="true" width="100%" height="100%" showRoot="true"
+           horizontalScrollPolicy="on" verticalScrollPolicy="auto"
+           labelField="{Constants.PROP_NAME_LABEL}" iconField="{Constants.PROP_NAME_ICON}"
+           click="onClick(event)" doubleClick="onDoubleClick(event)" doubleClickEnabled="true"
+           allowMultipleSelection="true" allowDragSelection="true" dragEnabled="true"
+           dragMoveEnabled="true" change="onChange(event)" valueCommit="onValueCommit(event)"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.core.UITextField;
+      import mx.binding.utils.ChangeWatcher;
+      import mx.core.Application;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Beans;
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Office;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.Position;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.hr.Events;
+      import com.gc.hr.model.HireType;
+      import com.gc.hr.model.JobGrade;
+      import com.gc.hr.model.PolParty;
+      import com.gc.hr.model.RegBranch;
+      import com.gc.hr.model.Schooling;
+
+      private var personList:ArrayCollection;
+      private var orderColumns:Array;
+      private var today:Date;
+      private var items:Array;
+
+      private function onCreationComplete():void
+      {
+        orderColumns=PersonalController.DEFAULT_PERSON_ORDER_COLUMNS;
+        today=new Date();
+        if (!Constants.DEBUG)
+          loadPersonTree(UserController.limit, Person.qo, orderColumns);
+        addEventListener(CommonEvent.REFRESH, onRefresh);
+        addEventListener(CommonEvent.EXPAND, onExpand);
+        addEventListener(CommonEvent.EXPAND_ALL, onExpandAll);
+        addEventListener(CommonEvent.COLLAPSE, onCollapse);
+        addEventListener(CommonEvent.COLLAPSE_ALL, onCollapseAll);
+        addEventListener(CommonEvent.CLEAR, onClear);
+        addEventListener(Events.PERSON_TREE_REFILTERING, onRefiltering);
+        addEventListener(Events.PERSON_TREE_REORGANIZING, onReorganizing);
+      }
+
+      private function loadPersonTree(limit:SecurityLimit, qo:Object, orderColumns:Array):void
+      {
+        qo=Person.getSearch(qo);
+        PersonalController.getPersons(limit, qo, orderColumns, onGetPersonsSuccess);
+      }
+
+      private function onGetPersonsSuccess(e:ResultEvent):void
+      {
+        personList=e.result as ArrayCollection;
+        buildPersonTree(personList, orderColumns);
+      }
+
+      private function buildPersonTree(coll:ArrayCollection, orderColumns:Array):void
+      {
+        var _root:Object=buildPersonTree1(coll, orderColumns);
+        this.today=new Date();
+        treePerson.dataProvider=_root;
+
+        /**
+         * 以下方法均无效:
+         * treePerson.expandItem(_root, true)
+         * treePerson.expandItem([_root], true)
+         * treePerson.expandChildrenOf(_root, true)
+         * treePerson.expandChildrenOf([_root], true)
+         **/
+
+//        treePerson.selectedItem=_root;
+        if (_root.hasOwnProperty("children"))
+        {
+          if (_root.children[0].hasOwnProperty("children"))
+          {
+            treePerson.openItems=[_root,_root.children[0]];
+            treePerson.validateNow();
+            treePerson.selectedItem=_root.children[0].children[0];
+          }
+          else
+          {
+            treePerson.openItems=[_root];
+            treePerson.validateNow();
+            treePerson.selectedItem=_root.children[0];
+          }
+
+        }
+
+//        if(personList!=null && personList.length>0)
+//        {
+//        	treePerson.selectedItem=personList[0];
+//        	treePerson.openItems=_root;
+//        	treePerson.expandChildrenOf(treePerson.selectedItem,true);
+//        	treePerson.expandItem(personList[0],true,true,true);
+//		 }	 
+      }
+
+      private function onClick(event:Event):void
+      {
+        if (event.target is UITextField)
+        {
+          var node:Object=treePerson.selectedItem;
+          treePerson.expandItem(node, !treePerson.isItemOpen(node));
+        }
+      }
+
+      private function onDoubleClick(event:Event):void
+      {
+        var node:Object=treePerson.selectedItem;
+        dispatchEvent(new CommonEvent(CommonEvent.DBLCLICKED, node));
+      }
+
+      // 捕获由鼠标点击事件引起的selectedItem改变
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      // 捕获由程序引起的selectedItem改变
+      private function onValueCommit(event:Event):void
+      {
+        var node:Object=treePerson.selectedItem;
+        if (!node || (node[Constants.PROP_NAME_TYPE] == Constants.TYPE_ROOT && !node.hasOwnProperty("children")))
+          return;
+        dispatchEvent(new CommonEvent(CommonEvent.CLICKED, node, [CommonUtil.getAncestors(treePerson), orderColumns]));
+      }
+
+      private function onExpand(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array=treePerson.selectedItems;
+        CommonUtil.visit(selectedItems, visitNode);
+        var openItems:Array=treePerson.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treePerson.openItems=openItems;
+        treePerson.validateNow();
+        treePerson.selectedItems=selectedItems;
+      }
+
+      private function onExpandAll(event:Event):void
+      {
+        if (treePerson.selectedItem == null)
+          return;
+        items=[];
+        CommonUtil.visit(treePerson.dataProvider, visitNode);
+        treePerson.openItems=items;
+        treePerson.validateNow();
+        treePerson.selectedItem=treePerson.dataProvider[0];
+      }
+
+      private function onCollapse(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array=treePerson.selectedItems;
+        CommonUtil.visit(selectedItems, visitNode);
+        var openItems:ArrayCollection=new ArrayCollection(treePerson.openItems as Array);
+        var k:int;
+        for each (var item:Object in items)
+        {
+          k=openItems.getItemIndex(item);
+          if (k >= 0)
+            openItems.removeItemAt(k);
+        }
+        treePerson.openItems=openItems.toArray();
+        treePerson.validateNow();
+        treePerson.selectedItems=selectedItems;
+      }
+
+      private function onCollapseAll(event:Event):void
+      {
+        if (treePerson.selectedItem == null)
+          return;
+        treePerson.openItems=[];
+        treePerson.validateNow();
+        treePerson.selectedItem=treePerson.dataProvider[0];
+      }
+
+      private function visitNode(node:Object):void
+      {
+        if (node && node.hasOwnProperty("children"))
+          items.push(node);
+      }
+
+      private function onRefresh(event:Event):void
+      {
+        event.stopImmediatePropagation();
+        // treePerson.dataProvider=null;
+        // treePerson.validateNow();
+        loadPersonTree(UserController.limit, Person.qo, orderColumns);
+      }
+
+      private function onClear(event:Event):void
+      {
+        treePerson.selectedIndices=[];
+        treePerson.validateDisplayList();
+      }
+
+      private function onReorganizing(event:Events):void
+      {
+        orderColumns=event.args;
+        treePerson.dataProvider=null;
+        treePerson.validateNow();
+        if (personList == null)
+        {
+          loadPersonTree(UserController.limit, Person.qo, orderColumns);
+        }
+        else
+        {
+          buildPersonTree(personList, orderColumns);
+        }
+      }
+
+      private function onRefiltering(event:Events):void
+      {
+        var qo:Object=event.data;
+        orderColumns=event.args;
+        treePerson.dataProvider=null;
+        treePerson.validateNow();
+        // CommonUtil.setValue(qo, "depart.name", "京徐公司");
+        // CommonUtil.setValue(qo, "office", "二车队");
+        loadPersonTree(UserController.limit, qo, orderColumns);
+      }
+
+      private function buildPersonTree1(coll:ArrayCollection, orderColumns:Array):Object
+      {
+        var root:Object=new Object();
+        var tree:Object;
+        var key:Object;
+        var children:Array;
+        var k:int;
+        for each (var person:Person in coll)
+        {
+          tree=root;
+          for each (var column:String in orderColumns)
+          {
+            key=getKey(person, column);
+            children=tree["children"] as Array;
+            if (children == null)
+            {
+              children=new Array();
+              tree["children"]=children;
+            }
+            // k=children.indexOf(key);
+            k=CommonUtil.indexOfObject(children, key);
+            if (k < 0)
+            {
+              children.push(key);
+              tree=key;
+            }
+            else
+            {
+              tree=children[k];
+            }
+          }
+          children=tree["children"] as Array;
+          if (children == null)
+          {
+            children=new Array();
+            tree["children"]=children;
+          }
+          person[Constants.PROP_NAME_TYPE]="person";
+          children.push(person);
+        }
+        root[Constants.PROP_NAME_TYPE]=Constants.TYPE_ROOT;
+        root[Constants.PROP_NAME_LABEL]=resourceManager.getString("gcc_hr", "tree.person.root");
+        return root;
+      }
+
+      private function getKey(person:Person, orderColumn:String):Object
+      {
+        var key:Object;
+        var scope:String;
+        switch (orderColumn)
+        {
+          case "type": // 用工性质
+            key=new HireType(person.branch, person.type);
+            break;
+          case "depart.id": // 部门, 注意: person.depart会有mx_internal_uid重复的数据
+            key=new Department(person.departId, person.branch, person.departName);
+            break;
+          case "depart.no": // 部门, 注意: person.depart会有mx_internal_uid重复的数据
+            key=new Department(person.departId, person.branch, person.departName);
+            key.no=person.departNo;
+            break;
+          case "office": // 科室
+            key=new Office(person.branch, person.depart, person.office);
+            // key["label"]=person.office;
+            break;
+          case "party": // 政治面貌
+            key=new PolParty(person.branch, person.party);
+            break;
+          case "position": // 岗位
+            key=new Position(person.branch, person.position, person.fkPosition == null ? "" : person.fkPosition.name);
+            break;
+          case "schooling": // 学历
+            key=new Schooling(person.branch, person.schooling);
+            break;
+          case "grade": // 职称
+            key=new JobGrade(person.branch, person.grade);
+            break;
+          case "regBelong": // 所属公司
+            key=new RegBranch(person.branch, person.regBelong);
+            break;
+          case "birthday": // 年龄
+            key=new Date();
+            key.fullYear=(person.birthday == null) ? 0 : person.birthday.getFullYear();
+            scope=(person.birthday == null) ? null : getScope(today.getFullYear() - person.birthday.getFullYear(), Constants.INTERVAL_YEARS);
+            key[Constants.PROP_NAME_LABEL]=(scope == null) ? Constants.NULL_LABEL : scope;
+            key[Constants.PROP_NAME_VALUE]=(scope == null) ? Constants.NULL_VALUE : scope;
+            break;
+          case "workLength": // 内部工龄
+            key=new Object();
+            key[Constants.PROP_NAME_LABEL]=(person.workLength == null) ? Constants.NULL_LABEL : person.workLength;
+            key[Constants.PROP_NAME_VALUE]=(person.workLength == null) ? Constants.NULL_VALUE : person.workLength;
+            break;
+          case "serviceLength": // 工龄
+            key=new Object();
+            key[Constants.PROP_NAME_LABEL]=(person.serviceLength == null) ? Constants.NULL_LABEL : person.serviceLength;
+            key[Constants.PROP_NAME_VALUE]=(person.serviceLength == null) ? Constants.NULL_VALUE : person.serviceLength;
+            break;
+          case "contr1End": // 合同到期(年)
+            key=new Date();
+            key.fullYear=(person.contr1End == null) ? 0 : person.contr1End.getFullYear();
+            scope=(person.contr1End == null) ? null 
+              : person.contr1End >= Constants.MAX_DATE ? resourceManager.getString("gcc", "person.contr1End.no")
+              : getScope(person.contr1End.getFullYear(), Constants.INTERVAL_YEARS);
+            key[Constants.PROP_NAME_LABEL]=(scope == null) ? Constants.NULL_LABEL : scope;
+            key[Constants.PROP_NAME_VALUE]=(scope == null) ? Constants.NULL_VALUE : scope;
+            break;
+          case "workDate": // 参加工作(年)
+            key=new Date();
+            key.fullYear=(person.workDate == null) ? 0 : person.workDate.getFullYear();
+            scope=(person.workDate == null) ? null : getScope(person.workDate.getFullYear(), Constants.INTERVAL_YEARS);
+            key[Constants.PROP_NAME_LABEL]=(scope == null) ? Constants.NULL_LABEL : scope;
+            key[Constants.PROP_NAME_VALUE]=(scope == null) ? Constants.NULL_VALUE : scope;
+            break;
+          case "inDate": // 进本单位(年)
+            key=new Date();
+            key.fullYear=(person.inDate == null) ? 0 : person.inDate.getFullYear();
+            scope=(person.inDate == null) ? null : getScope(person.inDate.getFullYear(), Constants.INTERVAL_YEARS);
+            key[Constants.PROP_NAME_LABEL]=(scope == null) ? Constants.NULL_LABEL : scope;
+            key[Constants.PROP_NAME_VALUE]=(scope == null) ? Constants.NULL_VALUE : scope;
+            break;
+          case "sex": // 性别
+            key=new Object();
+            key[Constants.PROP_NAME_LABEL]=(person.sex == null) ? Constants.NULL_LABEL : person.sex;
+            key[Constants.PROP_NAME_VALUE]=(person.sex == null) ? Constants.NULL_VALUE : person.sex;
+            break;
+          default:
+            key=new Object();
+            key[Constants.PROP_NAME_TYPE]=Constants.TYPE_UNKNOWN;
+            break;
+        }
+        key[Constants.PROP_NAME_TYPE]=orderColumn;
+        return key;
+      }
+
+      private function getScope(num:int, period:int):String
+      {
+        var b:int=period*(int(num/period));
+        var e:int=(b+period >= 10000) ? 9999 : b+period;
+        return b.toString() + "-" + e.toString();
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

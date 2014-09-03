@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="800" height="400"
+                title="处理事故列表" horizontalAlign="center" keyDown="escape(event)"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                horizontalScrollPolicy="off" verticalScrollPolicy="off">
+  <mx:VBox width="100%" horizontalAlign="center" horizontalScrollPolicy="auto">
+    <mx:AdvancedDataGrid id="adgAccs" height="301" labelFunction="{CommonUtil.gridLabelFunction}"
+                         doubleClickEnabled="true"
+                         doubleClick="doubleClickItem(adgAccs.selectedItem)"
+                         itemRenderer="mx.controls.Label" click="clickItem(adgAccs.selectedItem)"
+                         dataProvider="{accs}" horizontalScrollPolicy="auto">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="dept" dataTipField="dept.name"/>
+        <mx:AdvancedDataGridColumn dataField="date" labelFunction="onDateFormating" width="165"/>
+        <mx:AdvancedDataGridColumn dataField="no"/>
+        <mx:AdvancedDataGridColumn dataField="statusStr"/>
+        <mx:AdvancedDataGridColumn dataField="line" dataTipField="line.name"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.useId"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.name"/>
+        <mx:AdvancedDataGridColumnGroup headerText="三责" headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="outPayFee"/>
+          <mx:AdvancedDataGridColumn dataField="outGuaFee"/>
+          <mx:AdvancedDataGridColumn dataField="outGuaPayFee"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="客伤" headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="inPsnPayFee"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnGuaFee"/>
+          <mx:AdvancedDataGridColumn dataField="inPsnGuaPayFee"/>
+        </mx:AdvancedDataGridColumnGroup>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10">
+      <mx:Button id="btSure" label="确定" click="sure(event)"/>
+      <mx:Label width="40"/>
+      <mx:Button id="btClose" label="取消" click="cancel(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.util.DateUtil;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import com.gc.safety.model.AccOutPsnPay;
+      import com.gc.safety.model.AccInPsnPay;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.safety.model.AccOutPsn;
+      import com.gc.safety.model.AccInPsn;
+      import com.gc.safety.model.AccInPsnGuaPay;
+      import com.gc.safety.model.AccOutObj;
+      import com.gc.safety.model.AccOutGuaPay;
+      import com.gc.common.model.Department;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.safety.Events;
+      import com.gc.safety.model.Accident;
+      import com.gc.common.controller.UserController;
+      import com.gc.util.CommonUtil;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.managers.PopUpManager;
+      import mx.collections.ArrayCollection;
+      import mx.events.FocusRequestDirection;
+      import mx.managers.IFocusManagerComponent;
+      import mx.managers.IFocusManager;
+      import mx.core.Application;
+      import mx.core.Container;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+
+      private var accident:Accident;
+      [Bindable]
+      private var accs:ArrayCollection = new ArrayCollection();
+      [Bindable]
+      public var clickType:String;
+
+      private function onPreinitialize():void
+      {
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+      }
+
+      private function onCreationComplete():void
+      {
+        adgAccs.percentWidth = 100;
+        CommonUtil.setDataGridColumns(adgAccs, "gcc_safety", "accident", function(obj:Object):void{});
+        btSure.setFocus();
+        AccidentController.getAccsAndObjPsnGuas(UserController.branchId,CommonController.closeDate,successGetAccs);
+        adgAccs.setFocus();
+      }
+
+      private function successGetAccs(event:ResultEvent):void
+      {
+        accs.removeAll();
+        var arr:Object = event.result;
+        var accOutGuaPays:ArrayCollection = arr[0] as ArrayCollection;
+        var accInPsnGuaPays:ArrayCollection = arr[1] as ArrayCollection;
+        var accidents:ArrayCollection = arr[2] as ArrayCollection;
+        // 运算事故的相关赔偿、理赔信息、赔付信息
+        for each (var accident:Accident in accidents)
+        {
+          var outPayFee:Number = 0;
+          var outGuaFee:Number = 0;
+          var outGuaPayFee:Number = 0;
+          var inPsnPayFee:Number = 0;
+          var inPsnGuaFee:Number = 0;
+          var inPsnGuaPayFee:Number = 0;
+          for each (var accInPsn:Object in accident.accInPsns)
+          {
+            for each (var accInPsnPay:AccInPsnPay in accInPsn.accInPsnPays)
+            {
+              if (accInPsnPay.fkAccInPsn.id.accId == accInPsn.id.accId &&
+                accInPsnPay.fkAccInPsn.id.no == accInPsn.id.no &&
+                accInPsnPay.fkAccInPsn.id.branch.id == accInPsn.id.branch.id)
+                inPsnPayFee += accInPsnPay.mediFee + accInPsnPay.other1 + accInPsnPay.other2;
+            }
+          }
+          for each (var accOutPsn:Object in accident.accOutPsns)
+          {
+            for each (var accOutPsnPay:AccOutPsnPay in accOutPsn.accOutPsnPays)
+            {
+              if (accOutPsnPay.fkAccOutPsn.id.accId == accOutPsn.id.accId &&
+                accOutPsnPay.fkAccOutPsn.id.no == accOutPsn.id.no &&
+                accOutPsnPay.fkAccOutPsn.id.branch.id == accOutPsn.id.branch.id)
+                outPayFee += accOutPsnPay.mediFee + accOutPsnPay.other1 + accOutPsnPay.other2;
+            }
+          }
+          for each (var accOutObj:Object in accident.accOutObjs)
+          {
+            outPayFee += isNaN(accOutObj.payFee) ? 0 : accOutObj.payFee;
+          }
+          for each (var accOutGuaPay:AccOutGuaPay in accOutGuaPays)
+          {
+            if (accOutGuaPay.fkAccOutGua.accId == accident.id.id)
+            {
+              outGuaPayFee += accOutGuaPay.objSum + accOutGuaPay.mediFee + accOutGuaPay.other1 + accOutGuaPay.other2;
+              outGuaFee += accOutGuaPay.fkAccOutGua.objSum + accOutGuaPay.fkAccOutGua.mediFee + 
+                accOutGuaPay.fkAccOutGua.other1 + accOutGuaPay.fkAccOutGua.other2;
+            }
+          }
+          for each (var accInPsnGuaPay:AccInPsnGuaPay in accInPsnGuaPays)
+          {
+            if (accInPsnGuaPay.fkAccInPsnGua.accident.id.id == accident.id.id)
+            {
+              inPsnGuaPayFee += accInPsnGuaPay.mediFee + accInPsnGuaPay.other1 + accInPsnGuaPay.other2;
+              inPsnGuaFee += accInPsnGuaPay.fkAccInPsnGua.mediFee + accInPsnGuaPay.fkAccInPsnGua.other1 + accInPsnGuaPay.fkAccInPsnGua.other2;
+            }
+          }
+          accident.outPayFee = outPayFee;
+          accident.outGuaFee = outGuaFee;
+          accident.outGuaPayFee = outGuaPayFee;
+          accident.inPsnPayFee = inPsnPayFee;
+          accident.inPsnGuaFee = inPsnGuaFee;
+          accident.inPsnGuaPayFee = inPsnGuaPayFee;
+          accident.statusStr = accident.status == 2 ? "未存档" : "已存档";
+          accs.addItem(accident);
+        }
+      }
+
+      private function onDateFormating(item:Object, column:AdvancedDataGridColumn):String
+      {
+        return DateUtil.formatDateTime(item.date);
+      }
+
+      private function clickItem(item:Object):void
+      {
+        accident = item as Accident;
+      }
+
+      private function doubleClickItem(item:Object):void
+      {
+//        accident = item as Accident;
+//        if (accident == null)
+//          return;
+//        dispatchEvent(new Events(Events.DBCLICKED,accident));
+//        PopUpManager.removePopUp(this);
+      }
+
+      private function sure(event:Event):void
+      {
+        if (accident == null)
+        {
+          Alert.show("请选择一行进行处理",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+        else
+        {
+          dispatchEvent(new Events(Events.CLICKED,accident));
+          PopUpManager.removePopUp(this);
+        }
+      }
+
+      private function cancel(event:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+
+      private function escape(event:KeyboardEvent):void
+      {
+        var dobj:DisplayObject=(event.target is DisplayObject) ? CommonUtil.findAncestor(event.target as DisplayObject, Container) : null;
+        var focusManager:IFocusManager=(dobj is Container) ? (dobj as Container).focusManager : Application.application.focusManager;
+        switch (event.keyCode)
+        {
+          case Keyboard.ENTER:
+            var p:IFocusManagerComponent=focusManager.getFocus();
+            if (p is Button)
+            {
+              (p as Button).dispatchEvent(CommonEvent.MOUSE_CLICK_EVENT);
+              return;
+            }
+            focusManager.moveFocus(FocusRequestDirection.FORWARD);
+            var n:IFocusManagerComponent=focusManager.getFocus();
+            if (n is Button)
+              (n as Button).dispatchEvent(CommonEvent.MOUSE_CLICK_EVENT);
+            break;
+          case Keyboard.ESCAPE:
+            cancel(event);
+            break;
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

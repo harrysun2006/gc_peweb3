@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:common="com.gc.common.view.*"
+           xmlns:accident="com.gc.safety.view.accident.*" xmlns:claims="com.gc.safety.view.claims.*"
+           xmlns:guarantee="com.gc.safety.view.guarantee.*" xmlns:trans="com.gc.safety.view.trans.*"
+           xmlns:safety.common="com.gc.safety.view.*" layout="vertical" verticalAlign="top"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()" width="100%"
+           height="100%" xmlns:main="com.gc.safety.view.main.*"
+           xmlns:report="com.gc.safety.view.report.*">
+  <mx:VBox width="100%" height="100%">
+    <mx:MenuBar id="menuSafety" itemClick="CommonUtil.menuItemClick(event)" width="100%" height="24"/>
+    <mx:ViewStack id="vsSafety" width="100%" height="100%" minHeight="300" creationPolicy="auto"
+                  change="onChange(event)">
+      <mx:ModuleLoader id="loadSafety"/>
+      <safety.common:CodeManage id="codeManage"/>
+      <trans:TransRegister id="transRegister"/>
+      <trans:TransModify id="transModify"/>
+      <trans:TransQuery id="transQuery"/>
+      <claims:GuaManage id="claimsNew"/>
+
+      <guarantee:GuadtAdd id="guadtAdd"/>
+      <guarantee:GuadtModify id="guadtModify"/>
+      <guarantee:GuaQuery id="guaQuery"/>
+      <accident:AccRegister id="accRegister"/>
+      <accident:AccProcess id="accProcess"/>
+      <accident:AccAudit id="accAudit"/>
+      <accident:AccArchive id="accArchive"/>
+      <claims:QueryGua id="claimsQueryGua"/>
+      <claims:PayManage id="payManage"/>
+      <claims:QueryPay id="claimsQueryPay"/>
+      <accident:AccObjManage id="accObjManage"/>
+      <accident:AccObjPayManage id="accObjPayManage"/>
+      <report:QueryAcc id="queryAcc"/>
+      <report:BusTransQ id="busTransQ"/>
+      <report:BusGuaInfoQ id="busGuaInfoQ"/>
+      <report:BusAccQ id="busAccQ"/>
+      <report:PsnTransQ id="psnTransQ"/>
+      <report:PsnAccQ id="psnAccQ"/>
+      <report:ReportAccs id="reportAccs"/>
+      <trans:TransProcess id="transProcess"/>
+      <main:SafetyTree id="safetyTree"/>
+    </mx:ViewStack>
+    <mx:HBox width="100%" minWidth="800" horizontalScrollPolicy="off">
+      <mx:HBox id="hboxStatusBar" width="100%" minWidth="800" styleName="statusBar"
+               horizontalScrollPolicy="off">
+      </mx:HBox>
+      <mx:Label text="{Constants.VERSION}" styleName="statusBar"
+                toolTip="{resourceManager.getString('gcc_hr', 'statusbar.tip.version')}"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Metadata>
+       [ResourceBundle("gcc_safety")]
+  </mx:Metadata>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.safety.view.accident.AccBusPayWin;
+      import com.gc.safety.view.accident.OutObjPayWin;
+      import com.gc.safety.view.accident.InPsnPayWin;
+      import com.gc.safety.view.accident.OutPsnPayWin;
+      import com.gc.safety.view.accident.OutObjWin;
+      import com.gc.safety.view.accident.InPsnWin;
+      import com.gc.safety.view.accident.OutPsnWin;
+      import com.gc.safety.view.AccClose;
+      import mx.events.IndexChangedEvent;
+      import mx.managers.PopUpManager;
+      import mx.core.IFlexDisplayObject;
+      import mx.controls.Alert;
+      import mx.controls.Label;
+      import mx.controls.Text;
+      import mx.core.UIComponentDescriptor;
+      import mx.core.Container;
+      import com.gc.safety.controller.TransController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.safety.model.*;
+      import com.gc.util.CommonUtil;
+      import flash.utils.Timer;
+      import flash.net.registerClassAlias;
+      import com.gc.util.DateUtil;
+      import com.gc.CommonEvent;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.model.Weather;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.Constants;
+      import com.gc.LoadModuleEvent;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ModuleEvent;
+      import mx.events.MenuEvent;
+      import mx.events.ResourceEvent;
+      import org.swizframework.Swiz;
+
+      private var arrSafetyMainMenu:Array;
+
+      private var user:SecurityUser;
+
+      private var timer:Timer;
+
+      private var text:Label;
+
+      private var fullMenu:Array;
+
+      private var vsWidth:int;
+
+      private function onPreinitialize():void
+      {
+        user = UserController.user;
+        fullMenu = [
+          {label:resourceManager.getString("gcc_safety", "menu.system"), 
+            children: [
+            {label: checkFullScreen(), command: toggleFullScreen, enabled:(flash.system.Capabilities.playerType == "StandAlone"), visible:false},
+              {type: "separator"},
+              {label: resourceManager.getString("gcc_safety", "menu.system.return"), command: _return},
+              {label: resourceManager.getString("gcc_safety", "menu.system.logout"), command: logout},
+              {label: resourceManager.getString("gcc_safety", "menu.system.exit"), command: exit}
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.info"), access:[5,9,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.info.transgress"),
+                children: [
+                {label: resourceManager.getString("gcc_safety", "menu.info.transgress.transtype"), command: selectCodeManage, args: [TransType, "transType", TransController.getTransTypes]},
+                ]
+              },
+              {label: resourceManager.getString("gcc_safety", "menu.info.insure"),
+                children: [
+                {label: resourceManager.getString("gcc_safety", "menu.info.insure.guaranteetype"), command: selectCodeManage, args: [GuaType, "guaType", GuaranteeController.getGuaTypes]},
+                  {label: resourceManager.getString("gcc_safety", "menu.info.insure.insurer"), command: selectCodeManage, args: [Insurer, "insurer", GuaranteeController.getInsurers]}, 
+                ]
+              },
+              {label: resourceManager.getString("gcc_safety", "menu.info.accident"),
+                children: [
+                {label: resourceManager.getString("gcc_safety", "menu.info.accident.weather"), command: selectCodeManage, args: [Weather, "weather", BaseController.getWeathers]}, 
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.level"), command: selectCodeManage, args: [AccLevel, "accLevel", AccidentController.getAccLevels]}, 
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.type"), command: selectCodeManage, args: [AccType, "accType", AccidentController.getAccTypes]},
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.duty"), command: selectCodeManage, args: [AccDuty, "accDuty", AccidentController.getAccDutys]},
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.object"), command: selectCodeManage, args: [AccObject, "accObject", AccidentController.getAccObjects]},
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.processor"), command: selectCodeManage, args: [AccProcessor, "accProcessor", AccidentController.getAccProcessors]},
+                  {label: resourceManager.getString("gcc_safety", "menu.info.accident.extent"), command: selectCodeManage, args: [AccExtent, "accExtent", AccidentController.getAccExtents]},
+                ]
+              }
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.transgress"), access:[2,3,8,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.transgress.input"), access:[8,10,11,12], command: selectLogicChild, args: [2]},
+              {label: resourceManager.getString("gcc_safety", "menu.transgress.process"), access:[2,3,12], command: selectLogicChild, args: [25]},
+              {label: resourceManager.getString("gcc_safety", "menu.transgress.modify"), access:[8,10,11,12], command: selectLogicChild, args: [3]},
+              {label: resourceManager.getString("gcc_safety", "menu.transgress.query"), command: selectLogicChild, args: [4]},
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.insure"), access:[7,8,9,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.insure.add"), command: selectLogicChild, args: [6]},
+              {label: resourceManager.getString("gcc_safety", "menu.insure.modify"), command: selectLogicChild, args: [7]},
+              {label: resourceManager.getString("gcc_safety", "menu.insure.query"), command: selectLogicChild, args: [8]}
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.accident"), access:[1,2,3,4,6,7,8,9,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.accident.new"), access:[1,2,3,12], command: selectLogicChild, args: [9]},  
+              {label: resourceManager.getString("gcc_safety", "menu.accident.paymanage"), access:[1,2,3,12],
+                children:[
+                {label: resourceManager.getString('gcc_safety','menu.accident.paymanage.obj'), command: selectLogicChild, args: [16]},
+                  {label: resourceManager.getString('gcc_safety','menu.accident.paymanage.objpay'), access:[3,12], command: selectLogicChild, args: [17]},
+                ]},
+              {label: resourceManager.getString("gcc_safety", "menu.accident.process"), access:[3,4,12], command: selectLogicChild, args: [10]},
+              {label: resourceManager.getString("gcc_safety", "menu.accident.audit"), access:[6,11,12], command: selectLogicChild, args: [11]},
+              {label: resourceManager.getString("gcc_safety", "menu.accident.archive"), access:[6,11,12], command: selectLogicChild, args: [12]},
+//              {label: resourceManager.getString("gcc_safety", "menu.accident.query"), command: selectLogicChild, args: [16]}
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.claims"), access:[7,8,9,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.claims.new"), command: selectLogicChild, args: [5, 0]},
+              {label: resourceManager.getString("gcc_safety", "menu.claims.modify"), command: selectLogicChild, args: [5, 1]},
+              {label: resourceManager.getString("gcc_safety", "menu.claims.query"), command: selectLogicChild, args: [13]},
+              {type: "separator"},
+              {label: resourceManager.getString("gcc_safety", "menu.claims.pay.new"), command: selectLogicChild, args: [14, 0]},
+              {label: resourceManager.getString("gcc_safety", "menu.claims.pay.modify"), command: selectLogicChild, args: [14, 1]},
+              {label: resourceManager.getString("gcc_safety", "menu.claims.pay.query"), command: selectLogicChild, args: [15]},
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.report"), access:[1,2,3,4,5,6,7,8,9,10,11,12],
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.report.close"), access:[6,11,12], popup: AccClose},
+              {label: resourceManager.getString("gcc_safety", "menu.report.no.accident.query"), command: selectLogicChild, args: [18]},
+//              {label: resourceManager.getString("gcc_safety", "menu.report.bus.trans.query"), command: selectLogicChild, args: [19]},
+              {label: resourceManager.getString("gcc_safety", "menu.report.bus.guaInfo.query"), command: selectLogicChild, args: [20]},
+//              {label: resourceManager.getString("gcc_safety", "menu.report.bus.acc.query"), command: selectLogicChild, args: [21]},
+//              {label: resourceManager.getString("gcc_safety", "menu.report.psn.trans.query"), command: selectLogicChild, args: [22]},
+//              {label: resourceManager.getString("gcc_safety", "menu.report.psn.acc.query"), command: selectLogicChild, args: [23]},
+              {label: resourceManager.getString("gcc_safety", "menu.report.accident.query"), command: selectLogicChild, args: [24]},
+
+            ]
+          },
+          {label:resourceManager.getString("gcc_safety", "menu.help"),
+            children: [
+            {label: resourceManager.getString("gcc_safety", "menu.help.context")},
+              {label: resourceManager.getString("gcc_safety", "menu.help.about")}
+            ]
+          }
+          ];
+        registerRemoteClasses();
+        CommonController.getLastSafetyCloseDate(user.branch.id, function(evt:ResultEvent):void
+          {
+            CommonController.closeDate = evt.result as Date;
+          }, 
+          function(evt:FaultEvent):void {
+            trace("没有结账日期");
+          });
+        //初始化基础数据
+        GuaranteeController.preloadLists(UserController.branchId,GuaranteeController.ALL_LISTNAMES);
+        AccidentController.preloadBaseLists(UserController.branchId,AccidentController.ALL_BASELISTNAMES);
+        BaseController.preloadLists(UserController.branchId, ["departmentList","weatherList"]);
+//        PersonalController.preloadLists(UserController.branchId, ["driverList"]);
+        CommonController.getNowDate();
+      }
+
+      private function registerRemoteClasses():void
+      {
+        registerClassAlias("com.gc.safety.po.TransType", TransType);
+        registerClassAlias("com.gc.safety.po.TransInfoPK", TransInfoPK);
+        registerClassAlias("com.gc.safety.po.TransInfo", TransInfo);
+
+        registerClassAlias("com.gc.safety.po.AccType", AccType);
+        registerClassAlias("com.gc.safety.po.AccDuty", AccDuty);
+        registerClassAlias("com.gc.safety.po.AccExtent", AccExtent);
+        registerClassAlias("com.gc.safety.po.AccLevel", AccLevel);
+        registerClassAlias("com.gc.safety.po.AccObject", AccObject);
+        registerClassAlias("com.gc.safety.po.AccProcessor", AccProcessor);
+
+        registerClassAlias("com.gc.safety.po.GuaType", GuaType);
+        registerClassAlias("com.gc.safety.po.Insurer", Insurer);
+        registerClassAlias("com.gc.safety.po.GuaranteePK", GuaranteePK);
+        registerClassAlias("com.gc.safety.po.Guarantee", Guarantee);
+        registerClassAlias("com.gc.safety.po.GuarInfoPK", GuarInfoPK);
+        registerClassAlias("com.gc.safety.po.GuarInfo", GuarInfo);
+        registerClassAlias("com.gc.safety.po.Accident", Accident);
+        registerClassAlias("com.gc.safety.po.AccidentPK", AccidentPK);
+        registerClassAlias("com.gc.safety.po.AccOutPsn", AccOutPsn);
+        registerClassAlias("com.gc.safety.po.AccOutPsnPK", AccOutPsnPK);
+        registerClassAlias("com.gc.safety.po.AccOutObj", AccOutObj);
+        registerClassAlias("com.gc.safety.po.AccOutObjPK", AccOutObjPK);
+        registerClassAlias("com.gc.safety.po.AccInPsn", AccInPsn);
+        registerClassAlias("com.gc.safety.po.AccInPsnPK", AccInPsnPK);
+        registerClassAlias("com.gc.safety.po.GuaReport", GuaReport);
+        registerClassAlias("com.gc.safety.po.GuaReportPK", GuaReportPK);
+        registerClassAlias("com.gc.safety.po.AccOutGua", AccOutGua);
+        registerClassAlias("com.gc.safety.po.AccOutGuaPK", AccOutGuaPK);
+        registerClassAlias("com.gc.safety.po.AccOutGuaPay", AccOutGuaPay);
+        registerClassAlias("com.gc.safety.po.AccOutGuaPayPK", AccOutGuaPayPK);
+        registerClassAlias("com.gc.safety.po.AccInPsnGua", AccInPsnGua);
+        registerClassAlias("com.gc.safety.po.AccInPsnGuaPK", AccInPsnGuaPK);
+        registerClassAlias("com.gc.safety.po.AccInPsnGuaPay", AccInPsnGuaPay);
+        registerClassAlias("com.gc.safety.po.AccInPsnGuaPayPK", AccInPsnGuaPayPK);
+        registerClassAlias("com.gc.safety.po.SafetyClose", SafetyClose);
+        registerClassAlias("com.gc.safety.po.SafetyClosePK", SafetyClosePK);
+        registerClassAlias("com.gc.safety.po.AccInPsnPayPK", AccInPsnPayPK);
+        registerClassAlias("com.gc.safety.po.AccInPsnPay", AccInPsnPay);
+        registerClassAlias("com.gc.safety.po.AccOutPsnPayPK", AccOutPsnPayPK);
+        registerClassAlias("com.gc.safety.po.AccOutPsnPay", AccOutPsnPay);
+      }
+
+      private function checkFullScreen():String
+      {
+        var action:String = (stage.displayState == StageDisplayState.FULL_SCREEN) ? "exit" : "enter";
+        return resourceManager.getString("gcc_safety", "menu.system.fullScreen." + action);
+      }
+
+      private function toggleFullScreen(event:MenuEvent):void
+      {
+        stage.displayState=(stage.displayState == StageDisplayState.FULL_SCREEN) ? StageDisplayState.NORMAL : StageDisplayState.FULL_SCREEN
+        event.item["label"]=checkFullScreen();
+      }
+
+      private function onCreationComplete():void
+      {
+//        timer = new Timer(1000);
+//        timer.addEventListener(TimerEvent.TIMER, this.resetTime);
+//        timer.start();
+        resetTime();
+        loadMenu();
+        loadUserInfo();
+        addEventListener(LoadModuleEvent.LOAD_MODULE, loadModule);
+        addEventListener(LoadModuleEvent.UNLOAD_MODULE, unloadModule);
+        addEventListener(CloseEvent.CLOSE, close);
+        systemManager.addEventListener(CloseEvent.CLOSE, close);
+        vsSafety.selectedChild = safetyTree;
+      }
+
+      private function loadMenu(evt:ResourceEvent=null):void
+      {
+        arrSafetyMainMenu = CommonUtil.buildMenu(fullMenu, user.limit.safetyLimit);
+        menuSafety.dataProvider = arrSafetyMainMenu;
+        menuSafety.validateNow();
+      }
+
+      private function selectCodeManage(event:MenuEvent, args:Array):void
+      {
+        vsSafety.selectedChild=codeManage;
+        vsSafety.validateNow();
+        codeManage.dispatchEvent(new CommonEvent(CommonEvent.CREATED, null, args));
+      }
+
+      //使事故页面宽度正常
+      private function onChange(event:IndexChangedEvent):void
+      {
+        if (event.currentTarget is ViewStack)
+        {
+          var vs:ViewStack=event.currentTarget as ViewStack;
+//          vs.getChildAt(event.newIndex).width=vs.width;
+          vs.getChildAt(event.newIndex).width = (vsWidth != 0) ? vsWidth : vsWidth = vs.width;
+        }
+      }
+
+      /**
+       * args[0]一定要严格按照定义时的顺序
+       **/
+      private function selectLogicChild(event:MenuEvent, args:Array):void
+      {
+        var obj:Object;
+        switch (args[0])
+        {
+          case 0: // loadSafety 目前不用
+          case 1: // codeManage 在selectCodeManage()处理
+          case 2: // 违章录入 id=transRegister
+            obj = transRegister;
+            break;
+          case 3: // 违章管理
+            obj = transModify;
+            break;
+          case 4: // 违章查询
+            obj = transQuery;
+            break;
+          case 5:
+            obj = claimsNew;
+            break;
+          case 6: //保单建立
+            obj = guadtAdd;
+            break;
+          case 7: //保单修改
+            obj = guadtModify;
+            break;
+          case 8: //保单查询
+            obj = guaQuery;
+            break;
+          case 9: //事故登记 
+            obj = accRegister;
+            break;
+          case 10: //车队处理
+            obj = accProcess;
+            break;
+          case 11: //营运部审核	
+            obj = accAudit;
+            break;
+          case 12: // 结案处理
+            obj = accArchive;
+            break;
+          case 13: // 查询理赔凭证
+            obj = claimsQueryGua;
+            break;
+          case 14:
+            obj = payManage;
+            break;
+          case 15:
+            obj = claimsQueryPay;
+            break;
+          case 16: //赔偿对象管理
+            obj = accObjManage;
+            break;
+          case 17: //赔偿支付管理
+            obj = accObjPayManage;
+            break;
+          case 18: //事故查询
+            obj = queryAcc;
+            break;
+          case 19: //单车违章查询
+            obj = busTransQ;
+            break;
+          case 20: // 单车保单查询
+            obj = busGuaInfoQ;
+            break;
+          case 21: //单车事故查询
+            obj = busAccQ;
+            break;
+          case 22: //单人违章查询
+            obj = psnTransQ;
+            break;
+          case 23: //单人事故查询
+            obj = psnAccQ;
+            break;
+          case 24: //事故查询All
+            obj = reportAccs;
+            break;
+          case 25: //违章处理
+            obj = transProcess;
+            break;
+          default:
+            Alert.show("选择菜单事件发生错误！", Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+            break;
+        }
+        ;
+        if (obj == null)
+        {
+          // ViewStack's creationPolicy=null时用
+          vsSafety.selectedChild = vsSafety.createComponentFromDescriptor(vsSafety.childDescriptors[args[0]], false) as Container;
+        }
+        else
+        {
+          vsSafety.selectedIndex = args[0];
+        }
+        vsSafety.validateNow();
+        vsSafety.selectedChild.dispatchEvent(new CommonEvent(CommonEvent.CREATED, null, args.length > 1 ? [args[1]] : null));
+      }
+
+      private function resetTime():void
+      {
+        var time:String = DateUtil.formatDateTime(new Date());
+        if (text == null)
+          text = new Text();
+        text.text = time;
+        hboxStatusBar.addChildAt(text, 0);
+      }
+
+      private function loadUserInfo():void
+      {
+        var limit:SecurityLimit = user.limit;
+        var depart:String = (limit.safetyLimit >=6 && limit.safetyLimit <= 12) ? resourceManager.getString('gcc_safety', 'limit.depart.head') :
+          (limit.safetyLimitDepart == null) ? "" : limit.safetyLimitDepart.name;
+        var level:String = resourceManager.getString('gcc_safety', 'limit.level' + limit.safetyLimit);
+        var texts:Array = [user.useId + "[" + user.person.name + "]", limit.id.branch.name, depart, level];
+        var tips:Array = ["login.user", "limit.branch", "department", "level", "login.time"];
+        for (var i:int=0; i < texts.length; i ++)
+        {
+          var label:Label = new Label();
+          label.text = texts[i] + "   ";
+          label.toolTip = resourceManager.getString('gcc_safety', "statusbar.tip." + tips[i]);
+          label.styleName = "statusBar";
+          hboxStatusBar.addChild(label);
+        }
+      }
+
+      private function loadModule(event:LoadModuleEvent, url:String=null):DisplayObject
+      {
+        if (event != null)
+          event.stopImmediatePropagation();
+        var _url:String = (url != null) ? url : (event != null) ? event.url : "";
+        loadSafety.unloadModule();
+        loadSafety.loadModule(_url);
+        // loadSafety.applicationDomain = ApplicationDomain.currentDomain;
+        return loadSafety.child;
+      }
+
+      private function unloadModule(event:LoadModuleEvent = null):void
+      {
+        loadSafety.unloadModule();
+      }
+
+      private function close(event:Event):void
+      {
+        event.stopImmediatePropagation();
+        var obj:Object=null;
+        if (event is CommonEvent)
+          obj=(event as CommonEvent).data;
+        else
+          obj=event.target;
+        if (obj is Module)
+          unloadModule();
+        else if (obj is IFlexDisplayObject)
+        {
+          var window:IFlexDisplayObject=obj as IFlexDisplayObject;
+          PopUpManager.removePopUp(window);
+          if (window is OutPsnWin || window is InPsnWin || window is OutObjWin
+            || window is OutPsnPayWin || window is InPsnPayWin || window is OutObjPayWin || window is AccBusPayWin)
+            return;
+        }
+        vsSafety.selectedChild=safetyTree;
+      }
+
+      private function _return(event:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.RETURN_EVENT);
+      }
+
+      private function logout(event:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.LOGOUT_EVENT);
+      }
+
+      private function exit(event:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.EXIT_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:Module>

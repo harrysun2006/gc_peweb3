@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" showCloseButton="true"
+                close="PopUpManager.removePopUp(this);" creationComplete="init()">
+  <mx:Sprite id="sprite" alpha="10" scaleX="1" scaleY="1"/>
+  <mx:VBox top="10" left="10" width="100%" height="100%">
+    <mx:SWFLoader id="loader"/>
+    <mx:HBox width="100%">
+      <mx:Button label="Print" click="print(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+
+      private function init():void
+      {
+        var t1:TextField=new TextField();
+        t1.text="中文字体";
+        t1.x=t1.y=100;
+        // Flash Player仅支持有限的HTML标签
+        var t2:TextField=new TextField();
+        t2.htmlText="<b>Flash Player仅支持有限的HTML标签</b>";
+        t2.x=t2.y=200;
+        var s1:Sprite=new Sprite();
+        var g:Graphics;
+        g=s1.graphics;
+        g.lineStyle(6, 0xFF0000);
+        g.drawCircle(160, 160, 100);
+
+        // g=sprite.graphics;
+        // var r:Rectangle = new Rectangle(0, 0, 600, 480);
+        // drawRect(g, r, 0x00FF00, 3);
+        sprite.addChild(t1);
+        sprite.addChild(t2);
+        sprite.addChild(s1);
+        loader.load(sprite);
+      }
+
+      private function drawRect(g:Graphics, r:Rectangle, c:uint=0, t:uint=1):void
+      {
+        g.lineStyle(t, c);
+        g.moveTo(r.left, r.top);
+        g.lineTo(r.right, r.top);
+        g.lineTo(r.right, r.bottom);
+        g.lineTo(r.left, r.bottom);
+        g.lineTo(r.left, r.top);
+      }
+
+      /**
+       * orientation, paperWidth, paperHeight, pageWidth, pageHeight属性仅在pf.start()之后可以读取到
+       **/
+      private function print(e:Event):void
+      {
+        var pf:PrintJob=new PrintJob();
+        var b1:Boolean=pf.start();
+        trace("b1=" + b1 
+          + ", pf.orientation=" + pf.orientation 
+          + ", pf.paperWidth=" + pf.paperWidth + ", pf.paperHeight=" + pf.paperHeight
+          + ", pf.pageWidth=" + pf.pageWidth + ", pf.pageHeight=" + pf.pageHeight);
+        if (b1)
+        {
+          pf.addPage(sprite);
+          pf.send();
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

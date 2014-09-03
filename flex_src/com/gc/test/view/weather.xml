@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<weather>
+<city>
+<Location>Los Angeles</Location>
+<Climate>Mild</Climate>
+<CloudCoverPercent>25</CloudCoverPercent>
+</city>
+<city>
+<Location>San Francisco</Location>
+<Climate>Hot</Climate>
+<CloudCoverPercent>50</CloudCoverPercent>
+</city>
+<city>
+<Location>Paris</Location>
+<Climate>Foggy</Climate>
+<CloudCoverPercent>0</CloudCoverPercent>
+</city>
+<city>
+<Location>Milan</Location>
+<Climate>Hot</Climate>
+<CloudCoverPercent>25</CloudCoverPercent>
+</city>
+<city>
+<Location>London</Location>
+<Climate>Rainy</Climate>
+<CloudCoverPercent>100</CloudCoverPercent>
+</city>
+<city>
+<Location>New York</Location>
+<Climate>Snow</Climate>
+<CloudCoverPercent>50</CloudCoverPercent>
+</city>
+<city>
+<Location>Sydney</Location>
+<Climate>Hot</Climate>
+<CloudCoverPercent>50</CloudCoverPercent>
+</city>
+<city>
+<Location>CapeTown</Location>
+<Climate>Mild</Climate>
+<CloudCoverPercent>100</CloudCoverPercent>
+</city>
+</weather>

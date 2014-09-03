@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<personal:PersonTreeFilter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                           xmlns:personal="com.gc.hr.view.personal.*" width="100%"
+                           creationComplete="onCreationComplete(formFilter5, tiFrontWorkResume)">
+  <mx:Form id="formFilter5" verticalGap="3">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.frontWorkResume')}:">
+      <mx:TextInput id="tiFrontWorkResume" name="frontWorkResume" text="{qo.frontWorkResume}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.frontTrainingResume')}:">
+      <mx:TextInput name="frontTrainingResume" text="{qo.frontTrainingResume}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.specification')}:">
+      <mx:ComboBox name="specification" dataProvider="{PersonalController.jobSpecList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.degree')}:">
+      <mx:ComboBox name="degree" dataProvider="{PersonalController.schDegreeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.graduate')}:">
+      <mx:ComboBox name="graduate" dataProvider="{PersonalController.schGraduateList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.skill')}:">
+      <mx:TextInput name="skill" text="{qo.skill}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.lanCom')}:">
+      <mx:TextInput name="lanCom" text="{qo.lanCom}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.national')}:">
+      <mx:TextInput name="national" text="{qo.national}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.state')}:">
+      <mx:TextInput name="state" text="{qo.state}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.city')}:">
+      <mx:TextInput name="city" text="{qo.city}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.address')}:">
+      <mx:TextInput name="address" text="{qo.address}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.zip')}:">
+      <mx:TextInput name="zip" text="{qo.zip}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.telephone')}:">
+      <mx:TextInput name="telephone" text="{qo.telephone}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.email')}:">
+      <mx:TextInput name="email" text="{qo.email}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.officeTel')}:">
+      <mx:TextInput name="officeTel" text="{qo.officeTel}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.officeExt')}:">
+      <mx:TextInput name="officeExt" text="{qo.officeExt}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.officeFax')}:">
+      <mx:TextInput name="officeFax" text="{qo.officeFax}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.comment')}:">
+      <mx:TextInput name="comment" text="{qo.comment}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.controller.PersonalController;
+    ]]>
+  </mx:Script>
+</personal:PersonTreeFilter>

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+           backgroundColor="#FFFFFF" backgroundImage="{form}" creationPolicy="all" paddingTop="0"
+           paddingBottom="0" paddingLeft="0" paddingRight="0" width="767" height="1015"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off" fontFamily="SimSun"
+           fontStyle="normal" fontWeight="bold" alpha="100" preinitialize="onPreinitialize()"
+           creationComplete="onCreationComplete()">
+  <mx:Text text="{_person.branch.name}" x="33" y="24" width="325" height="32" fontWeight="normal"
+           fontSize="20" styleName="rmAlign"/>
+  <mx:Text text="{_person.name}" x="33" y="105" width="78" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="111" y="105" width="88" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.sex}" x="201" y="105" width="73" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.national}" x="275" y="105" width="83" height="43" styleName="ltAlign"/>
+  <mx:Text text="{_person.people}" x="359" y="105" width="62" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.nativePlace}" x="422" y="105" width="62" height="43" styleName="ltAlign"/>
+  <mx:Text text="{_person.city}" x="485" y="105" width="62" height="43" styleName="ltAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.birthday, f1)}" x="548" y="105" width="74" height="43"
+           styleName="cmAlign"/>
+
+  <gc:ByteArrayImage id="imgPhoto" x="623" y="61" width="113" height="175" bytes="{_person.photo}"/>
+
+  <mx:Text text="{_person.pid}" x="33" y="193" width="167" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.marryStatus}" x="201" y="193" width="73" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.party}" x="275" y="193" width="83" height="43" styleName="cmAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.partyOnDate, f2)}" x="359" y="193" width="125"
+           height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.skill}" x="485" y="193" width="137" height="43" styleName="cmAlign"/>
+
+  <mx:Text text="{_person.regAddress}" x="33" y="282" width="241" height="43" styleName="ltAlign"/>
+  <mx:Text text="" x="275" y="282" width="83" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.address}" x="359" y="282" width="188" height="43" styleName="ltAlign"/>
+  <mx:Text text="{_person.zip}" x="548" y="282" width="188" height="43" styleName="cmAlign"/>
+
+  <mx:Text text="{_person.officeTel}" x="33" y="370" width="167" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="201" y="370" width="157" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.telephone}" x="359" y="370" width="125" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.schooling}" x="485" y="370" width="62" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.specification}" x="548" y="370" width="74" height="43" styleName="cmAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.graduateDate, f2)}" x="623" y="370" width="113"
+           height="43" styleName="cmAlign"/>
+
+  <mx:Text text="{_person.graduate}" x="33" y="458" width="241" height="43" styleName="ltAlign"/>
+  <mx:Text text="{_person.degree}" x="275" y="458" width="209" height="43" styleName="ltAlign"/>
+  <mx:Text text="" x="33" y="458" width="241" height="43" styleName="ltAlign"/>
+
+  <mx:Text text="{_person.lanCom}" x="33" y="546" width="167" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="201" y="546" width="157" height="43" styleName="ltAlign"/>
+  <mx:Text text="{_person.email}" x="359" y="546" width="188" height="43" styleName="ltAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.workDate, f1)}" x="548" y="546" width="74" height="43"
+           styleName="cmAlign"/>
+  <mx:Text text="{_person.serviceLength}" x="623" y="546" width="113" height="43"
+           styleName="cmAlign"/>
+
+  <mx:Text text="{_person.workerId}" x="33" y="635" width="78" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="112" y="635" width="88" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.workType}" x="201" y="635" width="157" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.grade}" x="359" y="635" width="125" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.level}" x="485" y="635" width="62" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.fkPosition.name}" x="548" y="635" width="74" height="43"
+           styleName="cmAlign"/>
+  <mx:Text text="{_person.cert2No}" x="623" y="635" width="113" height="43" styleName="cmAlign"/>
+
+  <mx:Text text="{_person.techLevel}" x="33" y="723" width="78" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.type}" x="112" y="723" width="162" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.accumulation}" x="275" y="723" width="146" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.driverCardNo}" x="422" y="723" width="155" height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.conductorCardNo}" x="548" y="723" width="74" height="43"
+           styleName="cmAlign"/>
+  <mx:Text text="{_person.dispatcherCardNo}" x="623" y="723" width="113" height="43"
+           styleName="cmAlign"/>
+
+  <mx:Text text="" x="33" y="811" width="78" height="43" styleName="cmAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.contr1From, f2)}" x="112" y="811" width="162"
+           height="43" styleName="cmAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.contr1End, f2)}" x="275" y="811" width="146"
+           height="43" styleName="cmAlign"/>
+  <mx:Text text="{_person.cert1No}" x="422" y="811" width="62" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="485" y="811" width="62" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="548" y="811" width="74" height="43" styleName="cmAlign"/>
+  <mx:Text text="{DateUtil.formatDate(_person.fillTableDate, f2)}" x="623" y="811" width="113"
+           height="43" styleName="cmAlign"/>
+
+  <mx:Text text="" x="201" y="855" width="535" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="201" y="899" width="535" height="43" styleName="cmAlign"/>
+  <mx:Text text="" x="201" y="943" width="535" height="43" styleName="cmAlign"/>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.util.CommonUtil;
+      import mx.core.BitmapAsset;
+      import mx.core.ByteArrayAsset;
+
+      import com.gc.common.model.Person;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var _person:Person;
+      [Bindable]
+      [Embed(source="com/gc/hr/view/personal/PersonCard.png")]
+      private var form:Class;
+      [Bindable]
+      private var f1:String;
+      [Bindable]
+      private var f2:String;
+
+      private function onPreinitialize():void
+      {
+        f1=resourceManager.getString("gcc", "date.format.ym");
+        f2=resourceManager.getString("gcc", "date.format.ymd");
+      }
+
+      private function onCreationComplete():void
+      {
+      }
+
+      override public function set data(value:Object):void
+      {
+        super.data=value;
+        _person=value as Person;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

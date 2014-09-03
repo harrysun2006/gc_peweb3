@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="确定赔付条件" layout="vertical"
+                verticalGap="10" width="348" height="296" keyDown="{CommonUtil.keyDown(event)}">
+  <mx:VBox id="vbox" width="100%" height="100%">
+    <mx:HBox width="100%" height="30"/>
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.date')}" width="70"/>
+      <mx:DateField id="df" textAlign="center" formatString="{Constants.DATE_FORMAT}" width="180"/>
+    </mx:HBox>
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'insurer.name')}" width="70"/>
+      <mx:ComboBox id="cbInsurer" dataProvider="{GuaranteeController.insurerList}" labelField="name"
+                   width="180"/>
+    </mx:HBox>
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'guaType.name')}" width="70"/>
+      <mx:ComboBox id="cbType" labelField="name" width="180"/>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%">
+      <mx:Button id="confirmBtn" label="{resourceManager.getString('gcc', 'ok')}"/>
+      <mx:Button id="cancelBtn" label="{resourceManager.getString('gcc', 'cancel')}"/>
+    </mx:HBox>
+  </mx:VBox>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.controller.GuaranteeController;
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

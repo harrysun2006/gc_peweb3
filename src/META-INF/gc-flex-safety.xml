@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx" xmlns:flex="http://www.springframework.org/schema/flex"
+		xmlns:security="http://www.springframework.org/schema/security"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://www.springframework.org/schema/flex http://www.springframework.org/schema/flex/spring-flex-1.0.xsd
+			http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-2.0.4.xsd"
+		default-autowire="byName" default-lazy-init="true">
+
+	<flex:remoting-destination destination-id="safetyAccidentService" ref="safetyAccidentServiceUtil"/>
+	<flex:remoting-destination destination-id="safetyClaimsService" ref="safetyClaimsServiceUtil"/>
+	<flex:remoting-destination destination-id="safetyCommonService" ref="safetyCommonServiceUtil"/>
+	<flex:remoting-destination destination-id="safetyGuaranteeService" ref="safetyGuaranteeServiceUtil"/>
+	<flex:remoting-destination destination-id="safetyTransService" ref="safetyTransServiceUtil"/> 
+
+</beans>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           xmlns:test="com.gc.test.view.*">
+  <mx:TabNavigator id="tnTest" x="10" y="10" width="100%" height="100%"
+                   creationComplete="tnTest.selectedIndex=3" creationPolicy="auto">
+    <test:PersonTest label="Persons" width="100%" height="100%"/>
+    <test:PeopleTest label="Peoples" width="100%" height="100%"/>
+    <test:SalItemTest label="Salary Items" width="100%" height="100%"/>
+    <test:OtherTest label="Other Test" width="100%" height="100%"/>
+  </mx:TabNavigator>
+</mx:Canvas>

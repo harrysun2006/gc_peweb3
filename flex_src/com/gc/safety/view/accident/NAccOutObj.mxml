@@ -1,0 +1,189 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%">
+    <mx:AdvancedDataGrid id="adgOutObj" width="100%" labelFunction="{CommonUtil.gridLabelFunction}"
+                         rowCount="5" dataProvider="{outObjs}" editable="true"
+                         keyDown="keyDownHandler(event)" sortableColumns="false"
+                         itemRenderer="mx.controls.Label" horizontalScrollPolicy="auto"
+                         itemEditEnd="onItemEditEnd(event)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" width="64" editable="false"
+                                   labelFunction="setNo"/>
+
+        <mx:AdvancedDataGridColumn dataField="obj" dataTipField="obj.name" itemEditor="{comboBox}"
+                                   editorDataField="selectedItem"/>
+        <mx:AdvancedDataGridColumn dataField="tel"/>
+        <mx:AdvancedDataGridColumn dataField="address" itemEditor="{textArea}"/>
+        <mx:AdvancedDataGridColumn dataField="duty" dataTipField="duty.name" itemEditor="{comboBox}"
+                                   editorDataField="selectedItem"/>
+        <mx:AdvancedDataGridColumn dataField="desc" itemEditor="{textArea}"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox id="buttonBox" width="100%" horizontalAlign="center" paddingBottom="5">
+      <mx:Button id="add" label="+" click="addItem(event)" width="55"/>
+      <mx:Button id="del" label="-" click="delItem(event)" width="55"/>
+      <mx:Button id="remove" label="{resourceManager.getString('gcc', 'clear')}"
+                 click="removeAll(event)" width="55"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.model.AccObject;
+      import mx.collections.IList;
+      import mx.controls.Alert;
+      import com.gc.safety.model.AccDuty;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.ComboBox;
+      import mx.controls.TextArea;
+      import mx.events.FlexEvent;
+      import mx.controls.Label;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.safety.model.AccOutObj;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.ArrayCollection;
+      import mx.events.AdvancedDataGridEvent;
+
+      [Bindable]
+      private var comboBox:AdvancedClassFactory;
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+      private var lists:Object;
+
+      [Bindable]
+      public var outObjs:ArrayCollection = new ArrayCollection();
+      private var outObj:AccOutObj;
+
+      private function onPreinitialize():void
+      {
+        var branchId:int = UserController.branchId;
+        AccidentController.getAccObjects(branchId, successObj);
+        comboBox=new AdvancedClassFactory(ComboBox);
+        comboBox.properties={itemRenderer: new ClassFactory(Label)};
+        comboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onComboBoxCreateComplete}
+          , {type: KeyboardEvent.KEY_UP, listener: CommonUtil.keyUp}];
+        textArea=new AdvancedClassFactory(TextArea);
+      }
+
+      private function successObj(event:ResultEvent):void
+      {
+        lists = {obj: AccidentController.accObjectList,
+            duty: AccidentController.accDutyList};
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgOutObj, "gcc_safety", "accoutobj", function(obj:Object):void{});
+      }
+
+      private function onComboBoxCreateComplete(event:Event):void
+      {
+        if (event.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=event.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData && cbox.data is AccOutObj)
+          {
+            var listData:AdvancedDataGridListData=cbox.listData as AdvancedDataGridListData;
+            var dataField:String=listData.dataField
+            var list:IList=(lists.hasOwnProperty(dataField) && lists[dataField] is IList) ? lists[dataField] : null;
+            var b:AccOutObj=cbox.data as AccOutObj;
+            cbox.dataProvider=list;
+            cbox.selectedIndex=(list != null) ? CommonUtil.indexOfKey(list.toArray(), b[dataField], "label") : -1;
+          }
+        }
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = outObjs.getItemIndex(item) + 1;
+        if (outObj == null)
+        {
+          outObj = new AccOutObj();
+        }
+        outObj.id.no = i;
+        return i;
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+            if (newData == "" && CommonUtil.getAccessorValue(data, property) == null)
+              event.reason=AdvancedDataGridEventReason.CANCELLED;
+            else
+              data[property]=newData;
+            if (data[property] == "")
+              data[property] = null;
+          }
+          catch (error:Error)
+          {
+            event.reason = AdvancedDataGridEventReason.CANCELLED;
+          }
+        }
+        if (adgOutObj.errorString != null)
+        {
+          adgOutObj.errorString = null;
+        }
+      }
+
+      private function addItem(event:Event):void
+      {
+        outObj = new AccOutObj();
+        outObj.id.branch = UserController.branch;
+        outObjs.addItem(outObj);
+        adgOutObj.selectedItem = outObj;
+        adgOutObj.editedItemPosition = {rowIndex: adgOutObj.selectedIndex, columnIndex:1};
+      }
+
+      private function delItem(event:Event):void
+      {
+        if (outObjs.length <= 0)
+          return;
+        if (adgOutObj.selectedItem != null)
+        {
+          var k:int=outObjs.getItemIndex(adgOutObj.selectedItem);
+          if (k >= 0)
+          {
+            outObjs.removeItemAt(k);
+            adgOutObj.selectedIndex=(k == outObjs.length) ? outObjs.length - 1 : k;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc','delete.not.null'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (outObjs != null)
+        {
+          if (outObjs.length > 0)
+          {
+            outObjs.removeAll();
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

@@ -1,0 +1,240 @@
+<project name="peweb3" basedir="." default="release">
+
+	<property environment="env"/>
+  <tstamp>
+    <format property="NOW" pattern="yyyyMMddHHmm"/>
+  </tstamp>
+  <property name="app.name" value="peweb3"/>
+	<property name="deploy.server.name" value=""/>
+	<property name="deploy.server.ip" value=""/>
+	<property name="deploy.dir" value=""/>
+	<property name="rsync.repository" value=""/>
+	<property name="public.key.file" value="${user.home}/.ssh/id_dsa"/>
+
+	<property name="ant.build.javac.target" value="1.5"/>
+	<property name="ant.build.javac.source" value="1.5"/>
+	<property name="java-src.dir" value="${basedir}/src"/>
+	<basename file="${java-src.dir}" property="java-src.dir.name"/>
+	<property name="java-test.dir" value="${basedir}/test"/>
+	<basename file="${java-test.dir}" property="java-test.dir.name"/>
+	<property name="java-bin.dir" value="${basedir}/bin"/>
+	<basename file="${java-bin.dir}" property="java-bin.dir.name"/>
+	<property name="java-lib.dir" value="${basedir}/lib"/>
+	<basename file="${java-lib.dir}" property="java-lib.dir.name"/>
+	<property name="java-lib_src.dir" value="${basedir}/lib_src"/>
+	<basename file="${java-lib_src.dir}" property="java-lib_src.dir.name"/>
+
+	<property name="java-bin.jar" value="${basedir}/${app.name}.jar"/>
+	<basename file="${java-bin.jar}" property="java-bin.jar.name"/>
+	<property name="java-src.jar" value="${basedir}/${app.name}-src.jar"/>
+	<basename file="${java-src.jar}" property="java-src.jar.name"/>
+	<property name="java-test.jar" value="${basedir}/${app.name}-test.jar"/>
+	<basename file="${java-test.jar}" property="java-test.jar.name"/>
+	<property name="flex-src.dir" value="${basedir}/flex_src"/>
+	<basename file="${flex-src.dir}" property="flex-src.dir.name"/>
+	<property name="flex-lib.dir" value="${basedir}/flex_lib"/>
+	<basename file="${flex-lib.dir}" property="flex-lib.dir.name"/>
+	<property name="flex-lib_src.dir" value="${basedir}/flex_lib_src"/>
+	<basename file="${flex-lib_src.dir}" property="flex-lib_src.dir.name"/>
+	<property name="flex-src.zip" value="${basedir}/flex-src.zip"/>
+	<property name="flex-lib.zip" value="${basedir}/flex-lib.zip"/>
+	<property name="app.zip" value="${basedir}/${app.name}_${NOW}.zip"/>
+  <property name="build.compiler" value="org.eclipse.jdt.core.JDTCompilerAdapter"/>
+
+	<path id="java.classpath">
+		<fileset dir="${basedir}/lib">
+			<include name="*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="clean">
+		<delete dir="${java-bin.dir}"/>
+		<!--delete includeEmptyDirs="true">
+			<fileset dir="${java-bin.dir}" includes="**/*"/>
+		</delete-->
+	</target>
+
+	<target name="copy">
+		<mkdir dir="${java-bin.dir}"/>
+	  <copy todir="${java-bin.dir}/flex" verbose="false">
+			<fileset dir="${java-src.dir}/flex" includes="**/*.xml"/>
+	  </copy>
+	  <copy todir="${java-bin.dir}/langs" verbose="false">
+			<fileset dir="${java-src.dir}/langs" includes="**/*.properties"/>
+	  </copy>
+	  <copy todir="${java-bin.dir}/META-INF" verbose="false">
+			<fileset dir="${java-src.dir}/META-INF" includes="**/*.xml"/>
+	  </copy>
+	  <copy todir="${java-bin.dir}" verbose="false">
+			<fileset dir="${java-src.dir}">
+				<include name="gc_sample.properties"/>
+				<include name="gc.properties"/>
+				<include name="log4j.xml"/>
+				<include name="oscache.properties"/>
+			</fileset>
+	  </copy>
+	</target>
+
+	<target name="build-src">
+		<mkdir dir="${java-bin.dir}"/>
+		<echo>Using java version: ${ant.java.version}</echo>
+		<javac debug="off" fork="false" srcdir="${java-src.dir}" destdir="${java-bin.dir}" listfiles="false" failonerror="false" includeantruntime="true" encoding="GBK" source="1.6" target="1.6">
+			<compilerarg value="-nowarn"/>
+			<classpath refid="java.classpath"/>
+		</javac>
+	</target>
+
+	<target name="build-test">
+		<mkdir dir="${java-bin.dir}"/>
+		<echo>Using java version: ${ant.java.version}</echo>
+		<javac debug="off" fork="false" srcdir="${java-test.dir}" destdir="${java-bin.dir}" listfiles="false" failonerror="false" includeantruntime="true" encoding="GBK" source="1.6" target="1.6">
+			<compilerarg value="-nowarn"/>
+			<classpath refid="java.classpath"/>
+		</javac>
+	</target>
+
+	<target name="build" depends="build-src, build-test, copy">
+		<delete file="${java-bin.jar}"/>
+		<jar destfile="${java-bin.jar}" update="true">
+			<fileset dir="${java-bin.dir}">
+				<exclude name="com/test/**"/>
+			</fileset>
+		</jar>
+	</target>
+
+	<target name="rebuild" depends="clean, build"/>
+	<target name="all" depends="rebuild, pack-source, pack-all"/>
+	<target name="release" depends="rebuild, pack-source, pack-release"/>
+
+	<target name="pack-jars">
+		<delete file="${basedir}/${app.name}-jars.zip"/>
+		<zip destfile="${basedir}/${app.name}-jars.zip" update="true" encoding="GBK">
+			<zipfileset dir="${java-lib.dir}" prefix="${java-lib.dir.name}"/>
+			<!--zipfileset dir="${java-lib_src.dir}" prefix="${java-lib_src.dir.name}"/-->
+			<fileset dir="${basedir}" includes="${run-lib.dir}/**.jar"/>
+		</zip>
+	</target>
+
+	<zipfileset id="fs-client" dir="${basedir}">
+		<include name="aidep.exe"/>
+		<include name="aidep.pbd"/>
+		<include name="atl71.dll"/>
+		<include name="flex.exe"/>
+		<include name="hr.exe.lnk"/>
+		<include name="libjcc.dll"/>
+		<include name="libjutils.dll"/>
+		<include name="msvcp71.dll"/>
+		<include name="pbdpl115.DLL"/>
+		<include name="PBDWE115.DLL"/>
+		<include name="PBSHR115.DLL"/>
+		<include name="PBVM115.DLL"/>
+		<include name="pslib21.dll"/>
+		<include name="winsock.pbd"/>
+	</zipfileset>
+
+	<zipfileset id="fs-www" dir="${basedir}/www" prefix="www">
+		<include name="index.swf"/>
+		<include name="login.swf"/>
+		<include name="modules.swf"/>
+		<include name="hr.swf"/>
+		<include name="safety.swf"/>
+		<include name="framework_3.2.0.3958.swf"/>
+		<include name="CHANGES.DOC"/>
+		<include name="CHANGES.HTML"/>
+		<include name="CHANGES.TXT"/>
+	</zipfileset>
+
+	<zipfileset id="fs-project" dir="${basedir}">
+		<include name=".actionScriptProperties"/>
+		<include name=".classpath"/>
+		<include name=".flexProperties"/>
+		<include name=".project"/>
+		<include name="build.xml"/>
+		<include name="INSTALL.DOC"/>
+	</zipfileset>
+
+	<target name="pack-source">
+		<delete file="${basedir}/${app.name}-src.zip"/>
+		<zip destfile="${basedir}/${app.name}-src.zip" update="true" encoding="GBK">
+			<zipfileset dir="${flex-src.dir}" prefix="${flex-src.dir.name}"/>
+			<zipfileset dir="${flex-lib.dir}" prefix="${flex-lib.dir.name}"/>
+			<zipfileset dir="${basedir}/locale" prefix="locale"/>
+			<zipfileset dir="${java-src.dir}" prefix="${java-src.dir.name}"/>
+			<zipfileset dir="${java-test.dir}" prefix="${java-test.dir.name}"/>
+			<zipfileset refid="fs-project"/>
+		</zip>
+	</target>
+
+	<target name="pack-server" depends="build">
+		<zip destfile="${basedir}/${app.name}-server.zip" update="true" encoding="GBK">
+			<zipfileset dir="${basedir}" includes="${java-bin.jar.name}"/>
+			<zipfileset refid="fs-www"/>
+			<zipfileset dir="${basedir}/www/template" prefix="www/template"/>
+		</zip>
+	</target>
+
+	<target name="pack-client">
+		<zip destfile="${basedir}/${app.name}-client.zip" update="true" encoding="GBK">
+			<zipfileset refid="fs-client"/>
+			<zipfileset dir="${basedir}/fscommand" prefix="fscommand"/>
+		</zip>
+	</target>
+
+	<target name="pack-release" depends="pack-server, pack-client"/>
+
+	<target name="pack-all" depends="build">
+		<delete file="${app.zip}"/>
+		<zip destfile="${app.zip}" update="true" encoding="GBK">
+			<zipfileset dir="${flex-src.dir}" prefix="${flex-src.dir.name}"/>
+			<zipfileset dir="${flex-lib.dir}" prefix="${flex-lib.dir.name}"/>
+			<!--zipfileset dir="${flex-lib_src.dir}" prefix="${flex-lib_src.dir.name}"/-->
+			<zipfileset dir="${basedir}/locale" prefix="locale"/>
+			<zipfileset dir="${java-src.dir}" prefix="${java-src.dir.name}"/>
+			<zipfileset dir="${java-test.dir}" prefix="${java-test.dir.name}"/>
+			<zipfileset refid="fs-project"/>
+			<zipfileset refid="fs-client"/>
+			<zipfileset dir="${basedir}/fscommand" prefix="fscommand"/>
+			<zipfileset dir="${basedir}" includes="${java-bin.jar.name}"/>
+			<zipfileset dir="${basedir}/www" excludes="com**" prefix="www"/>
+		</zip>
+	</target>
+
+	<target name="flex-resources">
+	  <exec executable="compc" dir="D:\\Eclipse\\EclipsePlugins\\FlexBuilder3.0.2\\sdks\\3.2.0">
+	    <arg line=" -locale=zh_CN -source-path=frameworks\projects\framework\bundles\zh_CN\src -include-resource-bundles=collections,containers,controls,core,effects,formatters,logging,SharedResources,skins,states,styles,utils,validators -output=frameworks/locale/zh_CN/framework_rb.swc"/>
+	  </exec>
+	  <exec executable="mxmlc" dir="${basedir}">
+	  	<arg line=" -locale=en_US -source-path=locale/{locale} -include-resource-bundles=collections,containers,controls,core,effects,gcc,skins,styles -output=flex_src/gcc_en_US.swf"/>
+		</exec>
+	  <exec executable="mxmlc" dir="${basedir}">
+	  	<arg line=" -locale=zh_CN -source-path=locale/{locale} -include-resource-bundles=collections,containers,controls,core,effects,gcc,skins,styles -output=flex_src/gcc_zh_CN.swf"/>
+		</exec>
+	</target>
+
+	<target name="scp">
+		<echo message="User home is: ${user.home}"/>
+		<scp todir="root@${deploy.server.ip}:${deploy.dir}/" keyfile="${public.key.file}" passphrase="" trust="true" verbose="false">
+			<fileset dir="www"/>
+		</scp>
+		<!--echo message="ANT_HOME is set to = ${env.ANT_HOME}"/-->
+	</target>
+
+	<macrodef name="rsync">
+		<attribute name="local"/>
+		<attribute name="remote"/>
+		<sequential>
+			<exec executable="rsync.exe" >
+				<arg line="-ruldtvz @{local} @{remote}"/>
+			</exec>
+		</sequential>
+	</macrodef>
+
+	<target name="rsync">
+		<property name="rsync-arg" value=" -rultvz www/* root@${deploy.server.ip}:${rsync.repository}"/>
+		<echo message="${rsync-arg}"/>
+		<exec executable="rsync.exe">
+			<arg line="${rsync-arg}"/>
+		</exec>
+		<!--rsync local="${basedir}/www" remote="root@${deploy.server.ip}:${rsync.repository}"/-->
+	</target> 
+</project>

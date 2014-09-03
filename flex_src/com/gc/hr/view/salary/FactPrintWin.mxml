@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                title="{resourceManager.getString('gcc_hr', 'query.salFactD1')}"
+                preinitialize="onPreinitialize()" keyUp="CommonUtil.keyUp(event)" layout="vertical"
+                width="354" height="392">
+  <mx:Form id="form" width="100%">
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFactD.id.fact.id.no')}"
+                 horizontalAlign="right">
+      <mx:TextInput name="id.no" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.depart.name')}"
+                 horizontalAlign="right">
+      <mx:ComboBox name="depart" dataProvider="{BaseController.departmentList}" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.date')}"
+                 horizontalAlign="right">
+      <gc:DateSelector output="{qo}" name="date" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.issueDate')}"
+                 horizontalAlign="right">
+      <gc:DateSelector output="{qo}" name="issueDate" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.issueType')}"
+                 horizontalAlign="right">
+      <mx:ComboBox name="itype$" dataProvider="{SalFact.ITYPE_LIST}" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.issuer.workerId')}"
+                 horizontalAlign="right">
+      <mx:TextInput name="issuer.workerId" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.summary')}"
+                 horizontalAlign="right">
+      <mx:TextInput name="summary" width="140"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.comment')}"
+                 horizontalAlign="right">
+      <mx:TextInput name="comment" width="140"/>
+    </mx:FormItem>
+    <mx:GridItem width="100%" horizontalAlign="center">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="confirm(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:GridItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectProxy;
+      import mx.events.ValidationResultEvent;
+      import mx.managers.PopUpManager;
+      import mx.validators.Validator;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+      import com.gc.hr.model.SalFact;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var qo:Object=new ObjectProxy();
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            BaseController.preloadLists(UserController.branchId, ["departmentList"]);
+          });
+      }
+
+      private function confirm(e:Event):void
+      {
+        CommonUtil.loadInstance(form, qo, true);
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, qo));
+        close();
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

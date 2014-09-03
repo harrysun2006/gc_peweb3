@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:flexlib="http://code.google.com/p/flexlib/"
+         xmlns:personal="com.gc.hr.view.personal.*" width="100%" height="100%" borderStyle="solid"
+         borderColor="#CCCCCC" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()">
+  <flexlib:WindowShade label="{resourceManager.getString('gcc_hr','tree.person.filter1')}"
+                       opened="false">
+    <personal:PersonTreeFilter1/>
+  </flexlib:WindowShade>
+  <flexlib:WindowShade label="{resourceManager.getString('gcc_hr','tree.person.filter2')}"
+                       opened="false">
+    <personal:PersonTreeFilter2/>
+  </flexlib:WindowShade>
+  <flexlib:WindowShade label="{resourceManager.getString('gcc_hr','tree.person.filter3')}"
+                       opened="false">
+    <personal:PersonTreeFilter3/>
+  </flexlib:WindowShade>
+  <flexlib:WindowShade label="{resourceManager.getString('gcc_hr','tree.person.filter4')}"
+                       opened="false">
+    <personal:PersonTreeFilter4/>
+  </flexlib:WindowShade>
+  <flexlib:WindowShade label="{resourceManager.getString('gcc_hr','tree.person.filter5')}"
+                       opened="false">
+    <personal:PersonTreeFilter5/>
+  </flexlib:WindowShade>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.ComboBase;
+      import mx.controls.PopUpButton;
+      import mx.controls.TextInput;
+      import mx.containers.Form;
+      import mx.core.Container;
+      import mx.core.UIComponent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      private function onPreinitialize():void
+      {
+      }
+
+      private function onCreationComplete():void
+      {
+        addEventListener(CommonEvent.APPLY, onApply);
+        addEventListener(CommonEvent.RESET, onReset);
+      }
+
+      private function onApply(event:CommonEvent):void
+      {
+        var item:Object=focusManager.getFocus();
+        if (item is UIComponent)
+          (item as UIComponent).dispatchEvent(CommonEvent.FOCUS_OUT_EVENT);
+        // 发送REFILTERING事件
+        dispatchEvent(new Events(Events.PERSON_TREE_REFILTERING, Person.qo, null));
+      }
+
+      private function onReset(event:CommonEvent):void
+      {
+        /**
+         * 关于事件参考
+         * http://www.blogjava.net/usherlight/archive/2006/03/02/33264.html
+         **/
+        // trace("filters::onReset: " + event.eventPhase);
+        if (event.eventPhase == EventPhase.BUBBLING_PHASE)
+          return;
+        Person.init();
+        CommonUtil.visit(this, clearItem);
+        dispatchEvent(new CommonEvent(CommonEvent.CHANGED, Person.qo, []));
+      }
+
+      private function clearItem(comp:Object):void
+      {
+        if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.text=null;
+        }
+        else if (comp is ComboBase)
+        {
+          var cbase:ComboBase=comp as ComboBase;
+          cbase.selectedItem=null;
+          cbase.text=null;
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:flexlib="http://code.google.com/p/flexlib/" width="100%" height="100%"
+                showCloseButton="true" close="PopUpManager.removePopUp(this);"
+                preinitialize="onPreinitialize()">
+  <mx:AdvancedDataGrid id="adg" editable="true" width="100%" height="100%" variableRowHeight="true"
+                       itemEditEnd="onItemEditEnd(event)" styleFunction="formatSummary"
+                       creationComplete="groupedData.refresh(); adg.dataProvider.showRoot=false"
+                       groupItemRenderer="mx.controls.advancedDataGridClasses.AdvancedDataGridItemRenderer">
+    <mx:dataProvider>
+      <mx:GroupingCollection id="groupedData" source="{flatData}">
+        <mx:Grouping>
+          <!-- use some dummy field and set showRoot=false for the ADG
+               dataProvider -->
+          <mx:GroupingField name="fieldNameNotPresent">
+            <mx:summaries>
+              <!-- use the summaryObjectFunction to return a custom object
+                   which can then
+                   be used in the format function to detect a summary row -->
+              <mx:SummaryRow summaryPlacement="last" summaryObjectFunction="flatSummaryObject">
+                <mx:fields>
+                  <mx:SummaryField dataField="Estimate"/>
+                  <mx:SummaryField dataField="Actual"/>
+                </mx:fields>
+              </mx:SummaryRow>
+            </mx:summaries>
+          </mx:GroupingField>
+        </mx:Grouping>
+      </mx:GroupingCollection>
+    </mx:dataProvider>
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn headerText="Territory Rep" dataField="Territory_Rep"/>
+
+      <mx:AdvancedDataGridColumnGroup headerText="Sales Figures" textAlign="center">
+        <mx:AdvancedDataGridColumnGroup headerText="AAA" textAlign="center">
+          <mx:AdvancedDataGridColumn headerText="Estimate" textAlign="center" dataField="Estimate"
+                                     width="100"/>
+
+          <mx:AdvancedDataGridColumn headerText="Actual" textAlign="center" dataField="Actual"
+                                     width="100" itemEditor="{textArea}"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup headerText="BBB" textAlign="center">
+          <mx:AdvancedDataGridColumn headerText="Estimate" textAlign="center" dataField="Estimate"
+                                     width="100"/>
+
+          <mx:AdvancedDataGridColumn headerText="Actual" textAlign="center" dataField="Actual"
+                                     width="100" itemEditor="{textArea}"/>
+        </mx:AdvancedDataGridColumnGroup>
+      </mx:AdvancedDataGridColumnGroup>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.IGroupingCollection;
+      import mx.collections.GroupingField;
+      import mx.collections.Grouping;
+      import mx.collections.ArrayCollection;
+      import mx.collections.GroupingCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridItemRenderer;
+      import mx.controls.Alert;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.events.CloseEvent;
+      import mx.managers.PopUpManager;
+
+      import com.gc.Constants;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.PopUpTextArea;
+      [Bindable]
+      private var flatData:ArrayCollection = new ArrayCollection([
+        { Region:"Southwest", Territory:"Arizona", Territory_Rep:"Barbara Jennings", Estimate:40000 , Actual:38865 },
+        { Region:"Southwest", Territory:"Arizona", Territory_Rep:"Dana Binn", Estimate:30000 , Actual:29885 },
+        { Region:"Southwest", Territory:"Central California", Territory_Rep:"Joe Schmoe" , Estimate:30000 , Actual:29134 },
+        { Region:"Southwest", Territory:"Northern California" , Territory_Rep:"Lauren Ipsum" , Estimate:40000 , Actual:38805 },
+        { Region:"Southwest", Territory:"Northern California" , Territory_Rep:"Z.R. Smith" , Estimate:40000 , Actual:55498 },
+        { Region:"Southwest", Territory:"Southern California" , Territory_Rep:"Jane Grove" , Estimate:45000 , Actual:44913 },
+        { Region:"Southwest", Territory:"Southern California" , Territory_Rep:"Alice Treu" , Estimate:45000 , Actual:44985 },
+        { Region:"Southwest", Territory:"Nevada" , Territory_Rep:"Bethany Pittman", Estimate:45000 , Actual:52888 }]);
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+
+      private function onPreinitialize():void
+      {
+        textArea=new AdvancedClassFactory(PopUpTextArea);
+      }
+
+      private function formatSummary(data:Object, col:AdvancedDataGridColumn):Object
+      {
+        if (data.hasOwnProperty("summary"))
+        {
+          return { color:0xFF0000, fontWeight:"bold", fontSize:12 };
+        }
+
+        return {};
+      }
+
+      private function flatSummaryObject():Object
+      {
+        return { Territory_Rep:"Total", summary:true };
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        onItemEditEnd1(event);
+      }
+
+      private var alerted:Boolean=false;
+      private function onItemEditEnd1(event:AdvancedDataGridEvent):void
+      {
+        trace("Alerting: " + event);
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED && !alerted)
+        {
+          alerted=true;
+          Alert.show("Test", Constants.APP_NAME, Alert.OK, null, function(e:CloseEvent):void 
+            {
+              trace("Alerted OK!!!" + e);
+              alerted=false;
+            }, Constants.ICON32_QUESTION);
+        }
+      }
+
+      private function onItemEditEnd2(event:AdvancedDataGridEvent):void
+      {
+        trace("Alerting: " + event);
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          callLater(function():void{
+              Alert.show("Test", Constants.APP_NAME, Alert.OK, null, function(e:CloseEvent):void 
+                {
+                  trace("Alerted OK!!!" + e);
+                }, Constants.ICON32_QUESTION);
+            });
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription>
+	<name>peweb3</name>
+	<comment></comment>
+	<projects>
+	</projects>
+	<buildSpec>
+		<buildCommand>
+			<name>com.adobe.flexbuilder.project.flexbuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+		<buildCommand>
+			<name>org.eclipse.jdt.core.javabuilder</name>
+			<arguments>
+			</arguments>
+		</buildCommand>
+	</buildSpec>
+	<natures>
+		<nature>com.adobe.flexbuilder.project.flexnature</nature>
+		<nature>com.adobe.flexbuilder.project.actionscriptnature</nature>
+		<nature>org.eclipse.jdt.core.javanature</nature>
+	</natures>
+	<linkedResources>
+		<link>
+			<name>Flex3.2.0_zh_CN</name>
+			<type>2</type>
+			<location>D:/Eclipse/EclipsePlugins/FlexBuilder3.0.2/sdks/3.2.0/frameworks/projects/framework/bundles/zh_CN/src</location>
+		</link>
+		<link>
+			<name>hosts</name>
+			<type>1</type>
+			<location>C:/Windows/System32/drivers/etc/hosts</location>
+		</link>
+	</linkedResources>
+</projectDescription>

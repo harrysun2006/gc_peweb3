@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" title="{resourceManager.getString('gcc_hr', 'query.salFactD2')}"
+				preinitialize="onPreinitialize()" layout="vertical" xmlns:controls="com.gc.controls.*" width="500" height="354">
+	<mx:FormItem label="{resourceManager.getString('gcc_hr', 'salFact.issueDate')}">
+		<controls:DateSelector name="date" output="{qo}"/>
+	</mx:FormItem>
+	<mx:HBox width="100%">
+		<mx:VBox width="50%">
+			<mx:Label text="{resourceManager.getString('gcc_hr', 'salTemplate.allItems')}:"/>
+			<mx:List id="l1" dataProvider="{list1}" labelField="name" allowDragSelection="true" allowMultipleSelection="true" dragEnabled="true"
+					 dragMoveEnabled="true" dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList1(event)" width="100%"/>
+		</mx:VBox>
+		<mx:VBox width="50%">
+			<mx:Label text="{resourceManager.getString('gcc_hr', 'salTemplate.items')}:"/>
+			<mx:List id="l2" name="factItems" dataProvider="{list2}" labelField="name" allowDragSelection="true" allowMultipleSelection="true"
+					 dragEnabled="true" dragMoveEnabled="true" dropEnabled="true" doubleClickEnabled="true" doubleClick="onDbClickList2(event)"
+					 width="100%"/>
+		</mx:VBox>
+	</mx:HBox>
+	<mx:HBox horizontalAlign="center" width="100%" paddingTop="7">
+		<mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="confirm(event)"/>
+		<mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+	</mx:HBox>
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectProxy;
+			import mx.utils.ObjectUtil;
+			import mx.collections.ArrayCollection;
+			import mx.managers.PopUpManager;
+
+			import com.gc.CommonEvent;
+			import com.gc.common.controller.UserController;
+			import com.gc.hr.controller.SalaryController;
+			import com.gc.util.CommonUtil;
+
+			[Bindable]
+			private var list1:ArrayCollection;
+			[Bindable]
+			private var list2:ArrayCollection;
+			[Bindable]
+			private var qo:Object=new ObjectProxy();
+
+			private function onPreinitialize():void
+			{
+				qo["branch.id"]=UserController.branchId;
+				addEventListener(CommonEvent.CREATED, onCreated);
+			}
+
+			private function onCreated(e:CommonEvent):void
+			{
+				list1=ObjectUtil.copy(SalaryController.salItemList) as ArrayCollection;
+				list2=new ArrayCollection();
+			}
+
+			private function onDbClickList1(e:MouseEvent):void
+			{
+				if (l1.selectedIndex >= 0)
+				{
+					list2.addItem(l1.selectedItem);
+					list1.removeItemAt(l1.selectedIndex);
+				}
+			}
+
+			private function onDbClickList2(e:MouseEvent):void
+			{
+				if (l2.selectedIndex >= 0)
+				{
+					list1.addItem(l2.selectedItem);
+					list2.removeItemAt(l2.selectedIndex);
+				}
+			}
+
+			private function confirm(e:Event):void
+			{
+				if (list2.length <= 0)
+				{
+					CommonUtil.showError(l2, 2000, resourceManager.getString("gcc", "value.required.error"));
+					return;
+				}
+				qo["items.id"]=list2;
+				owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, qo));
+				PopUpManager.removePopUp(this);
+			}
+
+			private function close(e:Event=null):void
+			{
+				owner.dispatchEvent(CommonEvent.CLOSE_EVENT);
+				PopUpManager.removePopUp(this);
+			}
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

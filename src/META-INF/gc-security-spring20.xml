@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx" xmlns:flex="http://www.springframework.org/schema/flex"
+		xmlns:security="http://www.springframework.org/schema/security"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd
+			http://www.springframework.org/schema/flex http://www.springframework.org/schema/flex/spring-flex-1.0.xsd
+			http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-2.0.1.xsd">
+
+	<security:http auto-config="false" entry-point-ref="authenticationProcessingFilterEntryPoint">
+		<security:intercept-url pattern="/playerProductInstall.swf" filters="none"/>
+		<security:intercept-url pattern="/AC_OETags.js" filters="none"/>
+		<security:intercept-url pattern="/history/**" filters="none"/>
+		<security:intercept-url pattern="/test/*.swf"	filters="none"/>
+		<security:intercept-url pattern="/test/*.html" filters="none"/>
+		<security:intercept-url pattern="/login.*" filters="none"/>
+		<security:intercept-url pattern="/index.*" filters="none"/>
+		<security:intercept-url pattern="/**/*.swf"	access="ROLE_USER"/>
+		<security:intercept-url pattern="/**/*.html" access="ROLE_USER"/>
+		<security:intercept-url pattern="/**" access="ROLE_ANONYMOUS"/>
+    <!--security:form-login login-page="/login.html" authentication-failure-url="/login.html?error=true" 
+    	login-processing-url="/j_spring_security_check" default-target-url="/index.html"/-->
+		<security:logout invalidate-session="true" logout-url="/logout.html" logout-success-url="/index.html"/>
+		<security:anonymous username="guest" granted-authority="ROLE_ANONYMOUS"/>
+    <security:remember-me user-service-ref="userService"/>
+    <!--security:concurrent-session-control max-sessions="1" exception-if-maximum-exceeded="true"/-->
+		<!--security:http-basic/-->
+	</security:http>
+
+	<bean id="authenticationProcessingFilterEntryPoint"
+		class="org.springframework.security.ui.webapp.AuthenticationProcessingFilterEntryPoint"
+		p:loginFormUrl="/index.swf" p:forceHttps="false" p:serverSideRedirect="false"/>
+
+  <!--bean id="autoLoginFilter" class="com.gc.web.AutoLoginFilter" p:defaultTargetUrl="/index.html">
+    <security:custom-filter before="AUTHENTICATION_PROCESSING_FILTER"/>
+  </bean-->
+
+  <bean id="flexLoginFilter" class="com.gc.web.FlexLoginFilter" p:defaultTargetUrl="/index.html"
+  	p:authenticationManager-ref="_authenticationManager">
+    <security:custom-filter position="AUTHENTICATION_PROCESSING_FILTER"/>
+  </bean>
+
+	<!--security:global-method-security>
+		<security:protect-pointcut
+			expression="execution(* nl.gridshore.samples.books.business.*Manager.store*(..))"
+			access="ROLE_ADMIN" />
+		<security:protect-pointcut
+			expression="execution(* nl.gridshore.samples.books.business.*Manager.obtain*(..))"
+			access="ROLE_USER" />
+	</security:global-method-security-->
+
+	<!--security:global-method-security>
+		<security:protect-pointcut expression="execution(* com.gc.common.service.*ServiceUtil.*(..))" access="ROLE_USER"/>
+		<security:protect-pointcut expression="execution(* com.gc.hr.service.*ServiceUtil.*(..))" access="ROLE_USER"/>
+		<security:protect-pointcut expression="execution(* com.gc.safety.service.*ServiceUtil.*(..))" access="ROLE_USER"/>
+	</security:global-method-security-->
+
+	<!--security:authentication-provider>
+		<security:user-service>
+			<user name="admin" password="admin" authorities="ROLE_USER, ROLE_ADMIN"/>
+			<user name="user" password="user" authorities="ROLE_USER"/>
+		</security:user-service>
+	</security:authentication-provider-->
+
+	<security:authentication-provider user-service-ref="userService">
+		<security:password-encoder hash="plaintext"/>
+	</security:authentication-provider>
+
+</beans>

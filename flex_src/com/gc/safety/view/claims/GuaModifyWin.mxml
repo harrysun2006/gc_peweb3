@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:claims="com.gc.safety.view.claims.*"
+                title="{resourceManager.getString('gcc_safety', 'confirm.refNo')}"
+                preinitialize="onPreinitialize()" layout="vertical" horizontalAlign="center"
+                width="330" height="248">
+  <mx:HBox height="50"/>
+  <mx:VBox verticalGap="30" height="100%">
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'refNo')}"/>
+      <mx:TextInput id="tiRefNo"/>
+      <mx:PopUpButton id="popBtn" label="{resourceManager.getString('gcc_safety', 'choose')}"
+                      open="onPopUp(event)" openAlways="true">
+        <mx:popUp>
+          <claims:GuaModifyList id="modifyList"/>
+        </mx:popUp>
+      </mx:PopUpButton>
+    </mx:HBox>
+    <mx:HBox textAlign="center" horizontalAlign="center" width="100%">
+      <mx:Button id="confirmBtn" label="{resourceManager.getString('gcc', 'ok')}"/>
+      <mx:Button id="cancelBtn" label="{resourceManager.getString('gcc', 'cancel')}"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.AccInPsnPay;
+      import mx.utils.ObjectUtil;
+      import com.gc.safety.model.Insurer;
+      import com.gc.safety.model.AccInPsnGua;
+      import com.gc.safety.model.AccOutGua;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.ClaimsController;
+      import mx.rpc.events.ResultEvent;
+      import mx.controls.AdvancedDataGrid;
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+
+      [Bindable]
+      public var adgAC:ArrayCollection = new ArrayCollection();
+      public var modiAC:ArrayCollection = new ArrayCollection();
+      public var type:String;
+      public var insurer:Insurer;
+      public var appDate:Date;
+
+      private function onPreinitialize():void
+      {
+        // 取出可供选择的凭证列表
+        ClaimsController.getAccGuaForModify(UserController.branchId, onGetModifyListSuccess);
+      }
+
+      private function onGetModifyListSuccess(e:ResultEvent):void
+      {
+        adgAC.removeAll();
+        modiAC.removeAll();
+        modiAC = e.result as ArrayCollection;
+        sort();
+        modiAC.refresh();
+        var refNo:String="";
+        for each (var obj:Array in modiAC)
+        {
+          if (obj[0] is AccInPsnGua)
+          {
+            // 处理多次赔偿
+            var mediFee:Number=0;
+            var other1:Number=0;
+            var other2:Number=0;
+            for each (var accInPsnPay:AccInPsnPay in AccInPsnGua(obj[0]).fkAccInPsn.accInPsnPays)
+            {
+              mediFee += accInPsnPay.mediFee;
+              other1 += accInPsnPay.other1;
+              other2 += accInPsnPay.other2;
+            }
+            obj[0].fkAccInPsn.mediFee = mediFee;
+            obj[0].fkAccInPsn.other1 = other1;
+            obj[0].fkAccInPsn.other2 = other2;
+          }
+          var ret:Object = new Object();
+          ret.refNo = (obj[0] is AccOutGua) ? (obj[0] as AccOutGua).id.refNo : (obj[0] as AccInPsnGua).id.refNo;
+          if (refNo == ret.refNo)
+            continue;
+          refNo = ret.refNo;
+          ret.type = obj[1] as String;
+          ret.insurer = (obj[0] is AccOutGua) ? (obj[0] as AccOutGua).insurer : (obj[0] as AccInPsnGua).insurer;
+          ret.appDate = (obj[0] is AccOutGua) ? (obj[0] as AccOutGua).appDate : (obj[0] as AccInPsnGua).appDate;
+          adgAC.addItem(ret);
+        }
+      }
+
+      /** 排序 */
+      private function sort():void
+      {
+        for (var i:int = 0; i < modiAC.length; i ++)
+        {
+          var obj1:Array = modiAC.getItemAt(i, 0) as Array;
+          for (var j:int = i + 1; j < modiAC.length; j ++)
+          {
+            var obj2:Array = modiAC.getItemAt(j, 0) as Array;
+            if (ObjectUtil.compare(String(obj1[2]), String(obj2[2]), 1) > 0)
+            {
+              var obj:Array = obj1;
+              obj1 = obj2;
+              obj2 = obj;
+              modiAC.setItemAt(obj1, i);
+              modiAC.setItemAt(obj2, j);
+            }
+          }
+        }
+      }
+
+      private function onPopUp(e:Event):void
+      {
+        modifyList.adg.dataProvider=adgAC;
+        if (modifyList.adg.hasEventListener(MouseEvent.DOUBLE_CLICK))
+          modifyList.adg.addEventListener(MouseEvent.DOUBLE_CLICK, onDBClick);
+      }
+
+      private function onDBClick(e:MouseEvent):void
+      {
+        var selectedIndex:int = (e.currentTarget as AdvancedDataGrid).selectedIndex;
+        if (selectedIndex == -1)
+          return;
+        var item:Object = adgAC.getItemAt(selectedIndex, 0);
+        tiRefNo.text = item.hasOwnProperty("refNo") ? item.refNo : "";
+        type = item.hasOwnProperty("type") ? item.type : "";
+        insurer = item.hasOwnProperty("insurer") ? item.insurer : null;
+        appDate = item.hasOwnProperty("appDate") ? item.appDate : null;
+        popBtn.close();
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

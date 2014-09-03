@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+         horizontalAlign="center">
+  <mx:VBox width="90%" height="100%">
+    <mx:Label text="单车保单查询" fontSize="16" fontWeight="bold" textAlign="center" width="100%"
+              height="5%"/>
+    <mx:AdvancedDataGrid id="adg" labelFunction="{CommonUtil.gridLabelFunction}" height="100%"
+                         horizontalScrollPolicy="auto">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="no" headerText="序号"
+                                   labelFunction="{CommonUtil.serialLabelFunction}" width="64"
+                                   color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="center"/>
+        <mx:AdvancedDataGridColumnGroup headerText="投保凭证头" headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.id.accNo"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.inputDate"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.type.name"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.insurer.name"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.onDate"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.downDate"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.doPsn.name"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.insurerPsn"/>
+          <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.desc"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumn dataField="guaNo"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="useId"/>
+        <mx:AdvancedDataGridColumn dataField="lineNo"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="sits"/>
+        <mx:AdvancedDataGridColumn dataField="archNo"/>
+        <mx:AdvancedDataGridColumn dataField="powerNo"/>
+        <mx:AdvancedDataGridColumn dataField="guaCost" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="fee" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="guaDesc"/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+             horizontalGap="10">
+      <mx:Button id="btExport" label="导出" click="export(event)"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.controls.AdvancedClassFactory;
+      import mx.utils.ObjectUtil;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      private var useId:String;
+
+      private function onPreinitialize():void
+      {
+        var obj:DisplayObject=this;
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        addEventListener(CommonEvent.CREATED,function init(event:CommonEvent):void {
+            CommonUtil.popupWindow(BusGuaInfoQWin,"单车保单查询",obj);
+            new Events(Events.ADD).stopImmediatePropagation();
+            addEventListener(Events.ADD,function(evt:Events):void
+              {
+                adg.dataProvider = evt.data as ArrayCollection;
+                useId = (evt.args as Array)[0] as String;
+                adg.validateNow();
+              });
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg,"gcc_safety","guarInfo");
+        adg.percentWidth = 100;
+      }
+
+      private function onSort(obj1:Object,obj2:Object):int
+      {
+        return ObjectUtil.numericCompare(obj1.no,obj2.no);
+      }
+
+      private function export(event:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg),CommonUtil.getGridHeaders(adg),null,useId + "保单信息.xls");
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

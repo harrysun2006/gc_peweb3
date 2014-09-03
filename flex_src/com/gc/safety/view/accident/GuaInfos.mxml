@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adgGua" horizontalScrollPolicy="auto" rowCount="6"
+                       labelFunction="{CommonUtil.gridLabelFunction}"
+                       itemRenderer="mx.controls.Label" dataProvider="{guarInfos}">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="reportNo"/>
+      <mx:AdvancedDataGridColumnGroup 
+                                      headerText="{resourceManager.getString('gcc_safety','acc.guainfos.accno')}"
+                                      headerRenderer="{header}">
+        <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.insurer.name"/>
+        <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.type.name"/>
+        <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.id.accNo"/>
+        <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.onDate"/>
+        <mx:AdvancedDataGridColumn dataField="fkGuarantee" dataTipField="fkGuarantee.downDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup 
+                                      headerText="{resourceManager.getString('gcc_safety','acc.guainfos.info')}"
+                                      headerRenderer="{header}">
+        <mx:AdvancedDataGridColumn dataField="no" labelFunction="setNo"/>
+        <mx:AdvancedDataGridColumn dataField="guaNo"/>
+        <mx:AdvancedDataGridColumn dataField="guaCost"/>
+        <mx:AdvancedDataGridColumn dataField="fee"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumn/>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import com.gc.safety.model.GuarInfo;
+      import mx.collections.ArrayCollection;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      [Bindable]
+      public var guarInfos:ArrayCollection = new ArrayCollection();
+      private var guarInfo:GuarInfo;
+//			private var beforeReport:String;
+//			private var beforeInsurer:String;
+
+      private function onPreinitialize():void
+      {
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        header.properties = {opened: false};
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGua,"gcc_safety","guarInfo",function(obj:Object):void {});
+        adgGua.percentWidth = 100;
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        var i:int = guarInfos.getItemIndex(item) + 1;
+        return i;
+      }
+
+      //得到guarInfos
+      public function getGuaInfos(gis:ArrayCollection):void
+      {
+        guarInfos.removeAll();
+        if (gis != null)
+        {
+          if (gis.length > 0)
+            guarInfos = gis;
+        }
+      }
+
+      public function getReportNo(arr:Array):void
+      {
+        if (guarInfos != null)
+        {
+          if (guarInfos.length > 0)
+          {
+            for (var i:int=0; i < guarInfos.length; i++)
+            {
+              if (guarInfos[i]["fkGuarantee"]["insurer"]["name"] == arr[0])
+              {
+                guarInfos[i]["reportNo"] = arr[1];
+//								beforeInsurer = arr[0];
+//								beforeReport = arr[1];
+              } //else if(guarInfos[i]["fkGuarantee"]["insurer"]["name"] == beforeInsurer){
+                //guarInfos[i]["reportNo"] = beforeReport;
+                //}
+            }
+          }
+        }
+      }
+      //得到 guaReports and GuarInfos 车队处理
+      public function getGuaInfosAndReports(gis:ArrayCollection,grs:ArrayCollection):void
+      {
+        guarInfos.removeAll();
+        if (gis != null)
+        {
+          if (gis.length > 0)
+          {
+            guarInfos = gis;
+            if (grs != null)
+            {
+              if (grs.length > 0)
+              {
+                var guaReports:ArrayCollection = grs;
+                for (var i:int=0; i < guarInfos.length; i++)
+                {
+                  for (var j:int=0; j < guaReports.length; j++)
+                  {
+                    if (guarInfos[i]["fkGuarantee"]["insurer"]["name"] == guaReports[j]["id"]["insurer"]["name"])
+                    {
+                      guarInfos[i]["reportNo"] = guaReports[j]["reportNo"];
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+        adgGua.validateNow();
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

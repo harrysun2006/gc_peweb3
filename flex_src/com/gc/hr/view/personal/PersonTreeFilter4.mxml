@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<personal:PersonTreeFilter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                           xmlns:personal="com.gc.hr.view.personal.*" width="100%"
+                           creationComplete="onCreationComplete(formFilter4, tiCommend)">
+  <mx:Form id="formFilter4" verticalGap="3">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.fillTableDate')}:">
+      <gc:DateSelector name="fillTableDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.commend')}:">
+      <mx:TextInput id="tiCommend" name="commend" text="{qo.commend}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.workDate')}:">
+      <gc:DateSelector name="workDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.retireDate')}:">
+      <gc:DateSelector name="retireDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.serviceLength')}:">
+      <mx:TextInput name="serviceLength" text="{qo.serviceLength}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.inDate')}:">
+      <gc:DateSelector name="inDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.outDate')}:">
+      <gc:DateSelector name="outDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.workLength')}:">
+      <mx:TextInput name="workLength" text="{qo.workLength}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.groupNo')}:">
+      <mx:TextInput name="groupNo" text="{qo.groupNo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contractNo')}:">
+      <mx:TextInput name="contractNo" text="{qo.contractNo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contr1From')}:">
+      <gc:DateSelector name="contr1From" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contr1End')}:">
+      <gc:DateSelector name="contr1End" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contractReason')}:">
+      <mx:TextInput name="contractReason" text="{qo.contractReason}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contr2From')}:">
+      <gc:DateSelector name="contr2From" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.contr2End')}:">
+      <gc:DateSelector name="contr2End" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.workType')}:" visible="false">
+      <mx:TextInput name="workType" text="{qo.workType}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.level')}:">
+      <mx:TextInput name="level"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.techLevel')}:">
+      <mx:TextInput name="techLevel" text="{qo.techLevel}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.responsibility')}:">
+      <mx:TextInput name="responsibility" text="{qo.responsibility}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.cert1No')}:">
+      <mx:TextInput name="cert1No" text="{qo.cert1No}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.cert1NoDate')}:">
+      <gc:DateSelector name="cert1NoDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.cert2No')}:">
+      <mx:TextInput name="cert2No" text="{qo.cert2No}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.cert2NoHex')}:">
+      <mx:TextInput name="cert2NoHex" text="{qo.cert2NoHex}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.serviceNo')}:">
+      <mx:TextInput name="serviceNo" text="{qo.serviceNo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.serviceNoDate')}:">
+      <gc:DateSelector name="serviceNoDate" output="{qo}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      
+    ]]>
+  </mx:Script>
+</personal:PersonTreeFilter>

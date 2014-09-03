@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="302" height="242"
+                creationComplete="onCreationComplete()">
+  <mx:Form width="100%" horizontalGap="10" paddingTop="10" paddingBottom="30">
+    <mx:FormItem label="起始日期">
+      <mx:DateField id="dfFrom" name="dateFrom" formatString="{Constants.DATE_FORMAT}" width="160"
+                    yearNavigationEnabled="true"/>
+    </mx:FormItem>
+    <mx:FormItem label="当前日期">
+      <mx:DateField id="dfTo" name="dateTo" formatString="{Constants.DATE_FORMAT}" width="160"
+                    enabled="false"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%">
+    <mx:Button label="{resourceManager.getString('gcc','ok')}" click="ok(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc','cancel')}" click="cancel(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.safety.controller.CommonController;
+      import mx.managers.PopUpManager;
+      import com.gc.Constants;
+
+      private function onCreationComplete():void
+      {
+//        addEventListener(CommonEvent.CREATED,function(evt:CommonEvent):void 
+//          {
+//            dfFrom.selectedDate = evt.data as Date; 				//用该事件没接到，需调试
+//          });
+        addEventListener(Events.ADD,function(evt:Events):void 
+          {
+            dfFrom.selectedDate = evt.data as Date;
+          });
+        dfTo.selectedDate = CommonController.now;
+      }
+
+      private function ok(event:Event):void
+      {
+        dispatchEvent(new Events(Events.GET,dfFrom.selectedDate));
+      }
+
+      private function cancel(event:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

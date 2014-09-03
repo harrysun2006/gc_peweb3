@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adg" labelFunction="{CommonUtil.gridLabelFunction}" lockedColumnCount="5"
+                       sortableColumns="false" width="100%" height="100%">
+    <mx:groupedColumns>
+      <!--mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'serial')}" labelFunction="{CommonUtil.serialLabelFunction}"
+           styleFunction="{CommonUtil.serialStyleFunction}"/-->
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.fact.depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.depart.name"/>
+      <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name"/>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox horizontalAlign="center" width="100%">
+    <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Label id="qc" width="100%"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.Alert;
+      import mx.controls.DateField;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+      import mx.collections.ArrayCollection;
+      import mx.collections.HierarchicalData;
+      import mx.events.CloseEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.util.CommonUtil;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalFactD;
+      import com.gc.hr.model.SalItem;
+
+      [Bindable]
+      private var list:ArrayCollection=new ArrayCollection();
+      private var columns:Array;
+      private var groupedColumns:Array;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.RETURN, onReturn);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", "salFactD");
+        columns=adg.columns;
+        groupedColumns=adg.groupedColumns;
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        CommonUtil.popupWindow(FactPrint2Win, "", this);
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        organizeQueryCondition(e.data);
+        var own:DisplayObject=this;
+        SalaryController.getFactDs2(e.data, function(e:ResultEvent):void
+          {
+            var obj:Object=e.result;
+            if (obj.hasOwnProperty("items"))
+            {
+              var items:ArrayCollection=obj["items"] as ArrayCollection;
+              if (items.length <= 0)
+              {
+                Alert.show(resourceManager.getString('gcc_hr', 'salFactD.no.result'), Constants.APP_NAME, Alert.OK, null, function(e:CloseEvent):void
+                  {
+                    CommonUtil.popupWindow(FactPrint2Win, "", own);
+                  }, Constants.ICON32_INFO);
+              }
+            }
+            if (obj.hasOwnProperty("factds"))
+            {
+              var factds:ArrayCollection=obj["factds"] as ArrayCollection;
+              generateColumn(items, factds);
+            }
+          });
+      }
+
+      private function generateColumn(items:ArrayCollection, factds:ArrayCollection):void
+      {
+        if (items.length > 0)
+        {
+          if (items.length > 1)
+          {
+            var cg:AdvancedDataGridColumnGroup=new AdvancedDataGridColumnGroup();
+            cg.editable=false;
+            cg.headerText=resourceManager.getString('gcc_hr', 'salItem');
+            groupedColumns.push(cg);
+          }
+          for each (var sal:SalItem in items)
+          {
+            var sif:String="si#" + sal.id;
+            var cc1:AdvancedDataGridColumn=new AdvancedDataGridColumn();
+            cc1.dataField=sif + ".amount";
+            cc1.headerText=sal.no + "[" + sal.name + "]";
+            cc1.setStyle("textAlign", "right");
+            cc1.width=120;
+            cc1.formatter=Constants.NUMBER_FORMATTER_N2;
+            columns.push(cc1);
+            if (items.length > 1)
+            {
+              cg.children.push(cc1);
+            }
+            else
+            {
+              groupedColumns.push(cc1);
+            }
+          }
+        }
+        // 添加个人汇总列
+        var cc2:AdvancedDataGridColumn=new AdvancedDataGridColumn();
+        cc2.dataField="amount";
+        cc2.headerText=resourceManager.getString('gcc', 'sum');
+        cc2.setStyle("textAlign", "right");
+        cc2.width=130;
+        cc2.formatter=Constants.NUMBER_FORMATTER_N2;
+        columns.push(cc2);
+        groupedColumns.push(cc2);
+
+        adg.columns=columns;
+        adg.groupedColumns=groupedColumns;
+        // 计算汇总
+        var salFactD:SalFactD=null;
+        var sum1:Object;
+        var sum2:Object;
+        var depart1:Department, depart2:Department;
+        for (var i:int=0; i<factds.length; i++)
+        {
+          var tmp:SalFactD=factds.getItemAt(i) as SalFactD;
+          var si:SalItem=tmp.item;
+          // 业务部门汇总
+          if (depart2 != tmp.person.depart)
+          {
+            depart2=tmp.person.depart;
+            if (sum2 != null)
+              list.addItem(sum2);
+            sum2 = new Object();
+            sum2["person"]=new Object();
+            sum2["person"]["depart"]=new Object();
+            sum2["person"]["depart"]["name"]=resourceManager.getString('gcc', 'sum');
+            sum2["si#" + si.id + ".amount"]=tmp.amount;
+            sum2["amount"]=tmp.amount;
+          }
+          else
+          {
+            if (sum2.hasOwnProperty("si#" + si.id + ".amount"))
+              sum2["si#" + si.id + ".amount"]+=tmp.amount;
+            else
+              sum2["si#" + si.id + ".amount"]=tmp.amount;
+            sum2["amount"]+=tmp.amount;
+          }
+          // 发薪部门汇总
+          if (depart1 != tmp.id.fact.depart)
+          {
+            depart1=tmp.id.fact.depart;
+            if (sum1 != null)
+            {
+              list.addItem(sum2);
+              sum2 = new Object();
+              sum2["person"]=new Object();
+              sum2["person"]["depart"]=new Object();
+              sum2["person"]["depart"]["name"]=resourceManager.getString('gcc', 'sum');
+              sum2["si#" + si.id + ".amount"]=tmp.amount;
+              sum2["amount"]=tmp.amount;
+              list.addItem(sum1);
+            }
+            sum1 = new Object();
+            sum1["id"]=new Object();
+            sum1["id"]["fact"]=new Object();
+            sum1["id"]["fact"]["depart"]=new Object();
+            sum1["id"]["fact"]["depart"]["name"]=resourceManager.getString('gcc', 'sum');
+            sum1["si#" + si.id + ".amount"]=tmp.amount;
+            sum1["amount"]=tmp.amount;
+          }
+          else
+          {
+            if (sum1.hasOwnProperty("si#" + si.id + ".amount"))
+              sum1["si#" + si.id + ".amount"]+=tmp.amount;
+            else
+              sum1["si#" + si.id + ".amount"]=tmp.amount;
+            sum1["amount"]+=tmp.amount;
+          }
+          // 同一人不同发放的拼接
+          if (salFactD == null || tmp.id.no != salFactD.id.no)
+          {
+            salFactD=ObjectUtil.copy(tmp) as SalFactD;
+            salFactD.amount=0;
+            list.addItem(salFactD);
+          }
+          salFactD["si#" + si.id + ".amount"]=tmp.amount;
+          salFactD.amount+=tmp.amount;
+
+        }
+        list.addItem(sum2);
+        list.addItem(sum1);
+        // callLater(function():void{adg.dataProvider=buildGridList(list);});
+        adg.dataProvider=list;
+      }
+
+      /**
+       * @deprecated
+       * 生成树状DATAGRID
+       * 目前CommonUtil.export()不支持树状结构导出
+       */
+      private function buildGridList(col:ArrayCollection):Object
+      {
+        var ac:ArrayCollection=new ArrayCollection();
+        var depart1:Department;
+        var arr:Array;
+        for each (var sal:SalFactD in col)
+        {
+          if (depart1 == sal.id.fact.depart)
+          {
+            arr.push(sal);
+          }
+          else
+          {
+            depart1 = sal.id.fact.depart;
+            arr=new Array();
+            arr.push(sal);
+            depart1["children"]=arr;
+            ac.addItem(depart1);
+          }
+        }
+        return new HierarchicalData(ac);
+        // return new ArrayHierarchy(ac);
+      }
+
+      /** 组织显示查询条件 */
+      private function organizeQueryCondition(obj:Object):void
+      {
+        qc.text="";
+        if (obj.hasOwnProperty("date_from") && obj["date_from"] != null)
+        {
+          qc.text+=resourceManager.getString('gcc_hr', 'salFact.date_from') + DateField.dateToString(obj["date_from"] as Date, Constants.DATE_FORMAT) + " ";
+        }
+        if (obj.hasOwnProperty("date_to") && obj["date_to"] != null)
+        {
+          qc.text+=resourceManager.getString('gcc_hr', 'salFact.date_to') + DateField.dateToString(obj["date_to"] as Date, Constants.DATE_FORMAT) + " ";
+        }
+        if (obj.hasOwnProperty("items.id"))
+        {
+          qc.text+=resourceManager.getString('gcc_hr', 'salFactD.id.items') + ":";
+          var items:ArrayCollection=obj["items.id"] as ArrayCollection;
+          for each (var sal:SalItem in items)
+          {
+            qc.text+=" " + sal.name;
+          }
+        }
+      }
+
+      private function export(e:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg), CommonUtil.getGridHeaders(adg), null, resourceManager.getString('gcc_hr', 'salFactD.head2', [UserController.branchName]));
+      }
+
+      private function close(e:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

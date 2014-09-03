@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="800"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adg0" width="100%" height="100%" horizontalScrollPolicy="auto"
+                       editable="true" sortableColumns="false" draggableColumns="false"
+                       labelFunction="{CommonUtil.gridLabelFunction}"
+                       keyDown="{CommonUtil.gridKeyDown(event)}">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataField="no"/>
+      <mx:AdvancedDataGridColumn dataField="name"/>
+      <mx:AdvancedDataGridColumn dataField="formula" width="300" showDataTips="true"/>
+      <mx:AdvancedDataGridColumn dataField="xxid" textAlign="center" width="80"/>
+      <mx:AdvancedDataGridColumn dataField="#amount" textAlign="right" width="80" editable="true"
+                                 formatter="{Constants.NUMBER_FORMATTER_N2}"/>
+      <mx:AdvancedDataGridColumn width="1"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="6">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="save(event)"
+               enabled="{UserController.hrSalWrite}"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      /**
+       * 此窗口设置一个项目(带公式)中的xxs参数(可多个,需动态设置参数列)
+       **/
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+      import mx.utils.ObjectUtil;
+      import mx.validators.NumberValidator;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.model.SalFact;
+      import com.gc.hr.model.SalItem;
+      import com.gc.util.CommonUtil;
+
+      private var rr:Object, map_no:Object, map_id:Object, xxs:Array;
+      private var head:SalFact;
+      private var list0:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        list0=new ArrayCollection();
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        var fields:Array=["#amount"];
+        CommonUtil.setDataGridColumns(adg0, "gcc_hr", "salFact.items", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              obj.editable=fields.indexOf(obj.dataField) >= 0;
+            }
+          });
+      }
+
+      /**
+       * 窗口传递参数e.data={rr:rr, xxs:["xx001", "xx003"], map_no:{...}, map_id:{...}}, e.args=null
+       **/
+      private function onCreated(e:CommonEvent):void
+      {
+        rr=e.data ? e.data.rr : null;
+        xxs=e.data ? e.data.xxs : null;
+        map_no=e.data ? e.data.map_no : null;
+        map_id=e.data ? e.data.map_id : null;
+        head=e.data ? e.data.head : null;
+        if (!rr || !xxs || !map_no || !map_id || !head)
+          return;
+        list0.removeAll();
+        title=resourceManager.getString("gcc_hr", "salFact.items.input");
+        this.height=xxs.length <= 6 ? 480 : 600;
+        PopUpManager.centerPopUp(this);
+        var n:String, si:SalItem, obj:Object, xx:Object;
+        for each (n in xxs)
+        {
+          xx=rr.sylla.xx[n];
+          si=map_no[xx.ino];
+          obj={id:si.id, no:si.no, name:si.name, formula:si.formula, xxid:n};
+          obj["#amount"]=xx && xx.value ? xx.value : 0;
+          obj.uid=obj.id+"#"+n;
+          list0.addItem(obj);
+        }
+        adg0.dataProvider=list0;
+      }
+
+      private function save(e:Event):void
+      {
+        var nv:NumberValidator=new NumberValidator();
+        nv.allowNegative=false;
+        nv.required=true;
+        nv.requiredFieldError=resourceManager.getString("gcc", "number.required.error");
+        nv.minValue=0.01;
+        nv.lowerThanMinError=resourceManager.getString("gcc", "number.lower.than.min.error", [0]);
+        if (CommonUtil.validateGrid(adg0, [{field:"#amount", validator:nv}]).length > 0)
+          return;
+        var obj:Object, xx:Object=rr.sylla.xx;
+        for each (obj in list0)
+        {
+          xx[obj.xxid].value=obj["#amount"];
+        }
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, {type:"xx.items", items:list0}));
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+        owner.dispatchEvent(CommonEvent.RETURN_EVENT, {type:"close"});
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

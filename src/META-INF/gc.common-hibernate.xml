@@ -1,0 +1,579 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC 
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.gc.common.po" default-lazy="true">
+
+	<class name="Branch" table="T_BRANCH" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_BRANCHID">
+			<generator class="sequence-identity"/>
+		</id>
+		<property name="useId" column="C_BRANCHUSEID"/>
+		<property name="name" column="C_BRANCHNAME"/>
+		<property name="level" column="C_BRANCHLEVEL"/>
+		<property name="superId" column="C_SUPERBRANCH"/>
+		<property name="onDate" column="C_BRANCHONDATE"/>
+		<property name="status" column="C_BRANCHCURRENTSTATE"/>
+		<property name="downDate" column="C_BRANCHDOWNDATE"/>
+		<property name="national" column="C_NATIONAL"/>
+		<property name="state" column="C_STATE"/>
+		<property name="city" column="C_CITY"/>
+		<property name="zip" column="C_ZIP"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="contact" column="C_CONNECTPERSON"/>
+		<property name="telephone" column="C_TELEPONENO"/>
+		<property name="email" column="C_EMAIL"/>
+		<property name="comment" column="C_COMMENT"/>
+		<many-to-one name="manDepart" column="C_MANDEPARTMENT" class="Department"/>
+	</class>
+
+	<class name="Department" table="T_DEPARTMENT" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_DEPARTMENTID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<property name="name" column="C_DEPARTMENTNAME"/>
+		<property name="duty" column="C_MANDUTY"/>
+		<property name="onDate" column="C_DEPARTMENTONDATE"/>
+		<property name="status" column="C_DEPARTMENTCURRENTSTATE"/>
+		<property name="downDate" column="C_DEPARTMENTDOWNDATE"/>
+		<many-to-one name="manager" column="C_MANAGER" class="Person"/>
+		<property name="national" column="C_NATIONAL"/>
+		<property name="state" column="C_STATE"/>
+		<property name="city" column="C_CITY"/>
+		<property name="zip" column="C_ZIP"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="telephone" column="C_TELEPNONENO"/>
+		<property name="email" column="C_EMAIL"/>
+		<property name="comment" column="C_COMMENT"/>
+		<property name="officeTel" column="C_OFFICETEL"/>
+		<property name="officeExt" column="C_OFFICEEXT"/>
+		<property name="officeFax" column="C_OFFICEFAX"/>
+		<property name="no" column="C_NO"/>
+	</class>
+
+	<class name="Equipment" table="T_EQUIPMENT" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_EQUID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<property name="useId" column="C_EQUUSEID"/>
+		<many-to-one name="type" column="C_EQUTYPE" class="EquType"/>
+		<property name="name" column="C_EQUNAME"/>
+		<property name="prodData" column="C_EQUPRODDATA"/>
+		<property name="buyDate" column="C_EQUBUYDATE"/>
+		<property name="insureDate" column="C_EQUINSUREDATE"/>
+		<property name="buyPrice" column="C_EQUBUYPRICE"/>
+		<property name="manufacturer" column="C_EQUMANUFACTURER"/>
+		<property name="provider" column="C_EQUPROVIDER"/>
+		<property name="supporter" column="C_EQUSUPPORTER"/>
+		<property name="serviceProtocol" column="C_EQUSERVICEPROTOCL"/>
+		<property name="config" column="C_EQUCONFIG"/>
+		<property name="planUse" column="C_EQUPLANUSE"/>
+		<property name="standByCheckPart" column="C_EQUSTANDBYCHECKPART"/>
+		<property name="checkContain" column="C_EQUCHECKCONTAIN"/>
+		<property name="maintainReq" column="C_EQUMAINTAINREQUIREMENT"/>
+		<property name="sponsor" column="C_EQURESPONSOR"/>
+		<property name="status" column="C_EQUCURRENTSTATE"/>
+		<property name="downDate" column="C_EQUDOWNDATE"/>
+		<property name="comment" column="C_EQUCOMMENT"/>
+		<property name="authDate" column="C_AUTHORIZATIONDATE"/>
+		<property name="authNo" column="C_AUTHORIZATIONNO"/>
+		<property name="productDate" column="C_PRODUCTDATE"/>
+		<property name="color" column="C_COLOR"/>
+		<property name="powerType" column="C_POWERTYPE"/>
+		<property name="inPower1" column="C_INPOWERDATA1"/>
+		<property name="inPower2" column="C_INPOWERDATA2"/>
+		<property name="archNo" column="C_ARCHITECTURENO"/>
+		<property name="length" column="C_SIZELONG"/>
+		<property name="width" column="C_SIZEWIDTH"/>
+		<property name="height" column="C_SIZEHEIGHT"/>
+		<property name="weight" column="C_WEIGHT"/>
+		<property name="config1" column="C_CONFIG1"/>
+		<property name="config2" column="C_CONFIG2"/>
+		<property name="config3" column="C_CONFIG3"/>
+		<property name="config4" column="C_CONFIG4"/>
+		<property name="config5" column="C_CONFIG5"/>
+		<property name="outPower1" column="C_OUTPOWERDATA1"/>
+		<property name="outPower2" column="C_OUTPOWERDATA2"/>
+		<property name="spareUse1" column="C_SPAREUSE1"/>
+		<property name="spareUse2" column="C_SPAREUSE2"/>
+		<property name="spareUse3" column="C_SPAREUSE3"/>
+		<property name="spareUse4" column="C_SPAREUSE4"/>
+		<property name="spareUse5" column="C_SPAREUSE5"/>
+		<property name="acType" column="C_AIRCONDTYPE"/>
+		<property name="acNo" column="C_AIRCONDNO"/>
+		<property name="checkDate" column="C_CHECKDATE"/>
+		<property name="nextCheckDate" column="C_NEXTCHECKDATE"/>
+		<property name="regNo" column="C_REGNO"/>
+		<property name="regType" column="C_GETTYPE"/>
+		<property name="imports" column="C_IMPORTS"/>
+		<property name="brand" column="C_BRAND"/>
+		<property name="turnType" column="C_TURNTYPE"/>
+		<property name="innerSize" column="C_INNERSIZE"/>
+		<property name="springNum" column="C_SPRINGNUM"/>
+		<property name="netWeight" column="C_NETWEIGHT"/>
+		<property name="loading" column="C_LOADING"/>
+		<property name="drawing" column="C_DRAWING"/>
+		<property name="certName" column="C_GETCERTNAME"/>
+		<property name="certNo" column="C_GETCERTNO"/>
+		<property name="impCertName" column="C_IMPCERTNAME"/>
+		<property name="impCertNo" column="C_IMPCERTNO"/>
+		<property name="taxCertName" column="C_TAXCERTNAME"/>
+		<property name="cmt1" column="C_CMT1"/>
+		<property name="cmt2" column="C_CMT2"/>
+		<property name="cmt3" column="C_CMT3"/>
+		<property name="cmt4" column="C_CMT4"/>
+		<property name="cmt5" column="C_CMT5"/>
+		<property name="cmt6" column="C_CMT6"/>
+		<property name="lastMntDate" column="C_LASTMNT_DATE"/>
+		<property name="lastMntLc" column="C_LASTMNT_LC"/>
+		<property name="totalLc" column="C_TOTAL_LC"/>
+		<property name="equBelong" column="C_EQUBELONG"/>
+		<property name="emission" column="C_EQUEMISSION"/>
+		<property name="roadWayNo" column="C_EQUROADWAYNO"/>
+	</class>
+
+	<class name="EquOnline" table="T_ONLINE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ONLINEID">
+			<generator class="sequence">
+				<param name="sequence">seq_online</param>
+			</generator>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<many-to-one name="equipment" column="C_ONLINEEQUID" class="Equipment"/>
+		<many-to-one name="installer" column="C_ONLINEINSTALLER" class="Person"/>
+		<many-to-one name="responsor" column="C_ONLINERESPONSOR" class="Person"/>
+		<property name="config" column="C_ONLINECONFIG"/>
+		<many-to-one name="depart" column="C_ONLINEDEPARTMENT" class="Department"/>
+		<property name="address" column="C_ONLINEADDRESS"/>
+		<property name="useLimits" column="C_ONLINEUSELIMITS"/>
+		<property name="configChange" column="C_ONLINECONFIGCHANGE"/>
+		<property name="isMainEqu" column="C_ISMAINEQU"/>
+		<property name="soft" column="C_ONLINESOFT"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<property name="onReason" column="C_ONRESON"/>
+		<property name="downReason" column="C_DOWNRESON"/>
+		<property name="checkPart" column="C_ONLINECHECKPART"/>
+		<property name="checkContain" column="C_ONLINECHECKCONTAIN"/>
+		<property name="lastCheckDate" column="C_ONLINELASTCHECKDATE"/>
+		<property name="comment" column="C_ONLINECOMMENT"/>
+		<property name="fromStatus" column="C_FROMSTATUS"/>
+		<property name="toStatus" column="C_TOSTATUS"/>
+		<many-to-one name="downDepart" column="C_DOWNDEPARTMENT" class="Department"/>
+		<many-to-one name="installor" column="C_DOWNINSTALLOR" class="Person"/>
+		<property name="whither" column="C_WHITHER"/>
+		<property name="downComment" column="C_DOWNCOMMENT"/>
+		<property name="team" column="C_TEAM"/>
+		<many-to-one name="line" column="C_LINE" class="Line"/>
+		<property name="park" column="C_PARK"/>
+		<property name="monthMNT" column="C_MONTH_MNT"/>
+		<property name="weekMNT" column="C_WEEK_MNT"/>
+		<property name="fuel" column="C_FUEL"/>
+		<property name="lube" column="C_LUBE"/>
+		<property name="type" column="C_ONLINE_TYPE"/>
+		<property name="planUse" column="C_EQUPLANUSE"/>
+	</class>
+
+	<class name="EquType" table="T_TYPE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_TYPEID">
+			<generator class="sequence-identity"/>
+		</id>
+		<property name="name" column="C_TYPENAME"/>
+		<property name="comment" column="C_TYPECOMMENT"/>
+	</class>
+
+	<class name="Line" table="T_RUNNING_LINE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="desNo" column="C_DES_NO"/>
+		<property name="authNo" column="C_AUTHONO"/>
+		<property name="dealType" column="C_DEAL_TYPE"/>
+		<property name="lineType" column="C_LINE_TYPE"/>
+		<property name="busModel" column="C_BUSMODEL"/>
+		<property name="onReason" column="C_ONREASON"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<property name="downReason" column="C_DOWNREASON"/>
+		<property name="mustBus" column="C_MUST_BUS"/>
+		<property name="local" column="C_LOCAL"/>
+		<property name="lineDirect" column="C_LINEDIRECT"/>
+		<property name="lc" column="C_LC"/>
+		<property name="workTime" column="C_WORK_TIME"/>
+		<property name="intCrowd" column="C_CROWD_INTERVAL"/>
+		<property name="intQuiet" column="C_QUIET_INTERVAL"/>
+		<property name="ticketMode1" column="C_TICKETMODE1"/>
+		<property name="ticketMode2" column="C_TICKETMODE2"/>
+		<property name="ticketMode3" column="C_TICKETMODE3"/>
+		<property name="lowPrice" column="C_LOW_PRICE"/>
+		<property name="highPrice" column="C_HIGH_PRICE"/>
+		<many-to-one name="depart" column="C_DEPART" class="Department"/>
+		<property name="team" column="C_TEAM"/>
+		<property name="responsor" column="C_RESPONSOR"/>
+		<property name="attemper" column="C_ATTEMPER"/>
+		<property name="userDef1" column="C_USER_DEF1"/>
+		<property name="userDef2" column="C_USER_DEF2"/>
+		<property name="userDef3" column="C_USER_DEF3"/>
+		<property name="length" column="C_LONG"/>
+		<property name="cycleTime" column="C_CYCLETIME"/>
+		<property name="startTime" column="C_STARTTIME"/>
+		<property name="endTime" column="C_ENDTIME"/>
+		<property name="emptyLc" column="C_EMPTYLC"/>
+	</class>
+
+	<class name="Office" table="T_DEPARTTERM" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="OfficePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="Branch"/>
+			<key-many-to-one name="depart" column="C_DEPART" class="Department"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="duty" column="C_MANDUTY"/>
+		<many-to-one name="leader" column="C_LEADER" class="Person"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="Person" table="T_PERSONAL" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_PERSONALID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<property name="workerId" column="C_WORKERID"/>
+		<property name="name" column="C_PERSONALNAME "/>
+		<property name="pid" column="C_PID"/>
+		<property name="sex" column="C_SEX"/>
+		<property name="people" column="C_PEOPLE"/>
+		<property name="nativePlace" column="C_NATIVEPLACE"/>
+		<property name="regType" column="C_REGTYPE"/>
+		<property name="regAddress" column="C_REGADDRESS"/>
+		<property name="birthday" column="C_BARTHDAY"/>
+		<property name="marryStatus" column="C_MARRYSTATE"/>
+		<property name="annuities" column="C_ANNUITIES"/>
+		<property name="accumulation" column="C_ACCUMULATION"/>
+		<property name="onDate" column="C_PERSONALONDATE"/>
+		<property name="status" column="C_PERSONALCURRENTSTATE"/>
+		<property name="downDate" column="C_PERSONALDOWNDATE"/>
+		<property name="downReason" column="C_DOWNREASON"/>
+		<property name="upgradeDate" column="C_UPGRADE_DATE"/>
+		<property name="upgradeReason" column="C_UPGRADE_REASON"/>
+		<property name="type" column="C_TYPE"/>
+		<property name="salaryType" column="C_SALARYTYPE"/>
+		<property name="position" column="C_POSITION"/>
+		<many-to-one name="fkPosition" insert="false" update="false" class="Position">
+			<column name="C_BELONG"/>
+			<column name="C_POSITION"/>
+		</many-to-one>
+		<!--many-to-one name="position" column="C_POSITION" class="Position"/-->
+		<property name="regBelong" column="C_REGBELONG"/>
+		<property name="party" column="C_PARTY"/>
+		<property name="grade" column="C_GRADE"/>
+		<property name="schooling" column="C_SCHOOLHISTORY"/>
+		<property name="allotDate" column="C_ALLOTDATE"/>
+		<property name="allotReason" column="C_ALLOTREASON"/>
+		<many-to-one name="depart" column="C_DEPART" class="Department"/>
+		<property name="office" column="C_OFFICE"/>
+		<many-to-one name="line" column="C_LINEID" class="Line"/>
+		<many-to-one name="bus" column="C_BUSID" class="Equipment"/>
+		<property name="cert2No" column="C_CERT2_NO"/>
+		<property name="cert2NoHex" column="C_CERT2_NO_HEX"/>
+		<property name="fillTableDate" column="C_FILLTABLEDATE"/>
+		<property name="commend" column="C_COMMEND"/>
+		<property name="workDate" column="C_WORKDATE"/>
+		<property name="retireDate" column="C_RETIREDATE"/>
+		<property name="serviceLength" column="C_LENGTHSERVICE"/>
+		<property name="inDate" column="C_INDATE"/>
+		<property name="outDate" column="C_OUTDATE"/>
+		<property name="workLength" column="C_WORKLENGTH"/>
+		<property name="groupNo" column="C_GROUPNO"/>
+		<property name="contractNo" column="C_CONTRACTNO"/>
+		<property name="contr1From" column="C_CONTR1_FROM"/>
+		<property name="contr1End" column="C_CONTR1_END"/>
+		<property name="contractReason" column="C_CONTRACTREASON"/>
+		<property name="contr2From" column="C_CONTR2_FROM"/>
+		<property name="contr2End" column="C_CONTR2_END"/>
+		<property name="workType" column="C_WORKTYPE"/>
+		<property name="level" column="C_LEVEL"/>
+		<property name="techLevel" column="C_TECHLEVEL"/>
+		<property name="responsibility" column="C_RESPONSIBILITY"/>
+		<property name="cert1No" column="C_CERT1_NO"/>
+		<property name="cert1NoDate" column="C_CERT1_NO_DATE"/>
+		<property name="serviceNo" column="C_SERVICENO"/>
+		<property name="serviceNoDate" column="C_SERVICENO_DATE"/>
+		<property name="frontWorkResume" column="C_FRONT_WORKRESUME"/>
+		<property name="frontTrainingResume" column="C_FRONT_TRAININGRESUME"/>
+		<property name="specification" column="C_SPECIFICATION"/>
+		<property name="degree" column="C_DEGREE"/>
+		<property name="graduate" column="C_GRADUATE"/>
+		<property name="skill" column="C_SKILL"/>
+		<property name="lanCom" column="C_LAN_COM"/>
+		<property name="national" column="C_NATIONAL"/>
+		<property name="state" column="C_STATE"/>
+		<property name="city" column="C_CITY"/>
+		<property name="address" column="C_ADDRESS"/>
+		<property name="zip" column="C_ZIP"/>
+		<property name="telephone" column="C_TELEPNONENO"/>
+		<property name="email" column="C_EMAIL"/>
+		<property name="officeTel" column="C_OFFICETEL"/>
+		<property name="officeExt" column="C_OFFICEEXT"/>
+		<property name="officeFax" column="C_OFFICEFAX"/>
+		<many-to-one name="lastModifier" column="C_LASTMODIFIER" class="Person"/>
+		<property name="comment" column="C_COMMENT"/>
+		<many-to-one name="psnPhoto" column="C_PERSONALID" class="PsnPhoto" unique="true" insert="false" update="false"/>
+		<many-to-one name="chkGroup" column="C_HRCHKGROUPID" class="com.gc.hr.po.ChkGroup"/>
+		<property name="paySocialInsInit" column="C_PAYSOCIALINS_INIT"/>
+		<property name="paySocialInsAdj" column="C_PAYSOCIALINS_ADJ"/>
+	</class>
+
+	<class name="Position" table="T_POSITION" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="PositionPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="Branch"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="name" column="C_NAME"/>
+		<property name="responsibility" column="C_RESPONSIBILITY"/>
+		<property name="reqDescription" column="C_REQ_DESCRIPTION"/>
+		<property name="reqCert" column="C_REQ_CERT"/>
+		<property name="reqPersonCount" column="C_REQ_PSNCOUNT"/>
+		<property name="genLevel" column="C_GEN_LEVEL"/>
+		<property name="salaryLevel" column="C_SALARY_LEVEL"/>
+		<property name="techLevel" column="C_TECH_LEVEL"/>
+		<property name="securityLevel" column="C_SECURITY_LEVEL"/>
+		<property name="techDescription" column="C_TECH_DESCRIPTION"/>
+		<property name="securityDescription" column="C_SECURITY_DESCRIPTION"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="PsnOnline" table="T_PSN_ONLINE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ONLINEID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<many-to-one name="person" column="C_ONLINEPSN" class="com.gc.common.po.Person"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="allotReason" column="C_ALLOTREASON"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="office" column="C_OFFICE"/>
+		<many-to-one name="line" column="C_LINEID" class="com.gc.common.po.Line"/>
+		<many-to-one name="bus" column="C_BUSID" class="com.gc.common.po.Equipment"/>
+		<property name="cert2No" column="C_CERT2_NO"/>
+		<property name="cert2NoHex" column="C_CERT2_NO_HEX"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<many-to-one name="alloter" column="C_DOPSN" class="com.gc.common.po.Person"/>
+	</class>
+
+	<class name="PsnPhoto" table="T_PSN_PHOTO" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_PERSONALID">
+			<generator class="assigned"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<many-to-one name="person" column="C_PERSONALID" class="Person" unique="true" insert="false" update="false"/>
+		<property name="photo" column="C_PHOTO"/>
+		<property name="photoDate" column="C_PHOTODATE "/>
+		<many-to-one name="uploader" column="C_UPLOADBY" class="Person"/>
+	</class>
+
+	<class name="PsnStatus" table="T_PSN_STATUS" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_STATUSID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<many-to-one name="person" column="C_STATUSPSN" class="com.gc.common.po.Person"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="upgradeReason" column="C_UPGRADE_REASON"/>
+		<property name="regType" column="C_REGTYPE"/>
+		<property name="type" column="C_TYPE"/>
+		<property name="salaryType" column="C_SALARYTYPE"/>
+		<property name="position" column="C_POSITION"/>
+		<many-to-one name="fkPosition" insert="false" update="false" class="com.gc.common.po.Position">
+			<column name="C_BELONG"/>
+			<column name="C_POSITION"/>
+		</many-to-one>
+		<property name="workType" column="C_WORKTYPE"/>
+		<property name="regBelong" column="C_REGBELONG"/>
+		<property name="party" column="C_PARTY"/>
+		<property name="grade" column="C_GRADE"/>
+		<property name="schooling" column="C_SCHOOLHISTORY"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<many-to-one name="upgrader" column="C_DOPSN" class="com.gc.common.po.Person"/>
+		<property name="isModContract" column="C_ISMOD_CONTRACT"/>
+		<property name="contractEnd" column="C_CONTRACT_END"/>
+	</class>
+
+	<class name="PsnChange" table="TMP_PSN_CHANGE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="date" column="C_DODATE"/>
+		<property name="change" column="C_CHANGE"/>
+
+		<many-to-one name="alloter" column="C_ALLOTER" class="com.gc.common.po.Person"/>
+		<property name="allotReason" column="C_ALLOTREASON"/>
+		<property name="changedDepart" column="C_DEPART"/>
+		<many-to-one name="oldDepart" column="O_DEPART" class="com.gc.common.po.Department"/>
+		<many-to-one name="newDepart" column="N_DEPART" class="com.gc.common.po.Department"/>
+		<property name="changedOffice" column="C_OFFICE"/>
+		<property name="oldOffice" column="O_OFFICE"/>
+		<property name="newOffice" column="N_OFFICE"/>
+		<property name="changedLine" column="C_LINEID"/>
+		<many-to-one name="oldLine" column="O_LINEID" class="com.gc.common.po.Line"/>
+		<many-to-one name="newLine" column="N_LINEID" class="com.gc.common.po.Line"/>
+		<property name="changedBus" column="C_BUSID"/>
+		<many-to-one name="oldBus" column="O_BUSID" class="com.gc.common.po.Equipment"/>
+		<many-to-one name="newBus" column="N_BUSID" class="com.gc.common.po.Equipment"/>
+		<property name="changedCert2No" column="C_CERT2_NO"/>
+		<property name="oldCert2No" column="O_CERT2_NO"/>
+		<property name="newCert2No" column="N_CERT2_NO"/>
+		<property name="changedCert2NoHex" column="C_CERT2_NO_HEX"/>
+		<property name="oldCert2NoHex" column="O_CERT2_NO_HEX"/>
+		<property name="newCert2NoHex" column="N_CERT2_NO_HEX"/>
+
+		<many-to-one name="upgrader" column="C_UPGRADER" class="com.gc.common.po.Person"/>
+		<property name="upgradeReason" column="C_UPGRADE_REASON"/>
+		<property name="changedRegType" column="C_REGTYPE"/>
+		<property name="oldRegType" column="O_REGTYPE"/>
+		<property name="newRegType" column="N_REGTYPE"/>
+		<property name="changedType" column="C_TYPE"/>
+		<property name="oldType" column="O_TYPE"/>
+		<property name="newType" column="N_TYPE"/>
+		<property name="changedSalaryType" column="C_SALARYTYPE"/>
+		<property name="oldSalaryType" column="O_SALARYTYPE"/>
+		<property name="newSalaryType" column="N_SALARYTYPE"/>
+		<property name="changedPosition" column="C_POSITION"/>
+		<many-to-one name="oldPosition" insert="false" update="false" class="com.gc.common.po.Position">
+			<column name="C_BELONG"/>
+			<column name="O_POSITION"/>
+		</many-to-one>
+		<many-to-one name="newPosition" insert="false" update="false" class="com.gc.common.po.Position">
+			<column name="C_BELONG"/>
+			<column name="N_POSITION"/>
+		</many-to-one>
+		<property name="changedWorkType" column="C_WORKTYPE"/>
+		<property name="oldWorkType" column="O_WORKTYPE"/>
+		<property name="newWorkType" column="N_WORKTYPE"/>
+		<property name="changedRegBelong" column="C_REGBELONG"/>
+		<property name="oldRegBelong" column="O_REGBELONG"/>
+		<property name="newRegBelong" column="N_REGBELONG"/>
+		<property name="changedParty" column="C_PARTY"/>
+		<property name="oldParty" column="O_PARTY"/>
+		<property name="newParty" column="N_PARTY"/>
+		<property name="changedGrade" column="C_GRADE"/>
+		<property name="oldGrade" column="O_GRADE"/>
+		<property name="newGrade" column="N_GRADE"/>
+		<property name="changedSchooling" column="C_SCHOOLHISTORY"/>
+		<property name="oldSchooling" column="O_SCHOOLHISTORY"/>
+		<property name="newSchooling" column="N_SCHOOLHISTORY"/>
+		<property name="changedContractNo" column="C_CONTRACTNO"/>
+		<property name="oldContractNo" column="O_CONTRACTNO"/>
+		<property name="newContractNo" column="N_CONTRACTNO"/>
+		<property name="changedContr1End" column="C_CONTR1_END"/>
+		<property name="oldContr1End" column="O_CONTR1_END"/>
+		<property name="newContr1End" column="N_CONTR1_END"/>
+	</class>
+
+	<class name="SecurityGroup" table="T_SECURITY_GROUP" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<property name="useId" column="C_USEID"/>
+		<property name="supervise" column="C_IS_SUPERVISE"/>
+		<property name="description" column="C_DESCRIPTION"/>
+		<property name="comment" column="C_COMMENT"/>
+		<!--list name="limits" inverse="true" cascade="">
+			<key column="C_GROUPID"/>
+			<index column="C_BRANCHID"/>
+			<one-to-many class="SecurityLimit"/>
+		</list-->
+	</class>
+
+	<class name="SecurityLimit" table="T_SECURITY_LIMIT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SecurityLimitPK">
+			<key-many-to-one name="branch" column="C_BRANCHID" class="Branch"/>
+			<key-many-to-one name="group" column="C_GROUPID" class="SecurityGroup"/>
+		</composite-id>
+		<property name="description" column="C_DESCRIPTION"/>
+		<property name="equLimit" column="C_EQULIMIT"/>
+		<!--property name="softLimit" column="C_SOFTLIMIT"/-->
+		<property name="lineLimit" column="C_LINELIMIT"/>
+		<property name="fittingLimit" column="C_FITTINGLIMIT"/>
+		<property name="networkLimit" column="C_NETWORKLIMIT"/>
+		<property name="serviceLimit" column="C_SERVICELIMIT"/>
+		<property name="projectLimit" column="C_PROJECTLIMIT"/>
+		<property name="woLimit" column="C_WORKORDERLIMIT"/>
+		<property name="invLimit" column="C_INVENTORYLIMIT"/>
+		<property name="reportLimit" column="C_REPORTLIMIT"/>
+		<property name="systemLimit" column="C_SYSTEMLIMIT"/>
+		<property name="lineTktLimit" column="C_LINETKTLIMIT"/>
+		<property name="typeLimit" column="C_TYRELIMIT"/>
+		<property name="engineLimit" column="C_ENGINELIMIT"/>
+		<property name="hrLimit" column="C_HRLIMIT"/>
+		<many-to-one name="hrLimitDepart" column="C_HRLIMITDEPART" class="Department"/>
+		<property name="safetyLimit" column="C_SAFETYLIMIT"/>
+		<many-to-one name="safetyLimitDepart" column="C_SAFETYLIMITDEPART" class="Department"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SecurityUser" table="T_SECURITY_USER" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<property name="useId" column="C_USEID"/>
+		<many-to-one name="person" column="C_PSNID" class="Person"/>
+		<many-to-one name="branch" column="C_PSNBELONG" class="Branch"/>
+		<many-to-one name="group" column="C_GROUPID" class="SecurityGroup"/>
+		<property name="password1" column="C_PASSWORD1"/>
+		<property name="password2" column="C_PASSWORD2"/>
+		<property name="password3" column="C_PASSWORD3"/>
+		<property name="description" column="C_DESCRIPTION"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="EventLog" table="T_EVENT_LOG" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="Branch"/>
+		<many-to-one name="person" column="C_PERSON" class="Person"/>
+		<property name="type" column="C_TYPE"/>
+		<property name="table" column="C_TABLE"/>
+		<property name="key" column="C_KEY"/>
+		<property name="level" column="C_LEVEL"/>
+		<property name="className" column="C_CLASS"/>
+		<property name="fileName" column="C_FILE"/>
+		<property name="lineNumber" column="C_LINENUM"/>
+		<property name="loggerName" column="C_LOGGER"/>
+		<property name="methodName" column="C_METHOD"/>
+		<property name="threadName" column="C_THREAD"/>
+		<property name="message" column="C_MESSAGE"/>
+		<property name="logDate" column="C_LOGDATE"/>
+		<property name="startDate" column="C_STARTDATE"/>
+		<set name="strReps" inverse="true" cascade="save-update, delete">
+			<key column="C_ID"/>
+			<one-to-many class="EventLogD"/>
+		</set>
+	</class>
+
+	<class name="EventLogD" table="T_EVENT_LOGD" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="log" column="C_LOGID" class="EventLog"/>
+		<property name="strRep" column="C_STRREP"/>
+	</class>
+
+	<class name="Weather" table="T_WEATHER" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="name" column="C_NAME"/>
+		<property name="desc" column="C_DESC"/>
+	</class>
+
+</hibernate-mapping>

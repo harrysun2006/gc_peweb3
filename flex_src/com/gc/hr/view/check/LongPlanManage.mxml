@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <gc:Voucher width="100%" height="100%" bundle="gcc_hr" code="chkLongPlan">
+    <mx:AdvancedDataGrid id="_grid" editable="false">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no"/>
+        <mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name"/>
+        <mx:AdvancedDataGridColumn dataField="fromDate"/>
+        <mx:AdvancedDataGridColumn dataField="endDate"/>
+        <mx:AdvancedDataGridColumn dataField="holiday" dataTipField="holiday.name" width="60"/>
+        <mx:AdvancedDataGridColumn dataField="lastModifier" dataTipField="lastModifier.name"/>
+        <mx:AdvancedDataGridColumn dataField="checker" dataTipField="checker.name"/>
+        <mx:AdvancedDataGridColumn dataField="checkDate"/>
+        <mx:AdvancedDataGridColumn dataField="checkDescription"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:ToolBar id="search" width="100%" paddingTop="7">
+      <mx:FormItem label="{resourceManager.getString('gcc', 'person.depart.name')}:">
+        <mx:ComboBox id="cbDepart" width="160" itemRenderer="mx.controls.Label"
+                     change="onDepartChange(event)"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.person')}:">
+        <mx:ComboBox id="cbPerson" width="160" editable="true" itemRenderer="mx.controls.Label"
+                     labelField="name"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.checkDate')}:">
+        <gc:DateSelector name="checkDate" width="160" output="{qo}"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.date')}:">
+        <gc:DateSelector name="date" width="160" output="{qo}"/>
+      </mx:FormItem>
+    </mx:ToolBar>
+    <mx:HBox name="buttons" horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'refresh')}" click="refresh(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'add')}" click="add(event)"
+                 enabled="{UserController.hrWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'edit')}" click="edit(event)"
+                 enabled="{UserController.hrWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'delete')}" click="_delete(event)"
+                 enabled="{UserController.hrWrite}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.CloseEvent;
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.Label;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectProxy;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.DateSelector;
+      import com.gc.controls.PopUpTextArea;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.hr.model.ChkLongPlan;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var qo:Object=new ObjectProxy();
+      private var personList:ArrayCollection;
+      private var checkerList:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        qo["checkDate_from"]=CommonController.lastCloseDate;
+        qo["branch.id"]=UserController.branchId;
+      }
+
+      private function onCreationComplete():void
+      {
+        var departs:ArrayCollection=ObjectUtil.copy(BaseController.departmentList) as ArrayCollection;
+        departs.addItemAt(new Department(0, UserController.branch, resourceManager.getString("gcc", "depart.all")), 0);
+        cbDepart.dataProvider=departs;
+        cbDepart.selectedIndex=-1;
+        if (UserController.hrSub)
+        {
+          cbDepart.enabled=false;
+          cbDepart.selectedIndex=CommonUtil.indexOfKey(BaseController.departmentList, UserController.hrDepart);
+        }
+        CheckController.getCheckPersonsByDepart(UserController.hrDepartId, function(e:ResultEvent):void
+          {
+            personList=e.result as ArrayCollection;
+            checkerList=e.result as ArrayCollection;
+            if (UserController.hrSub)
+            {
+              cbPerson.dataProvider=personList;
+              cbPerson.selectedIndex=-1;
+            }
+          });
+        refresh();
+        onDepartChange();
+      }
+
+      private function onDepartChange(e:Event=null):void
+      {
+        var depart:Department=cbDepart.selectedItem as Department;
+        var did:int=depart ? depart.id : 0;
+        CheckController.getCheckPersonsByDepart(did, function(e1:ResultEvent):void
+          {
+            cbPerson.dataProvider=e1.result;
+            cbPerson.selectedIndex=-1;
+          });
+      }
+
+      private function refresh(e:Event=null):void
+      {
+        if (cbDepart.selectedItem)
+          qo["depart.id"]=cbDepart.selectedItem.id;
+        if (cbPerson.text && cbPerson.text != "")
+          qo["person.name"]=cbPerson.text;
+        var params:Object=CommonUtil.clear(qo);
+        CheckController.getLongPlans(params, function(e:ResultEvent):void
+          {
+            _grid.dataProvider=e.result;
+          });
+      }
+
+      private function add(e:Event):void
+      {
+        CommonUtil.popupWindow(LongPlanAE, resourceManager.getString("gcc_hr", "chkLongPlan.add"), this, 
+          [new ChkLongPlan(), personList, checkerList]);
+      }
+
+      private function edit(e:Event):void
+      {
+        var po:Object=_grid.selectedItem;
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "edit.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else if (po.checkDate < CommonController.lastCloseDate)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "error.beyond.closeDate", [DateUtil.formatDate(po.checkDate), DateUtil.formatDate(CommonController.lastCloseDate)]), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else if (po.person.downDate < Constants.MAX_DATE)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "error.person.down", [DateUtil.formatDate(po.person.downDate)]), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          CommonUtil.popupWindow(LongPlanAE, resourceManager.getString("gcc_hr", "chkLongPlan.edit"), this, 
+            [po, personList, checkerList]);
+        }
+      }
+
+      private function _delete(e:Event):void
+      {
+        var po:Object=_grid.selectedItem;
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString("gcc", "delete.not.null"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else if (po.checkDate < CommonController.lastCloseDate)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "error.beyond.closeDate", [DateUtil.formatDate(po.checkDate), DateUtil.formatDate(CommonController.lastCloseDate)]), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else if (po.person.downDate < Constants.MAX_DATE)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "error.person.down", [DateUtil.formatDate(po.person.downDate)]), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+        }
+        else
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "chkLongPlan.del.query", [po.no]), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, function(e1:CloseEvent):void
+            {
+              if (e1.detail == Alert.YES)
+              {
+                BaseController.deleteObject(po, function(e2:ResultEvent):void
+                  {
+                    Alert.show(resourceManager.getString("gcc_hr", "chkLongPlan.del.success", [po.no]), Constants.APP_NAME, Alert.OK, 
+                      null, null, Constants.ICON32_INFO);
+                    refresh();
+                  });
+              }
+            });
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreationComplete()"
+           width="100%" height="100%">
+  <mx:AdvancedDataGrid id="dg" dataProvider="{trans}" labelFunction="{CommonUtil.gridLabelFunction}"
+                       horizontalScrollPolicy="auto" verticalScrollPolicy="auto" width="100%"
+                       height="100%">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.accNo"/>
+      <mx:AdvancedDataGridColumn dataField="transDate"/>
+      <mx:AdvancedDataGridColumn dataField="transType" dataTipField="transType.name"/>
+      <mx:AdvancedDataGridColumn/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.CommonEvent;
+      import mx.collections.ArrayCollection;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var trans:ArrayCollection = new ArrayCollection();
+      private var item:Object;
+      private var ancestors:Array;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(dg, "gcc_safety", "tree.transList");
+        addEventListener(CommonEvent.EXPORT,function(event:CommonEvent):void 
+          {
+            CommonUtil.export(CommonUtil.getGridData(dg),CommonUtil.getGridHeaders(dg),null,event.data.label + "违章列表.xls");
+          });
+      }
+
+      public function listTrans(item:Object, ancestors:Array, orders:Array):void
+      {
+        if (item == null)
+          return;
+        this.item = item;
+        this.ancestors = ancestors;
+        trans = item.hasOwnProperty("trans") ? item["trans"] : null;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

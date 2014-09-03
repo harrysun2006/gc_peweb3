@@ -1,0 +1,372 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:flexlib="http://code.google.com/p/flexlib/" xmlns:view="com.gc.hr.view.*"
+                verticalAlign="top" layout="vertical" width="720" height="480"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:HDividedBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg" width="100%" height="100%" change="onChange(event)"
+                           valueCommit="onValueCommit(event)" keyDown="keyDownHandler(event)">
+        <mx:columns>
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="60"/>
+          <mx:AdvancedDataGridColumn dataField="no" width="40"/>
+          <mx:AdvancedDataGridColumn dataField="name" width="100"/>
+        </mx:columns>
+      </mx:AdvancedDataGrid>
+      <mx:ViewStack id="vsDepartOffice" width="100%" height="100%" minWidth="300"
+                    creationPolicy="all">
+        <mx:Canvas/>
+        <mx:VBox id="viewDepart" width="100%" height="100%" paddingLeft="10" paddingTop="10"
+                 paddingRight="10">
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.no')}:"/>
+            <mx:TextInput name="no" text="{po.no}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.name')}:"/>
+            <mx:TextInput name="name" text="{po.name}"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.duty')}:"/>
+            <mx:TextArea name="duty" wordWrap="false" text="{po.duty}" height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.city')}:"/>
+            <mx:TextInput name="city" text="{po.city}"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.address')}:"/>
+            <mx:TextInput name="address" text="{po.address}"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.zip')}:"/>
+            <mx:TextInput name="zip" text="{po.zip}" restrict="0-9"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.telephone')}:"/>
+            <mx:TextInput name="telephone" text="{po.telephone}" restrict="0-9\-"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'depart.comment')}:"/>
+            <mx:TextInput name="comment" text="{po.comment}"/>
+          </mx:GridItem>
+        </mx:VBox>
+        <mx:VBox id="viewOffice" width="100%" height="100%" paddingLeft="10" paddingTop="10"
+                 paddingRight="10">
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'office.name')}:"/>
+            <mx:TextInput name="id.name" text="{po.name}"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'office.duty')}:"/>
+            <mx:TextArea name="duty" wordWrap="false" text="{po.duty}" height="80"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:Label text="{resourceManager.getString('gcc', 'office.comment')}:"/>
+            <mx:TextInput name="comment" text="{po.comment}"/>
+          </mx:GridItem>
+        </mx:VBox>
+      </mx:ViewStack>
+    </mx:HDividedBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10"
+             paddingLeft="10">
+      <mx:Button id="btnAdd" label="{resourceManager.getString('gcc', 'add')}" click="add(event)"/>
+      <mx:Button id="btnDelete" label="{resourceManager.getString('gcc', 'delete')}"
+                 click="_delete(event)"/>
+      <mx:Button id="btnMerge" label="{resourceManager.getString('gcc', 'merge')}"
+                 click="merge(event)" includeInLayout="false" visible="false"/>
+      <mx:Button id="btnSave" label="{resourceManager.getString('gcc', 'save')}" click="save(event)"
+                 enabled="false"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Label;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.ArrayHierarchy;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Department;
+      import com.gc.common.model.Office;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var po:Object;
+      private var npo:Object;
+      private var list:ArrayCollection;
+      private var irLabel:IFactory=new ClassFactory(Label);
+      private var operation:String;
+
+      private function onCreationComplete():void
+      {
+        loadList();
+        CommonUtil.visit(adg.columns, setColumn);
+        CommonUtil.visit(vsDepartOffice, setItem);
+        CommonUtil.show([btnAdd, btnDelete, btnMerge, btnSave], UserController.hrWrite);
+        this.setFocus();
+      }
+
+      /**
+       * 树的相关方法和事件
+       **/
+      private function setColumn(comp:Object):void
+      {
+        if (comp is AdvancedDataGridColumn)
+        {
+          var column:AdvancedDataGridColumn=comp as AdvancedDataGridColumn;
+          if (column.headerText == column.dataField)
+            column.headerText=resourceManager.getString("gcc", "depart&office." + column.dataField);
+            // column.itemRenderer=irLabel;
+        }
+      }
+
+      private function loadList():void
+      {
+        BaseController.getDepartmentsAndOffices(UserController.branchId, UserController.hrDepartId, function(e:ResultEvent):void
+          {
+            list=e.result as ArrayCollection;
+            buildList(list);
+          });
+      }
+
+      private function buildList(coll:ArrayCollection):void
+      {
+        var _root:Object=buildGridList(coll);
+        adg.invalidateDisplayList();
+        adg.dataProvider=new ArrayHierarchy(_root);
+        adg.validateDisplayList();
+        adg.validateNow();
+        adg.expandItem(_root, true);
+        callLater(function():void{adg.selectedItem=_root;});
+      }
+
+      private function buildGridList(coll:ArrayCollection):Object
+      {
+        var root:Branch=UserController.branch;
+        var tree:Object;
+        var depart:Department;
+        var office:Office;
+        var children:Array;
+        var i:int, j:int;
+        var count:int=0;
+        for (i=0; i < coll.length; i++)
+        {
+          count++;
+          depart=coll[i];
+          depart[Constants.PROP_NAME_SERIAL]=count;
+          depart["children"]=depart.offices;
+          for (j=0; j < depart.offices.length; j++)
+          {
+            office=depart.offices[j];
+            office[Constants.PROP_NAME_SERIAL]=count+"-"+(j+1);
+            office["no"]="";
+          }
+        }
+        root[Constants.PROP_NAME_SERIAL]=root.useId;
+        root["children"]=coll;
+        return root;
+      }
+
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      private function onValueCommit(event:Event):void
+      {
+        var node:Object=adg.selectedItem;
+        btnAdd.enabled=false;
+        btnDelete.enabled=false;
+        btnMerge.enabled=false;
+        btnSave.enabled=false;
+        if (node is Branch)
+        {
+          vsDepartOffice.selectedIndex=0;
+          btnAdd.enabled=true;
+          btnAdd.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.add.depart");
+          operation=Constants.OP_ADD;
+        }
+        else if (node is Department)
+        {
+          vsDepartOffice.selectedIndex=1;
+          btnAdd.enabled=true;
+          btnDelete.enabled=true;
+          btnMerge.enabled=true;
+          btnAdd.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.add.office");
+          btnDelete.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.delete.depart");
+          btnMerge.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.merge.depart");
+          btnSave.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.save.depart");
+          po=node;
+          if (po != null && po.duty != null)
+            po.duty=po.duty.replace(/\r\n/g, "\n");
+          operation=Constants.OP_EDIT;
+        }
+        else if (node is Office)
+        {
+          vsDepartOffice.selectedIndex=2;
+          btnAdd.enabled=false;
+          btnDelete.enabled=true;
+          btnMerge.enabled=true;
+          btnAdd.toolTip="";
+          btnDelete.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.delete.office");
+          btnMerge.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.merge.office");
+          btnSave.toolTip=resourceManager.getString("gcc_hr", "info.manage.depart&office.save.office");
+          po=node;
+          if (po != null && po.duty != null)
+            po.duty=po.duty.replace(/\r\n/g, "\n");
+          operation=Constants.OP_EDIT;
+        }
+      }
+
+      /**
+       * 表单的相关方法和事件
+       **/
+      private function setItem(comp:Object):void
+      {
+        if (comp is Label)
+        {
+          comp.width=80;
+          comp.setStyle("textAlign", "right");
+        }
+        else if (comp is TextInput || comp is TextArea)
+        {
+          comp.percentWidth=100;
+          comp.addEventListener(Event.CHANGE, function(event:Event):void
+            {
+              btnSave.enabled=true;
+            });
+        }
+        else if (comp is GridItem)
+        {
+          comp.percentWidth=100;
+        }
+      }
+
+      /**
+       * Add, Delete, Merge, Save, Close
+       **/
+      private function add(event:Event):void
+      {
+        if (adg.selectedItem is Branch)
+        {
+          vsDepartOffice.selectedChild=viewDepart;
+          var branch:Branch=adg.selectedItem as Branch;
+          po=new Department(0, branch);
+          btnSave.enabled=true;
+        }
+        else if (adg.selectedItem is Department)
+        {
+          vsDepartOffice.selectedChild=viewOffice;
+          var depart:Department=adg.selectedItem as Department;
+          po=new Office(depart.branch, depart);
+          btnSave.enabled=true;
+          operation=Constants.OP_ADD;
+        }
+      }
+
+      private function _delete(event:Event):void
+      {
+        var f1:Function=function(e1:ResultEvent):void
+          {
+            CommonUtil.visit(list, f2, [po], {cancel: false});
+            adg.selectedIndex=0;
+          };
+        var f2:Function=function(obj:Object, args:Array=null, flag:Object=null):void
+          {
+            if (obj is ArrayCollection)
+            {
+              var coll:ArrayCollection=obj as ArrayCollection;
+              var node:Object=(args != null && args.length > 0) ? args[0] : null;
+              var k:int=coll.getItemIndex(node);
+              if (k >= 0)
+              {
+                coll.removeItemAt(k);
+                if (flag != null && flag.hasOwnProperty("cancel"))
+                  flag.cancel=true;
+              }
+            }
+          };
+        if (po is Department || po is Office)
+        {
+          BaseController.deleteObject(po, f1);
+        }
+      }
+
+      private function merge(event:Event):void
+      {
+      }
+
+      private function save(event:Event):void
+      {
+        if (po is Department)
+          saveDepart(po as Department);
+        else if (po is Office)
+          saveOffice(po as Office);
+      }
+
+      private function saveDepart(depart:Department):void
+      {
+        if (!CommonUtil.validateForm(viewDepart, ["no", "name"]))
+          return;
+        npo=new Department(depart.id);
+        npo.branch=new Branch(depart.branch.id);
+        CommonUtil.loadInstance(viewDepart, npo);
+        npo.onDate=new Date();
+        npo.downDate=Constants.MAX_DATE;
+        if (operation == Constants.OP_ADD)
+          BaseController.addObject(npo, addSuccessHandler);
+        else if (operation == Constants.OP_EDIT)
+          BaseController.updateObject(npo, updateSuccessHandler);
+      }
+
+      private function saveOffice(office:Office):void
+      {
+        if (!CommonUtil.validateForm(viewOffice, ["id.name"]))
+          return;
+        npo=new Office();
+        npo.id.branch=new Branch(office.id.branch.id);
+        npo.id.depart=new Department(office.id.depart.id);
+        CommonUtil.loadInstance(viewOffice, npo);
+        if (operation == Constants.OP_ADD)
+          BaseController.addObject(npo, addSuccessHandler);
+        else if (operation == Constants.OP_EDIT)
+          BaseController.updateObject(npo, updateSuccessHandler);
+      }
+
+      private function addSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        if (npo is Department)
+        {
+          loadList();
+        }
+        else if (npo is Office && adg.selectedItem is Department)
+        {
+          var depart:Department=adg.selectedItem as Department;
+          depart.children.addItem(npo);
+          adg.expandItem(depart, true);
+        }
+      }
+
+      private function updateSuccessHandler(event:ResultEvent):void
+      {
+        btnSave.enabled=false;
+        CommonUtil.copyProperties(npo, po);
+      }
+
+      private function close(event:Event):void
+      {
+        BaseController.preloadLists(UserController.branchId, BaseController.PERSONAL_LISTNAMES, true);
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

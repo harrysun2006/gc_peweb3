@@ -1,0 +1,351 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Box xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+        creationComplete="onCreationComplete()" width="100%" height="100%"
+        verticalScrollPolicy="auto" keyDown="CommonUtil.keyDown(event)" horizontalAlign="center">
+  <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.input')}" fontSize="16"
+            fontWeight="bold" textAlign="center" width="100%" height="8%"/>
+  <mx:HBox width="100%" horizontalAlign="center">
+    <mx:Label id="lAccNo" text="{resourceManager.getString('gcc_safety', 'transinfo.id.accno')}"/>
+    <mx:TextInput id="tiAccNo" editable="false" width="160"/>
+    <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.inputDate')}"/>
+    <mx:DateField id="dfInputDate" formatString="{Constants.DATE_FORMAT}" enabled="false"
+                  width="160"/>
+    <mx:Label text="{resourceManager.getString('gcc_safety', 'transinfo.inputer.name')}"/>
+    <mx:TextInput id="tiInputer" text="{UserController.personName}" editable="false" width="160"/>
+  </mx:HBox>
+  <mx:AdvancedDataGrid id="adgTrans" dataProvider="{transList}"
+                       labelFunction="{CommonUtil.gridLabelFunction}" width="90%" height="70%"
+                       editable="true" horizontalScrollPolicy="auto" verticalScrollPolicy="auto"
+                       sortableColumns="false" itemEditEnd="onItemEditEnd(event)">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" labelFunction="setNo"
+                                 width="64" color="0x0000FF" backgroundColor="0xD8D8D8"
+                                 fontWeight="bold" editable="false" textAlign="center"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      <mx:AdvancedDataGridColumn dataField="transDate" editorDataField="selectedDate"
+                                 itemEditor="{dateField}"/>
+      <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"
+                                 editorDataField="selectedItem" itemEditor="{equComboBox}"
+                                 width="250"/>
+      <mx:AdvancedDataGridColumn dataField="code"/>
+      <mx:AdvancedDataGridColumn dataField="transType" dataTipField="transType.name"
+                                 editorDataField="selectedItem" itemEditor="{transTypeComboBox}"/>
+      <mx:AdvancedDataGridColumn dataField="upFee" itemEditor="{numberInput}" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="point"/>
+      <mx:AdvancedDataGridColumn dataField="penalty" itemEditor="{numberInput}" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="doDate" editorDataField="selectedDate"
+                                 itemEditor="{dateField}"/>
+      <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.label" editable="false"
+                                 width="80"/>
+      <mx:AdvancedDataGridColumn dataField="confirmObj" dataTipField="confirmObj.label"
+                                 itemEditor="{confirmComboBox}" editorDataField="selectedItem"
+                                 width="80"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Label text="注：要编辑车牌号首先要先编辑违章日期，两者存在联动关系！" width="90%"/>
+  <mx:HBox id="buttonBox" width="100%" horizontalAlign="center" horizontalGap="10">
+    <mx:Button id="add" label="+" click="addItem(event)" width="55"/>
+    <mx:Button id="del" label="-" click="delItem(event)" width="55"/>
+    <mx:Button id="remove" label="{resourceManager.getString('gcc', 'clear')}"
+               click="removeAll(event)" width="55"/>
+  </mx:HBox>
+  <mx:HBox id="hbDown" width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+           horizontalGap="40">
+    <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="onSave(event)"
+               width="70" height="35"/>
+    <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+               click="onClose(event)" width="70" height="35"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import mx.events.CloseEvent;
+      import com.gc.common.model.Equipment;
+      import com.gc.common.model.EquOnline;
+      import mx.collections.IList;
+      import mx.events.FlexEvent;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.ComboBox;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.safety.controller.TransController;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.controls.Alert;
+      import com.gc.safety.model.TransInfo;
+      import mx.collections.ArrayCollection;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.events.AdvancedDataGridEventReason;
+      import com.gc.controls.AutoCompleteComboBox;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+
+      [Bindable]
+      private var dateField:AdvancedClassFactory;
+      [Bindable]
+      private var equComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var transTypeComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var confirmComboBox:AdvancedClassFactory;
+      [Bindable]
+      private var numberInput:AdvancedClassFactory;
+      [Bindable]
+      private var transList:ArrayCollection;
+      private var transInfo:TransInfo;
+      private var busList:ArrayCollection;
+      private var equOnlines:ArrayCollection;
+      private var oldTransList:ArrayCollection;
+      private var lists:Object;
+//      private var alert:Alert;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            busList = new ArrayCollection();
+            transList = new ArrayCollection();
+            dateField = new AdvancedClassFactory(DateField);
+            dateField.properties = {formatString: Constants.DATE_FORMAT, showToday: true, yearNavigationEnabled: true, editable: true};
+            equComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            equComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onBusCreateComplete}];
+            transTypeComboBox = new AdvancedClassFactory(AutoCompleteComboBox);
+            transTypeComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onTransTypeCreateComplete}];
+            confirmComboBox = new AdvancedClassFactory(ComboBox);
+            confirmComboBox.listeners=[{type: FlexEvent.CREATION_COMPLETE, listener: onComboBoxCreateComplete}];
+            numberInput = new AdvancedClassFactory(TextInput);
+            numberInput.properties = {restrict: "0-9."};
+            tiAccNo.text=resourceManager.getString('gcc_safety','gua.new.accNo');
+            dfInputDate.selectedDate = new Date();
+            oldTransList = null;
+            preLoad();
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgTrans, "gcc_safety", "transinfo");
+        validateNow();
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        var i:int = transList.getItemIndex(item) + 1;
+        transInfo.id.no=i;
+        return i;
+      }
+
+      private function preLoad():void
+      {
+        TransController.getTransTypes(UserController.branchId, onGetCtrlTransTypeSuccess);
+        //全部车辆调动信息
+        BaseController.getEquOnlineLasts(UserController.branchId,getEquOnlineSuccess);
+        lists = {confirmObj: Constants.CONFIRMOBJ};
+      }
+
+      private function onGetCtrlTransTypeSuccess(event:ResultEvent):void
+      {
+        transTypeComboBox.properties = {dataProvider: TransController.transTypeList};
+      }
+
+      private function getEquOnlineSuccess(event:ResultEvent):void
+      {
+        equOnlines = event.result as ArrayCollection;
+        if (equOnlines.length<=0)
+          return;
+      }
+
+      private function showEquDeptLine(item:Object):String
+      {
+        if (item is Equipment)
+          return item.authNo+"["+item.departName+"]["+item.lineName+"]["+item.useId+"]";
+        else
+          return item.toString();
+      }
+
+      private function onTransTypeCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(TransController.transTypeList.toArray(), event.currentTarget.data["transType"], "label");
+        if (event.currentTarget.selectedIndex==-1)
+          event.currentTarget.dataProvider=TransController.transTypeList;
+      }
+
+      private function onBusCreateComplete(event:Event):void
+      {
+        event.currentTarget.selectedIndex=CommonUtil.indexOfKey(busList.toArray(), event.currentTarget.data["bus"], "authNo");
+//        if (event.currentTarget.selectedIndex==-1)
+//          event.currentTarget.dataProvider=busList;
+      }
+
+      private function onComboBoxCreateComplete(event:Event):void
+      {
+        if (event.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=event.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData && cbox.data is TransInfo)
+          {
+            var listData:AdvancedDataGridListData=cbox.listData as AdvancedDataGridListData;
+            var dataField:String=listData.dataField
+            var list:Object=(lists.hasOwnProperty(dataField) && (lists[dataField] is IList || lists[dataField] is Array)) ? lists[dataField] : null;
+            var p:TransInfo=cbox.data as TransInfo;
+            cbox.dataProvider=list;
+            cbox.selectedIndex=(list != null) ? CommonUtil.indexOfKey(list, p[dataField], "label") : -1;
+          }
+        }
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+
+            data[property]=newData;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          if (property=="transDate" && data[property] != null)
+          {
+            busList = new ArrayCollection();
+            for each (var equOnline:EquOnline in equOnlines)
+            {
+              if (equOnline.onDate <= data[property] && (equOnline.downDate > data[property] || equOnline.downDate == null))
+              {
+                var bus:Equipment = equOnline.equipment;
+                bus["departName"]=equOnline.depart.name;
+                if (equOnline.line != null)
+                  bus["lineName"]=equOnline.line.name;
+                else
+                  bus["lineName"]=Constants.NULL_LABEL;
+                busList.addItem(bus);
+              }
+            }
+            equComboBox.properties={dataProvider: busList, labelFunction: showEquDeptLine};
+          }
+//          if (property=="doDate" && data[property] != null && data["transDate"] != null)
+//          {
+//            if (ObjectUtil.dateCompare(data[property],data["transDate"])<0 && alert==null)
+//            {
+//
+//              alert = Alert.show("你输入的处理日期早于违章日期",Constants.APP_NAME,
+//                Alert.OK,null,function(evt:CloseEvent):void{alert=null},Constants.ICON32_WARNING);
+//            }
+//          }
+        }
+      }
+
+      private function addItem(event:Event):void
+      {
+        var i:int = transList.length;
+        transInfo = new TransInfo();
+        transInfo.id.branch = UserController.branch;
+        transInfo.inputDate = dfInputDate.selectedDate;
+        transInfo.inputer = UserController.person;
+        transInfo.upFee=0;
+        transInfo.penalty=0;
+        if (i>=0 && i<transList.length)
+          transList.addItemAt(transInfo,i);
+        else
+          transList.addItem(transInfo);
+        adgTrans.selectedItem = transInfo;
+        adgTrans.editedItemPosition = {rowIndex: adgTrans.selectedIndex, columnIndex: 1};
+      }
+
+      private function delItem(event:Event):void
+      {
+        if (transList.length <= 0)
+          return;
+        if (adgTrans.selectedItem != null)
+        {
+          var k:int=transList.getItemIndex(adgTrans.selectedItem);
+          if (k >= 0)
+          {
+            transList.removeItemAt(k);
+            adgTrans.selectedIndex=(k == transList.length) ? transList.length - 1 : k;
+          }
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc','delete.not.null'),Constants.APP_NAME,
+            Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+      }
+
+      private function removeAll(event:Event):void
+      {
+        if (transList.length > 0)
+          transList.removeAll();
+      }
+
+      private function onSave(event:Event):void
+      {
+        if (transList.length <= 0)
+          return;
+        var checkFields:Array=["transDate","bus"];
+        if (CommonUtil.validateGrid(adgTrans,checkFields).length > 0)
+          return;
+        if (tiAccNo.text == resourceManager.getString('gcc_safety','gua.new.accNo') && oldTransList == null)
+        {
+          TransController.saveTrans(transList,null,function(evt:ResultEvent):void
+            {
+              tiAccNo.text = evt.result as String;
+              oldTransList = ObjectUtil.copy(transList) as ArrayCollection;
+              Alert.show(resourceManager.getString('gcc', 'save.success'), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+            });
+        }
+        else if (tiAccNo.text != resourceManager.getString('gcc_safety','gua.new.accNo'))
+        {
+          //这里TransType 改变的时候不能compare 出 ，？？？
+//          if (ObjectUtil.compare(oldTransList, transList,1)==0)
+//          {
+//            Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, 
+//              Alert.OK, null, null, Constants.ICON32_WARNING);
+//            return;
+//          }
+          for each (var trans:TransInfo in oldTransList)
+          {
+            trans.id.accNo = tiAccNo.text;
+            if (trans.point == "")
+              trans.point=null;
+            if (trans.code == "")
+              trans.code=null;
+          }
+          for each (var ti:TransInfo in transList)
+          {
+            ti.id.accNo = tiAccNo.text;
+          }
+          BaseController.saveObjects(oldTransList.toArray(),transList.toArray(),
+            {"@class": CommonUtil.getAlias(TransInfo), "@order": "id.no", 
+              "id.branch.id": UserController.branchId, "id.accNo":tiAccNo.text}, 
+            function(e:ResultEvent):void
+            {
+              oldTransList = ObjectUtil.copy(transList) as ArrayCollection;
+              Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, 
+                Alert.OK, null, null, Constants.ICON32_INFO);
+            });
+        }
+
+      }
+
+      private function onClose(event:Event):void
+      {
+        Alert.show(resourceManager.getString('gcc_safety','gua.out.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO) return;
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          },Constants.ICON32_QUESTION);
+      }
+    ]]>
+  </mx:Script>
+
+</mx:Box>

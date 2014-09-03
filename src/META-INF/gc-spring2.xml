@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd"
+		default-lazy-init="true">
+
+	<!-- Spring bean factory post processors -->
+	<bean class="com.gc.spring.BeanFactoryGCProcessor"/>
+
+	<bean id="restartTransactionInterceptor" class="com.gc.spring.RestartTransactionInterceptor"/>
+
+	<bean id="defaultLobHandler" class="org.springframework.jdbc.support.lob.DefaultLobHandler" lazy-init="true"/>
+
+	<bean id="jotm" class="org.springframework.transaction.jta.JotmFactoryBean"/>
+
+	<!-- GC DataSource, Hibernate SessionFactory & Transaction Manager -->
+	<bean id="gcDataSource" class="org.springframework.jndi.JndiObjectFactoryBean" p:jndiName="java:comp/env/jdbc/GCPool"/>
+
+	<bean id="gcDataSourceXA" class="org.enhydra.jdbc.standard.StandardXADataSource" destroy-method="shutdown"
+		p:transactionManager-ref="jotm" p:driverName="driverName" p:url="url"/>
+
+	<bean id="gcHibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+		<property name="properties">
+			<props>
+				<!--prop key="hibernate.hbm2ddl.auto">create</prop>
+				<prop key="hibernate.hbm2ddl.auto">update</prop-->
+				<prop key="hibernate.dialect">org.hibernate.dialect.Oracle9Dialect</prop>
+				<prop key="hibernate.show_sql">false</prop>
+				<prop key="hibernate.cache.provider_class">org.hibernate.cache.OSCacheProvider</prop>
+				<prop key="net.sf.ehcache.configurationResourceName">META-INF/gc-hibernate.xml</prop>
+				<prop key="hibernate.cache.use_query_cache">true</prop>
+				<prop key="hibernate.cache.use_second_level_cache">true</prop>
+				<prop key="hibernate.cache.use_minimal_puts">true</prop>
+				<prop key="hibernate.cache.use_structured_entries">false</prop>
+				<!--To disable the cache, uncomment the following lines
+				<prop key="hibernate.cache.provider_class">org.hibernate.cache.NoCacheProvider</prop>
+				<prop key="hibernate.cache.use_query_cache">false</prop>
+				<prop key="hibernate.cache.use_second_level_cache">false</prop>
+				<prop	key="hibernate.jdbc.batch_size">20</prop>
+				<prop	key="hibernate.jdbc.fetch_size">50</prop>
+				<prop	key="hibernate.max_fetch_depth">0</prop>
+				-->
+				<prop key="hibernate.jdbc.use_scrollable_resultset">true</prop>
+				<prop key="hibernate.bytecode.use_reflection_optimizer">true</prop>
+				<!--prop key="hibernate.query.factory_class">org.hibernate.hql.classic.ClassicQueryTranslatorFactory</prop-->
+				<!--prop key="hibernate.query.factory_class">org.hibernate.hql.ast.ASTQueryTranslatorFactory</prop-->
+			</props>
+		</property>
+	</bean>
+	<!-- bean id="gcSessionFactory" class="com.gc.spring.GCSessionFactoryBean" lazy-init="true" -->
+	<bean id="gcSessionFactory" class="org.springframework.orm.hibernate3.LocalSessionFactoryBean" 
+		p:dataSource-ref="gcDataSource" p:lobHandler-ref="defaultLobHandler" 
+		p:hibernateProperties-ref="gcHibernateProperties" 
+		p:mappingResources="META-INF/gc.common-hibernate.xml,META-INF/gc.hr-hibernate.xml,META-INF/gc.safety-hibernate.xml" 
+		lazy-init="true"/>
+
+	<bean id="gcTransactionManager"	class="org.springframework.orm.hibernate3.HibernateTransactionManager"
+		p:dataSource-ref="gcDataSource" p:sessionFactory-ref="gcSessionFactory"/>
+
+	<bean id="gcTransactionInterceptor"	class="org.springframework.transaction.interceptor.TransactionInterceptor"
+		p:transactionManager-ref="gcTransactionManager">
+		<property name="transactionAttributes">
+			<props>
+				<prop key="*">PROPAGATION_REQUIRED</prop>
+			</props>
+		</property>
+	</bean>
+
+	<!-- Interceptors & Advisors: transaction, logger, audit, accecc -->
+	<bean id="gcTransactionAdvisor" class="org.springframework.aop.support.RegexpMethodPointcutAdvisor"
+		p:advice-ref="gcTransactionInterceptor" p:patterns=".*"/>
+
+	<bean id="gcLoggerInterceptor" class="com.gc.spring.LoggerInterceptor"/>
+
+	<bean id="gcLoggerAdvisor" class="org.springframework.aop.support.RegexpMethodPointcutAdvisor"
+		p:advice-ref="gcLoggerInterceptor"
+		p:patterns=".*login.*,.*add.*,.*update.*,.*delete.*,.*suspend.*,.*enable.*,.*disable.*,.*expire.*,.*approve.*,.*import.*,.*export.*,.*set.*,.*unset.*,.*save.*"/>
+
+	<bean id="gcAuditInterceptor" class="com.gc.spring.AuditInterceptor"/>
+
+	<bean id="gcAccessInterceptor" class="com.gc.spring.AccessInterceptor"/>
+
+	<bean id="gcAccessAdvisor" class="org.springframework.aop.support.RegexpMethodPointcutAdvisor"
+		p:advice-ref="gcAccessInterceptor" p:patterns=".*add.*,.*update.*,.*delete.*,.*get.*,.*login.*,.*test.*"/>
+
+	<bean id="flexService" class="com.gc.spring.FlexService" lazy-init="true"/>
+
+</beans>

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="300" height="200"
+                preinitialize="onPreinitialize()">
+  <mx:Form id="form" width="100%" height="100%">
+    <mx:FormItem labelWidth="60" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc', 'item')}:">
+      <mx:ComboBox id="cbItem" name="item" width="160" editable="false"/>
+    </mx:FormItem>
+    <mx:FormItem labelWidth="60" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc', 'formula')}:">
+      <mx:TextInput id="tiFormula" name="formula" editable="true" width="160"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="6" paddingBottom="6">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="dodo(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.managers.PopUpManager;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.hr.model.SalItem;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.ExprUtil;
+
+      private var items:ArrayCollection;
+      private var list0:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        title=resourceManager.getString("gcc", "batch.set.item.value");
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        if (e.data == null || e.data.items == null)
+          return;
+        items=e.data.items as ArrayCollection;
+        list0=new ArrayCollection();
+        for each (var si:SalItem in items)
+        {
+          if (si.editable)
+            list0.addItem(si);
+        }
+        cbItem.dataProvider=list0;
+        if (list0.length == 1)
+        {
+          cbItem.selectedIndex=0;
+          cbItem.enabled=false;
+        }
+      }
+
+      private function dodo(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["item", "formula"]))
+          return;
+        var ii:Object=cbItem.selectedItem;
+        var ff:String=tiFormula.text, s:String, n:String;
+        // 加入特殊项$$=J01+J01*0.1, 注意缺失项将按0处理
+        var si$:Object={no:"$$", formula:ff};
+        var l:ArrayCollection=ObjectUtil.copy(items) as ArrayCollection;
+        l.addItem(si$);
+        var rr:Object=SalItem.validate(l, [SalItem.EVALF_ITEMS]);
+        if (!rr.valid)
+        {
+          for (n in rr.error)
+          {
+            s=rr.error[n];
+            break;
+          }
+          CommonUtil.showError(tiFormula, 2000, s);
+          return;
+        }
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, {type:"batch.set", item:ii, formula:ff, rr:rr}));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function close(e:Event):void
+      {
+        owner.dispatchEvent(new CommonEvent(CommonEvent.CLOSED));
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

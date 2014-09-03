@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adgAccs" width="100%" height="100%"
+                       labelFunction="{CommonUtil.gridLabelFunction}" dataProvider="{accs}"
+                       lockedColumnCount="1" horizontalScrollPolicy="auto" doubleClickEnabled="true"
+                       doubleClick="onDoubleClick()" keyDown="keyDownHandler(event)">
+    <mx:columns>
+      <!--mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.useId"/-->
+      <mx:AdvancedDataGridColumn dataField="no"/>
+      <mx:AdvancedDataGridColumn dataField="date"/>
+      <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+      <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.name"/>
+      <mx:AdvancedDataGridColumn dataField="statusStr"/>
+      <mx:AdvancedDataGridColumn/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import mx.collections.ArrayCollection;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var accs:ArrayCollection = new ArrayCollection();
+      private var item:Object;
+      private var ancestors:Array;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgAccs,"gcc_safety","tree.accList");
+        addEventListener(CommonEvent.EXPORT,function(event:CommonEvent):void 
+          {
+            CommonUtil.export(CommonUtil.getGridData(adgAccs),CommonUtil.getGridHeaders(adgAccs),null,event.data.label + "事故列表.xls");
+          });
+      }
+
+      public function listAccs(item:Object, ancestors:Array, orderColumns:Array):void
+      {
+        if (item == null)
+          return;
+        this.item = item;
+        this.ancestors = ancestors;
+        accs = item.accs;
+        for each (var acc:Object in accs)
+        {
+          switch (acc.status)
+          {
+            case 0:
+              acc.statusStr = "登记";
+              break;
+            case 1:
+              acc.statusStr = "处理";
+              break;
+            case 2:
+              acc.statusStr = "审核";
+              break;
+            case 3:
+              acc.statusStr = "存档";
+              break;
+            default:
+              break;
+          }
+        }
+      }
+
+      private function onDoubleClick():void
+      {
+        if (adgAccs.selectedItem == null)
+          return;
+        var item:Object = adgAccs.selectedItem;
+        var popwin:AccInfoWin = CommonUtil.popupWindow(AccInfoWin,"事故详细信息") as AccInfoWin;
+        popwin.dispatchEvent(new Events(Events.ADD,item.no));
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

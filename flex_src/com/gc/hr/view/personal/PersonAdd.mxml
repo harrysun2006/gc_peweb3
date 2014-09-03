@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                layout="vertical" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox id="box" width="100%" height="100%" visible="false" borderStyle="solid"
+           borderThickness="1" paddingLeft="6" paddingTop="6" paddingRight="6" paddingBottom="6">
+    <mx:ToolBar id="form" width="100%" height="100%">
+      <mx:FormItem label="workerId">
+        <mx:TextInput id="tiWorkerId" name="workerId"/>
+      </mx:FormItem>
+      <mx:FormItem label="name">
+        <mx:TextInput name="name"/>
+      </mx:FormItem>
+      <mx:FormItem label="pid">
+        <mx:TextInput name="pid"/>
+      </mx:FormItem>
+      <mx:FormItem label="sex">
+        <gc:AutoCompleteComboBox name="sex"/>
+      </mx:FormItem>
+      <mx:FormItem label="people">
+        <gc:AutoCompleteComboBox name="people"/>
+      </mx:FormItem>
+      <mx:FormItem label="nativePlace">
+        <gc:AutoCompleteComboBox name="nativePlace"/>
+      </mx:FormItem>
+      <mx:FormItem label="regAddress">
+        <mx:TextInput name="regAddress"/>
+      </mx:FormItem>
+      <mx:FormItem label="birthday">
+        <mx:DateField name="birthday" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="marryStatus">
+        <gc:AutoCompleteComboBox name="marryStatus"/>
+      </mx:FormItem>
+      <mx:FormItem label="paySocialInsInit">
+        <mx:TextInput name="paySocialInsInit"/>
+      </mx:FormItem>
+      <mx:FormItem label="paySocialInsAdj">
+        <mx:TextInput name="paySocialInsAdj"/>
+      </mx:FormItem>
+      <mx:FormItem label="annuities">
+        <mx:TextInput name="annuities"/>
+      </mx:FormItem>
+      <mx:FormItem label="accumulation">
+        <mx:TextInput name="accumulation"/>
+      </mx:FormItem>
+      <mx:FormItem label="chkGroup.name">
+        <gc:AutoCompleteComboBox name="chkGroup"/>
+      </mx:FormItem>
+      <mx:FormItem label="onDate">
+        <mx:DateField name="onDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="fillTableDate">
+        <mx:DateField name="fillTableDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="commend">
+        <mx:TextInput name="commend"/>
+      </mx:FormItem>
+      <mx:FormItem label="workDate">
+        <mx:DateField name="workDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="retireDate">
+        <mx:DateField name="retireDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="serviceLength">
+        <mx:TextInput name="serviceLength" editable="false"/>
+      </mx:FormItem>
+      <mx:FormItem label="inDate">
+        <mx:DateField name="inDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="outDate">
+        <mx:DateField name="outDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="workLength">
+        <mx:TextInput name="workLength"/>
+      </mx:FormItem>
+      <mx:FormItem label="groupNo">
+        <mx:TextInput name="groupNo"/>
+      </mx:FormItem>
+      <mx:FormItem label="contractNo">
+        <mx:TextInput name="contractNo"/>
+      </mx:FormItem>
+      <mx:FormItem label="contr1From">
+        <mx:DateField name="contr1From" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="contr1End">
+        <mx:DateField name="contr1End" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="contractReason">
+        <mx:TextInput name="contractReason"/>
+      </mx:FormItem>
+      <mx:FormItem label="contr2From">
+        <mx:DateField name="contr2From" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="contr2End">
+        <mx:DateField name="contr2End" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="level">
+        <mx:TextInput name="level" restrict="0-9"/>
+      </mx:FormItem>
+      <mx:FormItem label="techLevel">
+        <mx:TextInput name="techLevel"/>
+      </mx:FormItem>
+      <mx:FormItem label="responsibility">
+        <mx:TextInput name="responsibility"/>
+      </mx:FormItem>
+      <mx:FormItem label="cert1No">
+        <mx:TextInput name="cert1No"/>
+      </mx:FormItem>
+      <mx:FormItem label="cert1NoDate">
+        <mx:DateField name="cert1NoDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="cert2No">
+        <mx:TextInput name="cert2No"/>
+      </mx:FormItem>
+      <mx:FormItem label="cert2NoHex">
+        <mx:TextInput name="cert2NoHex"/>
+      </mx:FormItem>
+      <mx:FormItem label="serviceNo">
+        <mx:TextInput name="serviceNo"/>
+      </mx:FormItem>
+      <mx:FormItem label="serviceNoDate">
+        <mx:DateField name="serviceNoDate" yearNavigationEnabled="true"/>
+      </mx:FormItem>
+      <mx:FormItem label="frontWorkResume">
+        <mx:TextInput name="frontWorkResume"/>
+      </mx:FormItem>
+      <mx:FormItem label="frontTrainingResume">
+        <mx:TextInput name="frontTrainingResume"/>
+      </mx:FormItem>
+      <mx:FormItem label="specification">
+        <gc:AutoCompleteComboBox name="specification"/>
+      </mx:FormItem>
+      <mx:FormItem label="degree">
+        <gc:AutoCompleteComboBox name="degree"/>
+      </mx:FormItem>
+      <mx:FormItem label="graduate">
+        <gc:AutoCompleteComboBox name="graduate"/>
+      </mx:FormItem>
+      <mx:FormItem label="skill">
+        <mx:TextInput name="skill"/>
+      </mx:FormItem>
+      <mx:FormItem label="lanCom">
+        <mx:TextInput name="lanCom"/>
+      </mx:FormItem>
+      <mx:FormItem label="national">
+        <mx:TextInput name="national"/>
+      </mx:FormItem>
+      <mx:FormItem label="state">
+        <mx:TextInput name="state"/>
+      </mx:FormItem>
+      <mx:FormItem label="city">
+        <mx:TextInput name="city"/>
+      </mx:FormItem>
+      <mx:FormItem label="address">
+        <mx:TextInput name="address"/>
+      </mx:FormItem>
+      <mx:FormItem label="zip">
+        <mx:TextInput name="zip" restrict="0-9"/>
+      </mx:FormItem>
+      <mx:FormItem label="telephone">
+        <mx:TextInput name="telephone"/>
+      </mx:FormItem>
+      <mx:FormItem label="email">
+        <mx:TextInput name="email"/>
+      </mx:FormItem>
+      <mx:FormItem label="officeTel">
+        <mx:TextInput name="officeTel"/>
+      </mx:FormItem>
+      <mx:FormItem label="officeExt">
+        <mx:TextInput name="officeExt"/>
+      </mx:FormItem>
+      <mx:FormItem label="officeFax">
+        <mx:TextInput name="officeFax"/>
+      </mx:FormItem>
+      <mx:FormItem label="comment">
+        <mx:TextInput name="comment"/>
+      </mx:FormItem>
+      <mx:FormItem label="depart.name">
+        <gc:AutoCompleteComboBox id="cbDepart" name="depart"/>
+      </mx:FormItem>
+      <mx:FormItem label="office">
+        <gc:AutoCompleteComboBox id="cbOffice" name="office"/>
+      </mx:FormItem>
+      <mx:FormItem label="line.name">
+        <gc:AutoCompleteComboBox id="cbLine" name="line"/>
+      </mx:FormItem>
+      <mx:FormItem label="bus">
+        <gc:AutoCompleteComboBox id="cbBus" name="bus"/>
+      </mx:FormItem>
+      <mx:FormItem label="regType">
+        <gc:AutoCompleteComboBox name="regType"/>
+      </mx:FormItem>
+      <mx:FormItem label="type">
+        <gc:AutoCompleteComboBox name="type"/>
+      </mx:FormItem>
+      <mx:FormItem label="salaryType">
+        <gc:AutoCompleteComboBox name="salaryType"/>
+      </mx:FormItem>
+      <mx:FormItem label="fkPosition.name">
+        <gc:AutoCompleteComboBox name="fkPosition" labelField="name"/>
+      </mx:FormItem>
+      <mx:FormItem label="workType">
+        <gc:AutoCompleteComboBox name="workType"/>
+      </mx:FormItem>
+      <mx:FormItem label="regBelong">
+        <gc:AutoCompleteComboBox name="regBelong"/>
+      </mx:FormItem>
+      <mx:FormItem label="party">
+        <gc:AutoCompleteComboBox name="party"/>
+      </mx:FormItem>
+      <mx:FormItem label="grade">
+        <gc:AutoCompleteComboBox name="grade"/>
+      </mx:FormItem>
+      <mx:FormItem label="schooling">
+        <gc:AutoCompleteComboBox name="schooling"/>
+      </mx:FormItem>
+    </mx:ToolBar>
+  </mx:VBox>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="6" paddingBottom="6">
+    <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="save(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'reset')}" click="reset(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.IList;
+      import mx.collections.ArrayCollection;
+      import mx.containers.FormItem;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.DateField;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.events.ValidationResultEvent;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+      import mx.validators.Validator;
+
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private var lists:Object;
+      private var itemWidth:int = 160;
+      private var p:Person;
+
+      private function init():void
+      {
+        lists={sex:Constants.GENDERS,
+            people:PersonalController.peopleList, 
+            nativePlace:PersonalController.nativePlaceList,
+            marryStatus:PersonalController.marryStatusList, 
+            specification:PersonalController.jobSpecList, 
+            degree:PersonalController.schDegreeList, 
+            graduate:PersonalController.schGraduateList,
+            regType:PersonalController.regTypeList,
+            type:PersonalController.hireTypeList, 
+            salaryType:PersonalController.salaryTypeList,
+            fkPosition:PersonalController.positionList, 
+            workType:PersonalController.workTypeList,
+            regBelong:PersonalController.regBranchList,
+            party:PersonalController.polPartyList, 
+            grade:PersonalController.jobGradeList, 
+            schooling:PersonalController.schoolingList,
+            chkGroup:CheckController.groupList};
+        BaseController.getDepartmentsAndOLEs(UserController.branchId, UserController.hrDepartId, onGetDepartListSuccess);
+      }
+
+      private function onGetDepartListSuccess(e:ResultEvent):void
+      {
+        cbDepart.dataProvider = e.result as ArrayCollection;
+        cbDepart.addEventListener(CloseEvent.CLOSE,onDepartChange);
+        cbDepart.selectedItem=null;
+      }
+
+      private function onDepartChange(event:Event):void
+      {
+        onOfficeCreateComplete(event);
+        onLineCreateComplete(event);
+        onBusCreateComplete(event);
+        cbOffice.selectedItem=null;
+        cbLine.selectedItem=null;
+        cbBus.selectedItem=null;
+      }
+
+      private function setDataProvider(obj:Object, property:String, selectedField:String, filter:Function=null):void
+      {
+        if (obj is ComboBox)
+        {
+          var cbox:ComboBox=obj as ComboBox;
+          if (cbox.selectedItem != null)
+          {
+            var data:Object=cbox.selectedItem[property];
+            if (data is IList)
+            {
+              var list:IList=data as IList;
+              switch (property)
+              {
+                case "offices":
+                  cbOffice.dataProvider=(filter == null) ? list : list.toArray().filter(filter);
+                  break;
+                case "lines":
+                  cbLine.dataProvider=(filter == null) ? list : list.toArray().filter(filter);
+                  break;
+                case "equipments":
+                  cbBus.dataProvider=(filter == null) ? list : list.toArray().filter(filter);
+                  break;
+                default:
+                  break;
+              }
+            }
+          }
+        }
+      }
+
+      private function onOfficeCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "offices", "office");
+      }
+
+      private function onLineCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "lines", "line");
+      }
+
+      private function onBusCreateComplete(event:Event):void
+      {
+        setDataProvider(event.currentTarget, "equipments", "bus");
+      }
+
+      private function onPreinitialize():void
+      {
+        init();
+        p=new Person();
+        p.branch=UserController.branch
+        p.lastModifier=UserController.person;
+        p.downDate=Constants.MAX_DATE;
+        // 2011-3-4: 人员合同起始日期逻辑更改
+        var d1:Date=new Date();
+        var d2:Date=new Date();
+        d2.month++;
+        p.contr1From=d1.date == 1 ? d1 : DateUtil.getBeginDate(d2);
+      }
+
+      protected function setItem(comp:Object):void
+      {
+        if (comp is FormItem)
+        {
+          var fi:FormItem=comp as FormItem;
+          fi.styleName="filterLabel";
+          fi.label=resourceManager.getString("gcc", "person."+fi.label);
+          fi.percentWidth=100;
+        }
+        else if (comp is ComboBox)
+        {
+          var cbox:ComboBox=comp as ComboBox;
+          cbox.width=itemWidth;
+          cbox.editable=true;
+          cbox.selectedItem=null;
+          cbox.addEventListener(FocusEvent.FOCUS_OUT, function(e:Event):void
+            {
+              var _cbox:ComboBox=e.currentTarget as ComboBox;
+              var v:Validator=CommonUtil.genComboBoxValidator(_cbox);
+              v.required=false;
+              var vre:ValidationResultEvent=v.validate(_cbox.text);
+              if (vre.type == ValidationResultEvent.INVALID)
+              {
+                _cbox.errorString=vre.message;
+                CommonUtil.showError(_cbox);
+                _cbox.errorString=null;
+              }
+            });
+          if (lists.hasOwnProperty(cbox.name))
+            cbox.dataProvider=lists[cbox.name];
+        }
+        else if (comp is DateField)
+        {
+          var df:DateField = comp as DateField;
+          df.width=itemWidth;
+          df.editable=true;
+          df.formatString=Constants.DATE_FORMAT;
+          df.text=DateUtil.formatDate(CommonUtil.getAccessorValue(p, df.name));
+        }
+      }
+
+      private function clearItem(comp:Object):void
+      {
+        if (comp is TextInput)
+        {
+          var ti:TextInput = comp as TextInput;
+          ti.text=null;
+        }
+        else if (comp is ComboBox)
+        {
+          var cb:ComboBox=comp as ComboBox;
+          cb.selectedItem=null;
+          cb.text=null;
+        }
+        else if (comp is DateField)
+        {
+          var dfd:DateField = comp as DateField;
+          dfd.selectedDate=null;
+          dfd.text=null;
+        }
+      }
+
+      private function onCreationComplete():void
+      {
+        box.visible=true;
+        box.height=height-100;
+        itemWidth=tiWorkerId.getVisibleRect(form).width;
+        CommonUtil.visit(form, setItem);
+        tiWorkerId.setFocus();
+      }
+
+      private function save(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,["name","workerId",{field:"pid", validator:Constants.VALIDATOR_IDCARD}, "paySocialInsInit", "paySocialInsAdj", "onDate","inDate", "type", "regType", "salaryType", "depart"]))
+          return;
+        CommonUtil.loadInstance(form, p);
+        p.allotDate=p.onDate;
+        p.upgradeDate=p.onDate;
+//        if(p.contr1End !=null && ObjectUtil.dateCompare(p.contr1End, p.onDate)<1){
+//       		Alert.show("注册日小于合同到期日！","",Alert.OK,null,null,Constants.ICON32_ERROR);
+//            return;
+//       	}
+        var persons:ArrayCollection=new ArrayCollection();
+        persons.addItem(p);
+        PersonalController.addPersons2(persons.toArray(), function(e1:ResultEvent):void
+          {
+            var count:int=e1.result as int;
+            Alert.show(resourceManager.getString("gcc_hr", "person.add.success", [count]), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+            close();
+          // owner.dispatchEvent(CommonEvent.REFRESH_EVENT);
+          }, function(e2:FaultEvent):void
+          {
+            var message:String=e2.fault.rootCause.hasOwnProperty("message") ? e2.fault.rootCause.message : e2.fault.faultString;
+            if(message.indexOf("ORA-00001") > 0 && message.indexOf("PEADMIN.IDX_PERSONALWORKERID") > 0)
+              Alert.show("保存的人员工号系统中已经存在，请确认后重新保存！",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_ERROR);
+            else if(message.indexOf("违反唯一约束条件 (PEADMIN.IDX_PERSONALWORKERNAME)")>0)
+              Alert.show("保存的人员姓名系统中已经存在，请确认后重新保存！",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_ERROR);
+            else
+              Alert.show(message,e2.fault.faultCode,Alert.OK,null,null,Constants.ICON32_ERROR);
+          });
+      }
+
+      private function reset(event:Event):void
+      {
+        CommonUtil.visit(form,clearItem);
+      }
+
+      private function close(event:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

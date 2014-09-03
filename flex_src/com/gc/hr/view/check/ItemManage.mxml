@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="600" height="480"
+                preinitialize="onPreinitialize()">
+  <gc:Voucher id="v" width="100%" height="100%" autoLayout="true" faccess="{UserController.hrWrite}">
+    <mx:AdvancedDataGrid>
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="no" width="60"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.model.ChkDisp;
+      import com.gc.hr.model.ChkExtra;
+      import com.gc.hr.model.ChkHoliday;
+      import com.gc.hr.model.ChkWork;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.SAVE_SUCCESS, function(e:CommonEvent):void
+          {
+            if (e.data is ArrayCollection) {
+              var list:ArrayCollection=e.data as ArrayCollection;
+              switch(v.clazz) {
+                case ChkDisp:
+                  CheckController.dispList=list;
+                  break;
+                case ChkExtra:
+                  CheckController.extraList=list;
+                  break;
+                case ChkHoliday:
+                  CheckController.holidayList=list;
+                  break;
+                case ChkWork:
+                  CheckController.workList=list;
+                  break;
+              }
+            }
+          });
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

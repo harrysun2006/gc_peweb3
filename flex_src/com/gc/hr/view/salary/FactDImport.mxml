@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*" width="600"
+                height="480" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" horizontalAlign="center"
+           verticalGap="0">
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         editable="true" labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   editable="true" labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="source" dataTipField="source.label" width="160"/>
+        <mx:AdvancedDataGridColumn dataField="dest" dataTipField="dest.label" width="160"
+                                   editorDataField="selectedItem" itemEditor="{itemComboBox}"/>
+        <mx:AdvancedDataGridColumn width="1"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="6">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="save(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.ComboBox;
+      import mx.controls.Label;
+      import mx.utils.ObjectUtil;
+
+      import fxl.xls.Workbook;
+      import fxl.xls.Worksheet;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.hr.model.SalItem;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.ExcelUtil;
+
+      [Bindable]
+      private var itemComboBox:AdvancedClassFactory;
+      private var items:ArrayCollection; // 凭证中的工资项目
+      private var file:FileReference; // 导入文件xls/csv
+      private var list0:ArrayCollection; // xls/csv项目和工资项目的对应列表
+      private var ff:Array; // 有效的导入字段(FIELDS中excluded=false的项目code)
+
+      // 导入字段: code-代码; excluded-是否包含在导入界面中; def-缺省对应的薪资项目编号(""为缺省忽略不导入项)
+      private static const FIELDS:Array=[
+        {code:"type", excluded:true},
+        {code:"id", excluded:true},
+        {code:"bus", excluded:true},
+        {code:"name", excluded:true},
+        {code:"sdsr", excluded:true},
+        {code:"dsdf", excluded:true},
+        {code:"ydsr", excluded:true},
+        {code:"gwgz", def:"J01"},
+        {code:"bskk", def:""},
+        {code:"fwys", def:"J04"},
+        {code:"jyj", def:"J05"},
+        {code:"clj", def:"J06"},
+        {code:"csgz", def:"J07"},
+        {code:"tbgz", def:"J08"},
+        {code:"btgz", def:"J09"},
+        {code:"zzy", def:"J10"},
+        {code:"ysjl", def:"J03"},
+        ];
+      // 根据xls/csv列头信息(第3行)确定列序号: a-下标; b-偏移量; c-固定下标
+      private static const MAP_INDEXES:Object={"序":{a:0}, 
+          "双班":{a:1}, "单班":{a:1},
+          "驾驶员":{a:2}, "售票员":{a:2},
+          "实得收入":{a:3}, 
+          "代收代付":{a:4,b:1},
+          "应得收入":{a:5},
+          "岗位工资":{a:6,b:1},
+          "服务要素":{a:8,b:1},
+          "节油奖":{a:9,b:1},
+          "材料奖":{a:10,b:1},
+          "超时工资":{a:11,b:1},
+          "替班工资":{a:12,b:1},
+          "补贴工资":{a:13,b:1},
+          "津贴费":{a:14,b:1},
+          "营收奖励":{a:15,b:1},
+          "驾驶员工号":{c:16}, "售票员工号":{c:36}, "乘务员工号":{c:36}};
+      // a: 数据在index数组中的下标; b(数据类型): 1-字符串,0/NA-数字
+      private static const MAP_FIELDS:Object={id:{a:0}, bus:{a:1,b:1}, name:{a:2,b:1}, sdsr:{a:3}, dsdf:{a:4}, ydsr:{a:5}, 
+          gwgz:{a:6}, bskk:{a:7}, fwys:{a:8}, jyj:{a:9}, clj:{a:10}, csgz:{a:11}, 
+          tbgz:{a:12}, btgz:{a:13}, zzy:{a:14}, ysjl:{a:15}, wid:{a:16,b:1}};
+
+      private function onPreinitialize():void
+      {
+        list0=new ArrayCollection();
+        ff=new Array();
+        var obj:Object;
+        for each (obj in FIELDS)
+          if (!obj.hasOwnProperty("excluded") || obj.excluded == false)
+            ff.push(obj.code);
+        itemComboBox=new AdvancedClassFactory(ComboBox);
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        var efs:Array=["dest"];
+        CommonUtil.setDataGridColumns(adg, "gcc_hr", "salFactD.import", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn) obj.editable=efs.indexOf(obj.dataField) >= 0;
+          });
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        items=e.data.items;
+        file=e.data.file;
+        var m:Object={}, src:Object, dest:Object;
+        var items2:ArrayCollection=ObjectUtil.copy(items) as ArrayCollection;
+        var _ignore:SalItem=new SalItem();
+        _ignore.id=0;
+        _ignore.no="";
+        _ignore.name=resourceManager.getString("gcc_hr", "salFactD.import.ignore");
+        items2.addItemAt(_ignore, 0);
+        for each (dest in items2)
+        {
+          m[dest.no]=dest;
+        }
+        for each (src in FIELDS)
+        {
+          src.label=resourceManager.getString("gcc_hr", "salFactD.import.h."+src.code);
+          if (src.hasOwnProperty("excluded") && src.excluded)
+            continue;
+          dest=(src.hasOwnProperty("def") && m.hasOwnProperty(src.def)) ? m[src.def] : null;
+          list0.addItem({source:src, dest:dest});
+        }
+        adg.dataProvider=list0;
+        itemComboBox.properties={dataProvider:items2, itemRenderer:new ClassFactory(Label)};
+      }
+
+      /**
+       * 根据xls/csv列头信息(第3行)确定列序号, 列头和数据列对应即可
+       * 司: 序(id:ii[0]), 车号(bus:ii[1]), 姓名(name:ii[2]), 实得收入(sdsr:ii[3]), 代收代付(dsdf:ii[4])
+       *     应得收入(ydsr:ii[5]), 岗位工资(gwgz:ii[6]), 病事旷扣(bskk:ii[7]), 服务要素(fwys:ii[8])
+       *     节油奖(jyj:ii[9]), 材料奖(clj:ii[10]), 超时工资(csgz:ii[11]), 替班工资(tbgz:ii[12])
+       *     补贴工资(btgz:ii[13]), 津贴费(zzy:ii[14]), 营收奖励(ysjl:ii[15]), 工号(wid:ii[16])
+       * 售票员数据的列(ii[20]-ii[36])
+       **/
+      private function index(cc:Array):Array
+      {
+        var ii:Array=[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+        var i:uint, k:uint, nk:uint, n:Object;
+        var kk:Array=[0,20];
+        k=0;
+        nk=0;
+        for (i = 43; i < cc.length; i++)
+        {
+          if (cc[i] == "序")
+            nk=kk[k++];
+          if (cc[i] != "" && MAP_INDEXES.hasOwnProperty(cc[i]))
+          {
+            n=MAP_INDEXES[cc[i]];
+            if (n.hasOwnProperty("c"))
+              ii[n.c]=i;
+            else if (n.hasOwnProperty("a"))
+              ii[n.a+nk]=i+Number(n.hasOwnProperty("b") ? n.b : 0);
+          }
+          if (cc[i] == "岗位工资")
+            ii[nk+7]=i+3;
+        }
+        return ii;
+      }
+
+      /**
+       * 导入一条数据(1-2条记录,司/售)
+       **/
+      private function one(cc:Array, ii:Array, list:ArrayCollection):void
+      {
+        var ff:Function=function(_cc:Array, _ii:Array, t:uint, k:uint):Object
+          {
+            var d:Object={type:t}; // 1-驾驶员, 2-乘务员
+            var s:String, n:Object, tt:uint, i:uint;
+            for (s in MAP_FIELDS)
+            {
+              n=MAP_FIELDS[s];
+              tt=Number(n.hasOwnProperty("b") ? n.b : 0);
+              i=Number(n.a)+k;
+              if (tt == 0)
+                d[s]=_ii[i] > 0 && _ii[i] < _cc.length ? Number(_cc[_ii[i]]) : 0;
+              else if (tt == 1)
+                d[s]=_ii[i] > 0 && _ii[i] < _cc.length ? _cc[_ii[i]] : "";
+              else
+                d[s]="";
+            }
+            return d;
+          };
+        // 有工号的记录有效
+        if (ii[16] > 0 && ii[16] < cc.length && cc[ii[16]])
+          list.addItem(ff(cc,ii,1,0));
+        if (ii[36] > 0 && ii[36] < cc.length && cc[ii[36]])
+          list.addItem(ff(cc,ii,2,20));
+      }
+
+      // 解析csv格式文件
+      private function load1(e:Event, list:ArrayCollection):void
+      {
+        var s:String=file.data.readMultiByte(file.size, "GBK");
+        var ss:Array=s.split("\r\n");
+        var cc:Array, r:uint;
+        var ii:Array=index(ss[2].split(","));
+        for (r = 3; r < ss.length; r++)
+        {
+          cc=ss[r].split(",");
+          one(cc, ii, list);
+        }
+      }
+
+      // 解析xls格式文件
+      private function load2(e:Event, list:ArrayCollection):void
+      {
+        var book:Workbook=new Workbook();
+        book.load(file.data);
+        var s:Worksheet, r:uint;
+        var ex:Array=["测算","资料","油耗-材料","财务","决算","分析"]; // 忽略导入的Excel Sheet
+        var ii:Array, cc:Array;
+        for each (s in book.sheets)
+        {
+          if (ex.indexOf(s.name) >= 0 || s.rows < 3)
+            continue;
+          cc=ExcelUtil.readRow(s, 2);
+          ii=index(cc);
+          if (ii[16] <= 0 || ii[36] <= 0)
+            continue;
+          for (r = 3; r < s.rows; r++)
+          {
+            cc=ExcelUtil.readRow(s, r);
+            one(cc, ii, list);
+          }
+        }
+      }
+
+      private function save(e:Event):void
+      {
+        var list1:ArrayCollection=new ArrayCollection();
+        var t:String=file.type.toLowerCase();
+        if (t == ".csv")
+          load1(e, list1);
+        else if (t == ".xls")
+          load2(e, list1);
+        close(e, {type:"import", file:file, ff:ff, mm:list0, dd:list1});
+      }
+
+      private function close(e:Event, r:Object=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+        owner.dispatchEvent(r ? new CommonEvent(CommonEvent.RETURN, r) : CommonEvent.RETURN_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+         horizontalAlign="center">
+  <mx:VBox width="90%" height="100%">
+    <mx:Label text="单人违章查询" fontSize="16" fontWeight="bold" textAlign="center" width="100%"
+              height="5%"/>
+    <mx:AdvancedDataGrid id="adg" labelFunction="{CommonUtil.gridLabelFunction}" width="100%"
+                         height="100%">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="no" headerText="序号"
+                                   labelFunction="{CommonUtil.serialLabelFunction}" width="64"
+                                   color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="center"/>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.accno"/>
+        <mx:AdvancedDataGridColumn dataField="transDate"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="driver" dataTipField="driver.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="bus" dataTipField="bus.authNo"/>
+        <mx:AdvancedDataGridColumn dataField="transType" dataTipField="transType.name"/>
+        <mx:AdvancedDataGridColumn dataField="inputer" dataTipField="inputer.workerId"/>
+        <mx:AdvancedDataGridColumn dataField="inputDate"/>
+        <mx:AdvancedDataGridColumn dataField="code"/>
+        <mx:AdvancedDataGridColumn dataField="point" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="penalty" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="doDate"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10"
+             horizontalGap="10">
+      <mx:Button id="btExport" label="导出" click="export(event)"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+
+      private var workerId:String;
+
+      private function onPreinitialize():void
+      {
+        var obj:DisplayObject=this;
+        addEventListener(CommonEvent.CREATED,function init(event:CommonEvent):void {
+            CommonUtil.popupWindow(PsnTransQWin,"单人违章查询",obj);
+            new Events(Events.ADD).stopImmediatePropagation();
+            addEventListener(Events.ADD,function(evt:Events):void
+              {
+                adg.dataProvider = evt.data as ArrayCollection;
+                workerId = (evt.args as Array)[0] as String;
+                adg.validateNow();
+              });
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg,"gcc_safety","transinfo");
+      }
+
+      private function onSort(obj1:Object,obj2:Object):int
+      {
+        return ObjectUtil.numericCompare(obj1.no,obj2.no);
+      }
+
+      private function export(event:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg),CommonUtil.getGridHeaders(adg),null,workerId + "违章信息.xls");
+      }
+
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

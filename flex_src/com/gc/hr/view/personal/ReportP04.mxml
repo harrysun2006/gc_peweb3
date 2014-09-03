@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                layout="vertical" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%">
+    <mx:Label id="headName" width="100%" textAlign="center" fontSize="20" fontWeight="bold"/>
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="25%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.period')}:"/>
+          <!--<mx:Label text="{resourceManager.getString('gcc_hr', 'report.period.begin')}:"/>-->
+          <mx:Label id="reportTime"/>
+        </mx:GridItem>
+        <mx:GridItem width="25%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.aa')}:"/>
+          <mx:Label id="aaUint"/>
+        </mx:GridItem>
+        <mx:GridItem width="25%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.bb')}:"/>
+          <mx:Label id="bbPersonType"/>
+        </mx:GridItem>
+        <mx:GridItem width="25%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.cc')}:"/>
+          <mx:Label id="ccPostType"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" itemRenderer="mx.controls.Label"
+                         sortableColumns="false" resizableColumns="false"
+                         horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <!--<mx:AdvancedDataGridColumn dataField="id"/> -->
+        <mx:AdvancedDataGridColumn dataField="workId"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="sex"/>
+        <!--<mx:AdvancedDataGridColumn dataField="barthday"/> -->
+        <mx:AdvancedDataGridColumn dataField="pid"/>
+        <mx:AdvancedDataGridColumn dataField="workLength"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="regBlong"/>
+        <mx:AdvancedDataGridColumn dataField="position"/>
+        <mx:AdvancedDataGridColumn dataField="workType"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="party"/>
+        <mx:AdvancedDataGridColumn dataField="totalContract"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="contarctNo"/>
+        <mx:AdvancedDataGridColumn dataField="contractBegin"/>
+        <mx:AdvancedDataGridColumn dataField="contractEnd" labelFunction="replaceDateLabelFunction"
+                                   editable="false"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="exportToExcel(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.dataGridClasses.DataGridColumn;
+      import mx.utils.ObjectUtil;
+      import com.gc.common.model.Person;
+      import com.gc.hr.model.PsnContractRpt;
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      import fxl.xls.Workbook;
+      import fxl.xls.Worksheet;
+
+      [Bindable]
+      private var report:Object;
+      private var qo:Object;
+      private var dg:Array;
+      private var fields:Array=new Array();
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "report.p04.grid");
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        headName.text=resourceManager.getString("gcc_hr", "report.p04.name", [UserController.branchName]);
+        qo=e.data;
+        this.reportTime.text=DateUtil.formatDate(qo.reportBegin, Constants.DATE_FORMAT)+" 至 "
+          +(DateUtil.formatDate(qo.reportEnd,Constants.DATE_FORMAT)=="9999-12-31"?
+          "无固定期限":DateUtil.formatDate(qo.reportEnd,Constants.DATE_FORMAT));
+        if (qo.hasOwnProperty("depart"))
+          this.aaUint.text=qo.depart.name;
+        if (qo.hasOwnProperty("position"))
+          this.bbPersonType.text=qo.type;
+        if (qo.hasOwnProperty("type"))
+          this.ccPostType.text=qo.position.name;
+        PersonalController.getContractReportList(qo, load);
+      }
+
+      private function load(e:ResultEvent):void
+      {
+        var rstList:ArrayCollection=e.result as ArrayCollection;
+        var s:int=0;
+        var showList:ArrayCollection=new ArrayCollection();
+        for each (var pcr:PsnContractRpt in rstList)
+        {
+          if (pcr.workId!=null)
+          {
+            s++;
+            pcr.serial=s;
+          }
+          showList.addItem(pcr);
+        }
+        adg1.dataProvider=showList;
+        adg1.validateNow();
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function replaceDateLabelFunction(data:Object, column:AdvancedDataGridColumn):String
+      {
+        var cell:Object=data[column.dataField];
+        return DateUtil.formatDate(cell,Constants.DATE_FORMAT)=="9999-12-31"?"无固定期限":DateUtil.formatDate(cell,"YYYY-MM-DD");
+      }
+
+      private function exportToExcel(e:Event):void
+      {
+        var xls:Workbook=new Workbook();
+        var sheet:Worksheet=new Worksheet(xls);
+        var list:ArrayCollection=adg1.dataProvider as ArrayCollection;
+        var rowCount:int=list.length;
+        sheet.resize(rowCount+1, adg1.columnCount);
+        var columns:Array=adg1.columns;
+
+        var i:int=0, obj:Object;
+        for each (var column:AdvancedDataGridColumn in columns)
+        {
+          fields.push(column.dataField.toString());
+          i++;
+        }
+        var hs:Array=["serial", "workerId", "name", "sex", "pid", "workLength", "position", "regBelong", 
+          "workType", "type", "party", "totalContract", "contarctNo", "contractBegin", "contractEnd"];
+        for (i = 0; i < hs.length; i++)
+          sheet.setCell(0, i+1, resourceManager.getString("gcc_hr", "report.p04.grid."+hs[i]));
+
+        for (i = 0; i < rowCount; i++)
+        {
+          obj=list.getItemAt(i);
+          insertRecordInSheet(i+1, sheet, obj);
+        }
+        xls.sheets.addItem(sheet);
+
+        var bytes:ByteArray=xls.save();
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(e1:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.save(bytes,resourceManager.getString("gcc_hr", "report.p04.file"));
+      }
+
+      private function insertRecordInSheet(row:int, sheet:Worksheet, obj:Object):void
+      {
+        var colCount:int=adg1.columnCount;
+        for (var c:int=0; c<colCount; c++)
+        {
+          var i:int=0;
+          for each (var field:String in fields)
+          {
+            if (obj != null)
+            {
+              for each (var value:String in obj)
+              {
+                if (obj[field]!=null)
+                  if (obj[field] is Date)
+                    sheet.setCell(row, i, DateUtil.formatDate(obj[field],Constants.DATE_FORMAT));
+                  else
+                    sheet.setCell(row, i, obj[field].toString());
+                else
+                  sheet.setCell(row, i, "");
+              }
+              i++;
+            }
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

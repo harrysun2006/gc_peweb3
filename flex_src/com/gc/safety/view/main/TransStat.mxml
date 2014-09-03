@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" creationComplete="onCreationComplete()"
+           xmlns:main="com.gc.safety.view.main.*" width="100%" height="100%">
+  <mx:HBox width="100%" height="100%">
+    <mx:AdvancedDataGrid id="adg" dataProvider="{dg}" labelFunction="{CommonUtil.gridLabelFunction}"
+                         horizontalScrollPolicy="auto" verticalScrollPolicy="auto" width="100%"
+                         height="100%" styleFunction="onStyleFunction" doubleClickEnabled="true"
+                         doubleClick="onDoubleClick(adg.selectedItem)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="no" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                   headerText="序号" sortCompareFunction="onSortCompareFunction"
+                                   textAlign="center" width="64"/>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_LABEL}"/>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_COUNT_1}"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="_totalKils" textAlign="right"/>
+        <mx:AdvancedDataGridColumn dataField="_totalTimes"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="right"/>
+        <mx:AdvancedDataGridColumn/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <!--main:TransStatPie id="pie"/-->
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import com.gc.CommonEvent;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.model.EquOnline;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import mx.collections.ArrayCollection;
+
+      [Bindable]
+      private var dg:ArrayCollection=new ArrayCollection();
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc_safety", "tree.transStat");
+        addEventListener(CommonEvent.EXPORT,function(event:CommonEvent):void 
+          {
+            CommonUtil.export(CommonUtil.getGridData(adg),CommonUtil.getGridHeaders(adg),null,event.data.label + "违章统计列表.xls");
+          });
+      }
+
+      private function onSortCompareFunction(obj1:Object,obj2:Object):int
+      {
+        return ObjectUtil.numericCompare(obj1.no,obj2.no);
+      }
+
+      private function onStyleFunction(data:Object, col:AdvancedDataGridColumn):Object
+      {
+        if (data.hasOwnProperty("color") && data["color"] != null)
+        {
+          return { color:0x8E388E, fontWeight:"bold", fontSize:12 };
+        }
+
+        return {};
+      }
+
+      private function onDoubleClick(item:Object):void
+      {
+        if (item != null)
+          parent.dispatchEvent(new CommonEvent(CommonEvent.DBLCLICKED,item));
+      }
+
+      public function statTrans(item:Object, ancestors:Array, orders:Array):void
+      {
+        if (item == null || !(item["children"] is Array))
+          return;
+        dg.removeAll();
+        counter(item);
+        var children:Array=item["children"] as Array;
+        var i:int = 0;
+        for each (var child:Object in children)
+        {
+          child.no = ++i;
+          child.color = null;
+          dg.addItem(child);
+        }
+        item.no = ++i;
+        item.color = "";
+        dg.addItem(item);
+
+        // 饼图
+//        pie.dispatchEvent(new CommonEvent(CommonEvent.REFRESH, dg));
+      }
+// 不能使用Constants.PROP_NAME_COUNT 的原因是EquOnline动态变量加了后一直有，这样树之间切换后保留了原来的值，就会有问题
+      private function counter(item:Object):void
+      {
+        if (item == null)
+          return;
+        if (item["children"] == null || !item["children"] is Array)
+        {
+          item[Constants.PROP_NAME_COUNT_1]=(item.downDate != null && item.downDate <= CommonController.now) ? 0 : 1;
+          if (item is EquOnline && item["id"] == 0)
+          {
+            // TODO: 显示公务车,没有线路的部门,后台尚未处理
+            item[Constants.PROP_NAME_COUNT_1]=0;
+            item["_totalKils"]=0;
+            item["_totalTimes"]=0;
+            return;
+          }
+          item["_totalKils"]=item.mileage;
+          item["_totalTimes"]=item.trans.length;
+          return;
+        }
+        var children:Array=item["children"] as Array;
+        var count:int=0;
+        var totalLc:Number=0;
+        var times:int=0;
+        for each (var child:Object in children)
+        {
+          if (!child.hasOwnProperty(Constants.PROP_NAME_COUNT_1))
+            counter(child);
+          count+=child[Constants.PROP_NAME_COUNT_1];
+          totalLc+=child["_totalKils"];
+          times+=child["_totalTimes"];
+        }
+        item[Constants.PROP_NAME_COUNT_1]=count;
+        item["_totalKils"]=totalLc;
+        item["_totalTimes"]=times;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

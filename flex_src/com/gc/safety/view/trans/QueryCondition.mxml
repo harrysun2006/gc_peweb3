@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="300" height="250"
+                creationComplete="onCreationComplete()" horizontalAlign="center"
+                keyDown="CommonUtil.keyDown(event)">
+  <mx:HBox id="hboxTi" width="100%" horizontalAlign="center" paddingTop="30" paddingBottom="40">
+    <mx:Label text="凭证编号: "/>
+    <mx:TextInput id="tiAccNo" name="accNo"/>
+  </mx:HBox>
+  <mx:HBox width="100%" horizontalAlign="center" paddingTop="20">
+    <mx:Button id="btSave" label="确定" click="sure(event)"/>
+    <mx:Label width="40"/>
+    <mx:Button id="btClose" label="取消" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+      import com.gc.Constants;
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.TransController;
+      import com.gc.safety.model.TransInfo;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+
+      private function onCreationComplete():void
+      {
+        tiAccNo.setFocus();
+      }
+
+      private function sure(event:Event):void
+      {
+        if (!CommonUtil.validateForm(hboxTi,[{field:"accNo",error:"请填写违章编号"}]))
+          return;
+        var win:TitleWindow = this;
+        TransController.getTransInfosForModify(UserController.branchId,tiAccNo.text,null,null,CommonController.closeDate,
+          function(evt:ResultEvent):void{
+            var transList:ArrayCollection = evt.result as ArrayCollection;
+            if(transList.length > 0)
+            {
+              owner.dispatchEvent(new Events(Events.ADD,transList));
+              PopUpManager.removePopUp(win);
+            }else
+            {
+              Alert.show("结账日后没有你要查找的违章信息，请确认后重新查找",Constants.APP_NAME,
+                Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          });
+      }
+      private function close(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

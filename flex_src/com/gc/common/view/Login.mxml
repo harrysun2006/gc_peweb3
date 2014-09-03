@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="400" height="280"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                close="onClose(event)" layout="vertical" paddingLeft="0" paddingTop="0"
+                paddingRight="0" paddingBottom="0" showCloseButton="true">
+  <mx:Box horizontalAlign="center" verticalAlign="middle" width="100%" height="100%">
+    <mx:Form id="form" verticalGap="10" keyDown="{CommonUtil.keyDown(event)}">
+      <mx:FormItem label="{resourceManager.getString('gcc', 'login.username')}">
+        <mx:TextInput id="tiUseId" name="useId" focusIn="onFocusIn(tiUseId)"
+                      focusOut="onFocusOut(tiUseId)"/>
+      </mx:FormItem>
+      <mx:FormItem label="{resourceManager.getString('gcc', 'login.password')}">
+        <mx:TextInput id="tiPassword1" name="password1" displayAsPassword="true"/>
+      </mx:FormItem>
+      <mx:FormItem id="fiLimitBranch" label="{resourceManager.getString('gcc', 'login.branch')}">
+        <mx:ComboBox id="cboLimitBranch" name="limit.id.branch.useId"
+                     itemRenderer="mx.controls.Label" labelField="name"/>
+      </mx:FormItem>
+      <mx:FormItem id="fiRememberMe" creationPolicy="none" height="0">
+        <mx:CheckBox id="chkRememberMe"
+                     label="{resourceManager.getString('gcc', 'login.rememberme')}"/>
+      </mx:FormItem>
+      <mx:HBox width="100%" horizontalAlign="center">
+        <mx:Button label="{resourceManager.getString('gcc', 'login.login')}" width="80"
+                   click="onLoginClick()"/>
+        <mx:Label text="" width="100%"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'login.reset')}" width="80"
+                   click="onResetClick()"/>
+      </mx:HBox>
+    </mx:Form>
+    <mx:Label width="320" styleName="red" text="{message}"/>
+  </mx:Box>
+  <mx:StringValidator id="svUseId" source="{tiUseId}" required="true"
+                      requiredFieldError="{resourceManager.getString('gcc', 'login.useid.not.null')}"
+                      property="text"/>
+  <!--mx:StringValidator id="svPassword1" source="{tiPassword1}" required="true"
+       requiredFieldError="{resourceManager.getString('gcc', 'login.password.not.null')}"
+       property="text"/-->
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.Button;
+      import mx.core.Application;
+      import mx.events.CloseEvent;
+      import mx.events.FocusRequestDirection;
+      import mx.events.ValidationResultEvent;
+      import mx.events.ResourceEvent;
+      import mx.managers.FocusManager;
+      import mx.resources.ResourceBundle;
+      import mx.resources.ResourceManager;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.rpc.remoting.RemoteObject;
+      import mx.validators.Validator;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.LoadModuleEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var user:SecurityUser;
+      [Bindable]
+      private var message:String;
+      // 0: auto, 1: always
+      private static const showLimitBranch:int=1;
+
+      private function onPreinitialize():void
+      {
+        user=UserController.user;
+      }
+
+      private function onCreationComplete():void
+      {
+        this.title=resourceManager.getString("gcc", "login.title", [Constants.VERSION]);
+        form.removeChild(fiRememberMe);
+        cboLimitBranch.width=tiUseId.getVisibleRect(form).width;
+        if (showLimitBranch == 0)
+          fiLimitBranch.visible = false;
+        // FIXME:html访问方式下, 可以修改index.template.html设置页面中swf控件的焦点(Firefox有问题)
+        tiUseId.setFocus();
+      }
+
+      private function onLoginClick():void
+      {
+        var errors:Array=Validator.validateAll([svUseId]);
+        if (errors.length > 0)
+          message=(errors[0] as ValidationResultEvent).message;
+        else
+        {
+          CommonUtil.loadInstance(form, user);
+          var branch:Branch=cboLimitBranch.selectedItem as Branch;
+          if (branch != null)
+            CommonUtil.setValue(user, "limit.id.branch.useId", branch.useId);
+          UserController.authenticate(user, onLoginSuccess, onLoginFailed);
+        }
+      }
+
+      private function onResetClick():void
+      {
+        tiUseId.text="";
+        tiPassword1.text="";
+        if (showLimitBranch == 0)
+          fiLimitBranch.visible=false;
+        message="";
+        tiUseId.setFocus();
+      }
+
+      private function onClose(event:Event):void
+      {
+        dispatchEvent(CommonEvent.EXIT_EVENT);
+      }
+
+      private function onFocusIn(item:TextInput):void
+      {
+        if (user != null)
+          user.useId=item.text;
+      }
+
+      private function onFocusOut(item:TextInput):void
+      {
+        var newUseId:String=item.text;
+        if (newUseId == "")
+        {
+          user.useId=newUseId;
+          var list:IList = cboLimitBranch.dataProvider as IList;
+          list.removeAll();
+          if (showLimitBranch == 0)
+            fiLimitBranch.visible=false;
+        }
+        else if (user.useId != newUseId)
+        {
+          user.useId=newUseId;
+          UserController.getLimitBranches(user, onGetLimitBranchesSuccess, onGetLimitBranchesFailed);
+            // ctrlBase.getLimitBranches(user);
+        }
+      }
+
+      private function onGetLimitBranchesFailed(e:FaultEvent):void
+      {
+        message=e.fault.message;
+      }
+
+      private function onGetLimitBranchesSuccess(e:ResultEvent):void
+      {
+        var list:ArrayCollection=e.result as ArrayCollection;
+        cboLimitBranch.dataProvider=list;
+        if (showLimitBranch == 0)
+          fiLimitBranch.visible=(list.length > 1);
+      }
+
+      private function onLoginSuccess(e:ResultEvent):void
+      {
+        var su:SecurityUser=e.result as SecurityUser;
+        if (su == null)
+          message="Login ERROR!!!";
+        else
+        {
+          UserController.user=su;
+          dispatchEvent(new LoadModuleEvent(LoadModuleEvent.LOAD_MODULE, "modules.swf"));
+        }
+      }
+
+      private function onLoginFailed(e:FaultEvent):void
+      {
+        message=e.fault.faultString;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>
+

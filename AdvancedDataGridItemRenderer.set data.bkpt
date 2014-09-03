@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<breakpoints>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="6007" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGrid.as [line: 6,007]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\AdvancedDataGrid.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="7168" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGrid.as [line: 7,168]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\AdvancedDataGrid.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="892" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGridBase.as [line: 892]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\advancedDataGridClasses\AdvancedDataGridBase.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="1640" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGridBase.as [line: 1,640]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\advancedDataGridClasses\AdvancedDataGridBase.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="1923" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGridBase.as [line: 1,923]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\advancedDataGridClasses\AdvancedDataGridBase.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="1917" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGridBaseEx.as [line: 1,917]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\AdvancedDataGridBaseEx.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="171" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedDataGridItemRenderer.as [line: 171]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\advancedDataGridClasses\AdvancedDataGridItemRenderer.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="1231" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedListBase.as [line: 1,231]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\listClasses\AdvancedListBase.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="false" persistant="true" registered="true">
+<resource path="/" type="8"/>
+<marker lineNumber="3501" type="com.adobe.flexbuilder.debug.flash.lineBreakpoint.marker">
+<attrib name="message" value="Line breakpoint: AdvancedListBase.as [line: 3,501]"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.instantiationOkCount" value="0"/>
+<attrib name="org.eclipse.debug.core.id" value="com.adobe.flexbuilder.debug"/>
+<attrib name="com.adobe.flexbuilder.debug.flash.lineBreakpoint.path" value="D:\Eclipse\EclipsePlugins\FlexBuilder3.0.2\sdks\3.2.0\fbpro\projects\datavisualization\src\mx\controls\listClasses\AdvancedListBase.as"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+</marker>
+</breakpoint>
+</breakpoints>

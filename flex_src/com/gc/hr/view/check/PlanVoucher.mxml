@@ -1,0 +1,500 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" horizontalScrollPolicy="off" horizontalAlign="center">
+    <gc:StyledDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                       lockedColumnCount="1" editable="false" selectionMode="multipleCells"
+                       labelFunction="planLabel" sortableColumns="false" resizableColumns="false"
+                       click="onGridClick(event)" visible="false" draggableColumns="false"
+                       horizontalGridLines="false">
+      <gc:columns>
+        <mx:AdvancedDataGridColumn headerText="{resourceManager.getString('gcc', 'person')}"
+                                   dataField="person" dataTipField="person.name" width="80"/>
+      </gc:columns>
+    </gc:StyledDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingLeft="7" paddingRight="7">
+      <mx:Image id="iSelection" source="{IconUtil.getRectangleIcon(iSelection, Constants.Gold)}"/>
+      <mx:FormItem width="50%" height="100%" textAlign="left" label="{selectionTip}"/>
+      <mx:PopUpButton id="pubWork" label="{resourceManager.getString('gcc_hr', 'chkWork')}"
+                      icon="{ChkWork.ICON}" themeColor="{ChkWork.bgColor}" enabled="{writable}"/>
+      <mx:PopUpButton id="pubHoliday" label="{resourceManager.getString('gcc_hr', 'chkHoliday')}"
+                      icon="{ChkHoliday.ICON}" themeColor="{ChkHoliday.bgColor}"
+                      enabled="{writable}"/>
+      <mx:PopUpButton id="pubExtra" label="{resourceManager.getString('gcc_hr', 'chkExtra')}"
+                      icon="{ChkExtra.ICON}" themeColor="{ChkExtra.bgColor}" enabled="{writable}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'erase.item')}"
+                 icon="{Constants.ICON16_ERASE}" enabled="{writable}" click="erase(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'select.none')}" click="clear(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="save(event)"
+                 enabled="{writable}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+      <mx:FormItem width="50%" height="100%"/>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="left" width="100%" paddingBottom="7" paddingLeft="7"
+             visible="{writable}" includeInLayout="{writable}">
+      <mx:Label color="0x0000FF" text="{resourceManager.getString('gcc_hr', 'chkPlan.sop')}"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import flash.events.MouseEvent;
+
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumnGroup;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridHeaderRenderer;
+      import mx.controls.Alert;
+      import mx.controls.Menu;
+      import mx.core.ClassFactory;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.MenuEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.skins.ProgrammaticSkin;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.advancedDataGridClasses.StyledDataGridHeaderRenderer;
+      import com.gc.controls.advancedDataGridClasses.StyledDataGridItemRenderer;
+      import com.gc.ArrayHierarchy;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.hr.model.ChkDisp;
+      import com.gc.hr.model.ChkExtra;
+      import com.gc.hr.model.ChkHoliday;
+      import com.gc.hr.model.ChkLongPlan;
+      import com.gc.hr.model.ChkPlan;
+      import com.gc.hr.model.ChkPlanD;
+      import com.gc.hr.model.ChkWork;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.IconUtil;
+
+      private const FONT_SIZE:int=12;
+
+      private var planHeaderRenderer:AdvancedClassFactory;
+      private var planItemRenderer:AdvancedClassFactory;
+      private var head:ChkPlan;
+      private var date1:Date;
+      private var date2:Date;
+      private var op:String;
+      private var list0:IList; // 3维
+      private var list1:IList; // 3维
+      private var list0$:IList; // 2维
+      private var list1$:IList; // 2维
+      [Bindable]
+      private var selectionTip:String;
+      [Bindable]
+      private var writable:Boolean=false;
+
+      private function onPreinitialize():void
+      {
+        list0=new ArrayCollection();
+        list1$=new ArrayCollection();
+        CheckController.getDefaultItem(UserController.branchId);
+        planItemRenderer=new AdvancedClassFactory(StyledDataGridItemRenderer);
+        planHeaderRenderer=new AdvancedClassFactory(StyledDataGridHeaderRenderer);
+        planHeaderRenderer.properties={labelStyle: "planHeaderLabel", sortItemRenderer: Constants.ZERO_RENDERER};
+        planHeaderRenderer.styles={color: Constants.Blue};
+        addEventListener(CommonEvent.CREATED, onCreated);
+        selectionTip=resourceManager.getString("gcc", "select.cell.count", [0]);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.createPopUpMenu(pubWork, CheckController.workList, mark);
+        CommonUtil.createPopUpMenu(pubHoliday, CheckController.holidayList, mark);
+        CommonUtil.createPopUpMenu(pubExtra, CheckController.extraList, mark);
+        adg.itemRenderer=planItemRenderer;
+        adg.headerRenderer=planHeaderRenderer;
+        adg.setStyle("headerSortSeparatorSkin", ProgrammaticSkin);
+        adg.setStyle("alternatingItemColors", [ChkWork.bgColor, ChkHoliday.bgColor, ChkExtra.bgColor]);
+        adg.setStyle("selectionColor", Constants.Gold);
+        // adg.setStyle("rollOverColor", 0xFFFF00);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        writable=UserController.hrCheckWrite;
+        head=e.data as ChkPlan;
+        op=head.no ? (head.checkDate >= CommonController.lastCloseDate) ? Constants.OP_EDIT : 
+          Constants.OP_VIEW : Constants.OP_ADD;
+        if (op == Constants.OP_ADD)
+        {
+          title=resourceManager.getString("gcc_hr", "chkPlan.add2", 
+            [head.depart.name, head.office, DateUtil.formatDate(head.date, "YYYY-MM")]);
+          if (!writable)
+          {
+            Alert.show(resourceManager.getString("gcc", "access.invalid.error", [resourceManager.getString("gcc_hr", "chkPlan.add1")]), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+            callLater(_close);
+            return;
+          }
+        }
+        op=writable ? op : Constants.OP_VIEW;
+        if (op == Constants.OP_EDIT)
+        {
+          title=resourceManager.getString("gcc_hr", "chkPlan.edit", 
+            [head.no, head.depart.name, head.office, DateUtil.formatDate(head.date, "YYYY-MM")]);
+        }
+        else if (op == Constants.OP_VIEW)
+        {
+          title=resourceManager.getString("gcc_hr", "chkPlan.view", 
+            [head.no, head.depart.name, head.office, DateUtil.formatDate(head.date, "YYYY-MM")]);
+          writable=false;
+        }
+
+        date1=DateUtil.getBeginDate(head.date);
+        date2=DateUtil.getEndDate(head.date);
+        callLater(function():void
+          {
+            adg.columns=adg.columns.concat(getColumns(date1, date2));
+            if (op == Constants.OP_ADD)
+              CheckController.getCheckPersonsAndCLPs(head, newCheckPlan);
+            else
+              CheckController.getCheckPersonsAndCPDs(head, loadCheckPlan);
+          });
+      }
+
+      private function getColumns(d1:Date, d2:Date):Array
+      {
+        var r:Array=[];
+        var d:Date=new Date(d1.fullYear, d1.month, d1.date);
+        var column:AdvancedDataGridColumn;
+        var dayNames:Array=resourceManager.getStringArray("controls", "dayNamesShortest").slice(0);
+        var k:int=0;
+        var cw:int=Math.max(36, (width-80)/((d2.time-d1.time)/Constants.MS_PER_DAY)-1);
+        while (d <= d2)
+        {
+          column=new AdvancedDataGridColumn();
+          column.headerText=dayNames[d.day] + "\n" + d.date;
+          column.width=cw;
+          column.showDataTips=true;
+          column.dataField="d"+k++;
+          column.setStyle("textAlign", "center");
+          r.push(column);
+          d.date++;
+        }
+        return r;
+      }
+
+      private function styleOf(obj:Object):Object
+      {
+        var color:uint=obj && obj.hasOwnProperty("color") ? obj.color : Constants.Black;
+        // var bgColor:uint=obj && obj.bgColor ? obj.bgColor : Constants.White;
+        // return {color: color, bgColor: bgColor, fontSize:FONT_SIZE};
+        return {color: color, fontSize:FONT_SIZE};
+      }
+
+      private function newCheckPlan(e:ResultEvent):void
+      {
+        var persons:ArrayCollection=e.result as ArrayCollection;
+        var work:Object, holiday:Object, extra:Object;
+        var style:Object={color:Constants.Blue, fontSize:FONT_SIZE};
+        var d:Date;
+        var k:int;
+        var defItem:Object=CheckController.defaultItem;
+        list0.removeAll();
+        list1$.removeAll();
+        for each (var person:Person in persons)
+        {
+          work={type:ChkWork};
+          holiday={type:ChkHoliday};
+          extra={type:ChkExtra};
+          d=new Date(date1.fullYear, date1.month, date1.date);
+          k=0;
+          while (d <= date2)
+          {
+            work["d"+k++]={date:d, item:defItem, style:styleOf(defItem)};
+            d=new Date(d.fullYear, d.month, d.date+1);
+          }
+          for each (var clp:ChkLongPlan in person.chkLongPlans)
+          {
+            d=new Date(clp.fromDate.fullYear, clp.fromDate.month, clp.fromDate.date);
+            while (d <= clp.endDate)
+            {
+              k=(d.time-date1.time)/Constants.MS_PER_DAY;
+              work["d"+k].item=null;
+              holiday["d"+k]={date:d, item:clp.holiday, style:styleOf(clp.holiday)};
+              d=new Date(d.fullYear, d.month, d.date+1);
+            }
+          }
+          work["person"]={item:person, style:style};
+          holiday["person"]={item:person, style:style, show:false};
+          extra["person"]={item:person, style:style, show:false};
+          list1$.addItem(work);
+          list1$.addItem(holiday);
+          list1$.addItem(extra);
+        }
+        adg.dataProvider=list1$;
+        adg.visible=true;
+      }
+
+      private function loadCheckPlan(e:ResultEvent):void
+      {
+        var persons:ArrayCollection=e.result as ArrayCollection;
+        var work:Object, holiday:Object, extra:Object;
+        var style:Object={color:Constants.Blue, fontSize:FONT_SIZE};
+        var k:int;
+        list0.removeAll();
+        list1$.removeAll();
+        for each (var person:Person in persons)
+        {
+          work={type:ChkWork};
+          holiday={type:ChkHoliday};
+          extra={type:ChkExtra};
+          for each (var cpd:ChkPlanD in person.chkPlanDs)
+          {
+            k=(cpd.date.time-date1.time)/Constants.MS_PER_DAY;
+            work["d"+k]={date:cpd.date, item:cpd.work, style:styleOf(cpd.work)};
+            holiday["d"+k]={date:cpd.date, item:cpd.holiday, style:styleOf(cpd.holiday)};
+            extra["d"+k]={date:cpd.date, item:cpd.extra, style:styleOf(cpd.extra)};
+            if (cpd.work || cpd.holiday || cpd.extra)
+              list0.addItem(cpd);
+          }
+          work["person"]={item:person, style:style};
+          holiday["person"]={item:person, style:style, show:false};
+          extra["person"]={item:person, style:style, show:false};
+          list1$.addItem(work);
+          list1$.addItem(holiday);
+          list1$.addItem(extra);
+        }
+        adg.dataProvider=list1$;
+        adg.visible=true;
+      }
+
+      private function planLabel(data:Object, column:AdvancedDataGridColumn):String
+      {
+        var cell:Object=data[column.dataField];
+        // var show:Boolean=data && data.hasOwnProperty("show") ? data.show : true;
+        var item:Object=cell && cell.hasOwnProperty("item") ? cell.item : null;
+        var show:Boolean=cell && cell.hasOwnProperty("show") ? cell.show : true;
+        return show && item && item.hasOwnProperty("name") ? item.name : "";
+      }
+
+      private function mark(e:MenuEvent, data:Object):void
+      {
+        var rc:Object;
+        var row:Object;
+        var cell:Object;
+        for each (rc in adg.selectedCells)
+        {
+          row=list1$.getItemAt(rc.rowIndex);
+          if (!(data is row.type))
+            continue;
+          if (rc.columnIndex > 0)
+          {
+            cell=row[adg.columns[rc.columnIndex].dataField];
+            if (!cell)
+            {
+              var d:Date=new Date(date1.fullYear, date1.month, date1.date + rc.columnIndex - 1);
+              cell={date:d};
+              row["d"+(d.time-date1.time)/Constants.MS_PER_DAY]=cell;
+            }
+            cell.item=data;
+            cell.style=styleOf(data);
+          }
+        }
+        adg.selectedCells=[];
+        selectionTip=resourceManager.getString("gcc", "select.cell.count", [0]);
+      }
+
+      private function onGridClick(e:MouseEvent):void
+      {
+        var target:Object=e.target;
+        if (!target)
+          return;
+        var listData:Object=e.target.hasOwnProperty("listData") ? e.target.listData : null;
+        var owner:Object=e.target.hasOwnProperty("owner") ? e.target.owner : null;
+        if (!listData && owner)
+        {
+          listData=owner.hasOwnProperty("listData") ? owner.listData : null;
+        }
+        if (!listData)
+          return;
+        var columnIndex:int=listData.hasOwnProperty("columnIndex") ? listData.columnIndex : NaN;
+        var rowIndex:int=listData.hasOwnProperty("rowIndex") ? listData.rowIndex : NaN;
+        // trace("columnIndex=" + columnIndex + ", rowIndex=" + rowIndex);
+        if (columnIndex == 0 && rowIndex == -1)
+          selectAll();
+        else if (rowIndex == -1)
+          selectColumn(columnIndex, e.ctrlKey, e.shiftKey);
+        else if (columnIndex == 0)
+          selectRow(rowIndex, e.ctrlKey, e.shiftKey);
+        selectionTip=resourceManager.getString("gcc", "select.cell.count", [adg.selectedCells.length]);
+      }
+
+      private function selectAll():void
+      {
+
+      }
+
+      private function selectColumn(columnIndex:int, ctrl:Boolean, shift:Boolean):void
+      {
+        var arr1:Array=[];
+        var arr2:Array=[];
+        for (var rowIndex:int=0; rowIndex < list1$.length; rowIndex++)
+          arr1.push({rowIndex: rowIndex, columnIndex: columnIndex});
+        if (ctrl)
+        {
+          for each (var cell:Object in adg.selectedCells)
+            if (cell.columnIndex != columnIndex)
+              arr2.push(cell);
+          adg.selectedCells=(arr2.length + arr1.length == adg.selectedCells.length) ? arr2 : arr1.concat(arr2);
+        }
+        else
+        {
+          adg.selectedCells=arr1;
+        }
+        adg.validateNow();
+      }
+
+      private function selectRow(rowIndex:int, ctrl:Boolean, shift:Boolean):void
+      {
+        var arr1:Array=[];
+        var arr2:Array=[];
+        var k:int=0;
+        for (var columnIndex:int=1; columnIndex < adg.columnCount; columnIndex++)
+          arr1.push({rowIndex: rowIndex, columnIndex: columnIndex});
+        if (ctrl)
+        {
+          for each (var cell:Object in adg.selectedCells)
+            if (cell.rowIndex != rowIndex)
+              arr2.push(cell);
+            else if (cell.columnIndex == 0)
+              k=1;
+          adg.selectedCells=(arr2.length + arr1.length + k == adg.selectedCells.length) ? arr2 : arr1.concat(arr2);
+        }
+        else
+        {
+          adg.selectedCells=arr1;
+        }
+        adg.validateNow();
+      }
+
+      private function erase(e:Event):void
+      {
+        var rc:Object;
+        var row:Object;
+        var cell:Object;
+        for each (rc in adg.selectedCells)
+        {
+          row=list1$.getItemAt(rc.rowIndex);
+          if (rc.columnIndex > 0)
+          {
+            cell=row[adg.columns[rc.columnIndex].dataField];
+            if (!cell)
+              continue;
+            cell.item=null;
+          }
+        }
+        adg.selectedCells=[];
+        selectionTip=resourceManager.getString("gcc", "select.cell.count", [0]);
+      }
+
+      private function clear(e:Event):void
+      {
+        adg.selectedCells=[];
+        selectionTip=resourceManager.getString("gcc", "select.cell.count", [0]);
+      }
+
+      private function unpack():IList
+      {
+        var work:Object, holiday:Object, extra:Object;
+        var wcell:Object, hcell:Object, ecell:Object;
+        var person:Person;
+        var cpd:ChkPlanD;
+        var k:int=1;
+        var i:int, j:int;
+        var list:IList=new ArrayCollection();
+        for (i=0; i < list1$.length; )
+        {
+          work=list1$[i++];
+          holiday=list1$[i++];
+          extra=list1$[i++];
+          person=work.person.item;
+          for (j=1; j < adg.columnCount; j++)
+          {
+            wcell=work["d"+(j-1)];
+            hcell=holiday["d"+(j-1)];
+            ecell=extra["d"+(j-1)];
+            // if (wcell || hcell || ecell)
+            if ((wcell && wcell.item) || (hcell && hcell.item) || (ecell && ecell.item))
+            {
+              cpd=new ChkPlanD(UserController.branch, head.no, k++);
+              cpd.person=person;
+              cpd.date=wcell ? wcell.date : hcell ? hcell.date : ecell ? ecell.date : null;
+              cpd.work=wcell ? wcell.item : null;
+              cpd.holiday=hcell ? hcell.item : null;
+              cpd.extra=ecell ? ecell.item : null;
+              list.addItem(cpd);
+            }
+          }
+        }
+        return list;
+      }
+
+      private function save(e:Event, list:IList=null):void
+      {
+        list1=list ? list : unpack();
+        if (ObjectUtil.compare(list0, list1, 1) == 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, 
+            Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        var params:Object={"@class":CommonUtil.getAlias(ChkPlanD), "@clear":true, 
+            "@no":"id.no", "@pre":"com.gc.hr.service.NoPredecessor"};
+        if (op == Constants.OP_ADD)
+        {
+          head.checkDate=new Date();
+          head.checker=UserController.person;
+        }
+        BaseController.saveVoucher(head, list0.toArray(), head, list1.toArray(), params,
+          function(e1:ResultEvent):void
+          {
+            var cp:ChkPlan=e1.result as ChkPlan;
+            var info:String;
+            if (cp == null) // deleted
+              info=resourceManager.getString("gcc_hr", "chkPlan.del.success", [head.no]);
+            else if (op == Constants.OP_ADD)
+              info=resourceManager.getString("gcc_hr", "chkPlan.add.success", [cp.no]);
+            else if (op == Constants.OP_EDIT)
+              info=resourceManager.getString("gcc_hr", "chkPlan.edit.success", [cp.no]);
+            Alert.show(info, Constants.APP_NAME, Alert.OK, null, function(e2:Event):void{_close();}, Constants.ICON32_INFO);
+          });
+      }
+
+      private function _close():void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function close(e:Event=null):void
+      {
+        list1=unpack();
+        if (ObjectUtil.compare(list0, list1, 1) != 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.change"), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, function(e:CloseEvent):void
+            {
+              if (e.detail == Alert.YES)
+                save(e, list1);
+              else
+                _close();
+            }, Constants.ICON32_QUESTION);
+        }
+        else
+        {
+          _close();
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%">
+    <mx:AdvancedDataGrid id="adgOutObj" labelFunction="{CommonUtil.gridLabelFunction}" rowCount="6"
+                         dataProvider="{outObjs}" editable="true" keyDown="keyDownHandler(event)"
+                         sortableColumns="false" itemRenderer="mx.controls.Label"
+                         horizontalScrollPolicy="auto" itemEditEnd="onItemEditEnd(event)">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" editable="false" width="64"
+                                   labelFunction="setNo"/>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_safety','acc.basic.info')}"
+                                        headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="obj" dataTipField="obj.name"/>
+          <mx:AdvancedDataGridColumn dataField="tel"/>
+          <mx:AdvancedDataGridColumn dataField="address"/>
+          <mx:AdvancedDataGridColumn dataField="duty" dataTipField="duty.name"/>
+          <mx:AdvancedDataGridColumn dataField="desc"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_safety','acc.gua.reparation')}"
+                                        headerRenderer="{header}">
+          <mx:AdvancedDataGridColumn dataField="payFee" itemEditor="{numberInput}"/>
+          <mx:AdvancedDataGridColumn dataField="payDate" itemEditor="{dateField}"
+                                     editorDataField="selectedDate"/>
+          <mx:AdvancedDataGridColumn dataField="payDesc" itemEditor="{textArea}"/>
+          <mx:AdvancedDataGridColumn dataField="payPsn" dataTipField="payPsn.name"/>
+        </mx:AdvancedDataGridColumnGroup>
+        <mx:AdvancedDataGridColumn/>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.controls.PopUpTextArea;
+      import com.gc.safety.Events;
+      import com.gc.controls.advancedDataGridClasses.SuperDataGridHeaderRenderer;
+      import mx.controls.TextInput;
+      import mx.controls.DateField;
+      import mx.events.AdvancedDataGridEventReason;
+      import com.gc.common.controller.UserController;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.safety.model.AccOutObj;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.collections.ArrayCollection;
+      import mx.events.AdvancedDataGridEvent;
+
+      [Bindable]
+      private var header:AdvancedClassFactory;
+      [Bindable]
+      private var dateField:AdvancedClassFactory;
+      [Bindable]
+      private var numberInput:AdvancedClassFactory;
+      [Bindable]
+      private var textArea:AdvancedClassFactory;
+      private var fields:Array;
+
+      [Bindable]
+      public var outObjs:ArrayCollection = new ArrayCollection();
+      private var outObj:AccOutObj;
+      private var outObjFee:Number = 0;
+
+      private function onPreinitialize():void
+      {
+        var branchId:int = UserController.branchId;
+        dateField=new AdvancedClassFactory(DateField);
+        dateField.properties={formatString: Constants.DATE_FORMAT, showToday: true, yearNavigationEnabled: true};
+        numberInput=new AdvancedClassFactory(TextInput);
+        numberInput.properties={restrict: "0-9."};
+        textArea=new AdvancedClassFactory(PopUpTextArea);
+        header = new AdvancedClassFactory(SuperDataGridHeaderRenderer);
+        if ([6,11,12].indexOf(UserController.safetyLimit) >= 0)
+        {
+          fields=["payFee","payDate","payDesc"];
+        }
+        else
+        {
+          fields=[];
+        }
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgOutObj, "gcc_safety", "accoutobj", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var column:AdvancedDataGridColumn=obj as AdvancedDataGridColumn;
+              column.editable=(fields.indexOf(column.dataField) >= 0);
+            }
+          });
+        adgOutObj.percentWidth = 100;
+      }
+
+      private function serialStyleFunction(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        column.setStyle("backgroundColor", 0xD8D8D8);
+        return {color:0x0000FF, fontWeight:"bold", textAlign:"center"};
+      }
+
+      private function setNo(item:Object, column:AdvancedDataGridColumn):int
+      {
+        column.styleFunction = serialStyleFunction;
+        var i:int = outObjs.getItemIndex(item) + 1;
+        if (outObj == null)
+        {
+          outObj = new AccOutObj();
+        }
+        outObj.id.no = i;
+        return i;
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        if (event.itemRenderer && event.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var adg:AdvancedDataGrid=event.currentTarget as AdvancedDataGrid;
+          var column:AdvancedDataGridColumn=adg.columns[event.columnIndex];
+          var newData:Object=adg.itemEditorInstance[column.editorDataField];
+          var property:String=column.dataField;
+          var data:Object=event.itemRenderer.data;
+          try
+          {
+            if (newData == "" && CommonUtil.getAccessorValue(data, property) == null)
+              event.reason=AdvancedDataGridEventReason.CANCELLED;
+            else
+              data[property]=newData;
+            if (data[property] == "")
+              data[property] = null;
+            if (data["payPsn"]["id"] != UserController.personId)
+              data["payPsn"]=UserController.person;
+          }
+          catch (error:Error)
+          {
+            event.reason=AdvancedDataGridEventReason.CANCELLED;
+          }
+          if (property == "payFee" && data["payFee"] != null)
+          {
+            outObjFee = 0;
+            for (var i:int=0; i < outObjs.length; i++)
+            {
+              outObjFee += outObjs[i]["payFee"];
+            }
+            dispatchEvent(new Events(Events.ADD_OUTOBJFEE, outObjFee));
+          }
+        }
+        if (adgOutObj.errorString != null)
+        {
+          adgOutObj.errorString = null;
+        }
+      }
+
+      public function getOutObjs(oos:ArrayCollection):void
+      {
+        outObjs.removeAll();
+        if (oos != null)
+        {
+          if (oos.length > 0)
+          {
+            outObjs = oos;
+            outObjFee = 0;
+            for (var i:int=0; i < outObjs.length; i++)
+            {
+              outObjFee += outObjs[i]["payFee"];
+            }
+            dispatchEvent(new Events(Events.ADD_OUTOBJFEE, outObjFee));
+          }
+        }
+      }
+
+      public function setAdgEditable(able:Boolean):void
+      {
+        fields= (able) ? ["payFee","payDate","payDesc"] : [];
+        onCreationComplete();
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

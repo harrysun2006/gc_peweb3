@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml">
+  <mx:VBox height="100%" width="100%" autoLayout="true">
+    <mx:AdvancedDataGrid id="dgSalItem" width="100%" height="100%"
+                         dataProvider="{SalaryController.salItemList}" allowMultipleSelection="true"
+                         selectable="true" selectionMode="multipleCells" sortableColumns="false"
+                         styleName="red" labelFunction="{CommonUtil.gridLabelFunction}">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn headerText="ID" dataField="id" width="100"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn headerText="NAME" dataField="name" width="120"/>
+        <mx:AdvancedDataGridColumn headerText="BRANCH" dataField="branch" dataTipField="branch.name"/>
+        <mx:AdvancedDataGridColumn headerText="NO" dataField="no" width="120"/>
+        <mx:AdvancedDataGridColumn headerText="TYPE" dataField="typeValue" width="120"/>
+        <mx:AdvancedDataGridColumn headerText="FLAG" dataField="flagValue" width="120"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox autoLayout="true" paddingTop="10" paddingBottom="10" paddingLeft="10">
+      <mx:Button label="Get SalItems" click="SalaryController.getAllItems(2)"/>
+      <mx:Button label="Select All" click="selectAll()"/>
+      <mx:Button label="Copy" click="copy()"/>
+      <mx:Button label="Clear" click="dgSalItem.dataProvider.removeAll()"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.IViewCursor;
+
+      import com.gc.Constants;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.util.CommonUtil;
+
+      private function selectAll():void
+      {
+        if (SalaryController.salItemList != null)
+          dgSalItem.selectedItems=SalaryController.salItemList.toArray();
+      }
+
+      private function exportCSV(dg:AdvancedDataGrid, csvSeparator:String="\t", lineSeparator:String="\n"):String
+      {
+        var data:String = "";
+        var columns:Array = dg.columns;
+        var columnCount:int = columns.length;
+        var column:AdvancedDataGridColumn;
+        var header:String = "";
+        var headerGenerated:Boolean = false;
+        var dataProvider:Object = dg.dataProvider;
+        var rowCount:int = dataProvider.length;
+        var dp:Object = null;
+
+        var cursor:IViewCursor = dataProvider.createCursor();
+        var j:int = 0;
+
+        //loop through rows
+        while (!cursor.afterLast)
+        {
+          var obj:Object = null;
+          obj = cursor.current;
+          //loop through all columns for the row
+          for (var k:int=0; k < columnCount; k++)
+          {
+            column = columns[k];
+            //Exclude column data which is invisible (hidden)
+            if (!column.visible)
+            {
+              continue;
+            }
+            data += "\""+ column.itemToLabel(obj)+ "\"";
+            if (k < (columnCount -1))
+            {
+              data += csvSeparator;
+            }
+            //generate header of CSV, only if it's not genereted yet
+            if (!headerGenerated)
+            {
+              header += "\"" + column.headerText + "\"";
+              if (k < columnCount - 1)
+              {
+                header += csvSeparator;
+              }
+            }
+          }
+
+          headerGenerated = true;
+          if (j < (rowCount - 1))
+          {
+            data += lineSeparator;
+          }
+          j++;
+          cursor.moveNext();
+        }
+
+        //set references to null:
+        dataProvider = null;
+        columns = null;
+        column = null;
+
+        return (header + "\r\n" + data);
+      }
+
+      private function copy():void
+      {
+        System.setClipboard(exportCSV(dgSalItem));
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

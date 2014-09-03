@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%">
+    <mx:Label id="lName" width="100%" textAlign="center" fontSize="20" fontWeight="bold"/>
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="70%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.period')}:"/>
+          <mx:Label text="{report.period}"/>
+        </mx:GridItem>
+        <mx:GridItem width="30%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.bcount')}:"/>
+          <mx:Label text="{report.bcount}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="70%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.aa')}:"/>
+          <mx:Label text="{report.aa}"/>
+        </mx:GridItem>
+        <mx:GridItem width="30%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.ecount')}:"/>
+          <mx:Label text="{report.ecount}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem colSpan="2">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.bb')}:"/>
+          <mx:Label text="{report.bb}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem colSpan="2">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p01.cc')}:"/>
+          <mx:Label text="{report.cc}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:HBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg1" width="50%" height="100%" itemRenderer="mx.controls.Label"
+                           sortableColumns="false" labelFunction="{CommonUtil.gridLabelFunction}">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumnGroup 
+                                          headerText="{resourceManager.getString('gcc_hr', 'report.p01.increase')}"
+                                          textAlign="center" editable="false">
+            <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                       labelFunction="{CommonUtil.serialLabelFunction}"
+                                       styleFunction="{CommonUtil.serialStyleFunction}"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.workerId"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.name"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.sex"/>
+            <mx:AdvancedDataGridColumn dataField="newDepart" dataTipField="newDepart.name"/>
+            <mx:AdvancedDataGridColumn dataField="newType"/>
+            <mx:AdvancedDataGridColumn dataField="newPosition" dataTipField="newPosition.name"/>
+            <mx:AdvancedDataGridColumn dataField="source"/>
+            <mx:AdvancedDataGridColumn dataField="reason"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+      <mx:AdvancedDataGrid id="adg2" width="50%" height="100%" itemRenderer="mx.controls.Label"
+                           sortableColumns="false" labelFunction="{CommonUtil.gridLabelFunction}">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumnGroup 
+                                          headerText="{resourceManager.getString('gcc_hr', 'report.p01.decrease')}"
+                                          textAlign="center" editable="false">
+            <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                       labelFunction="{CommonUtil.serialLabelFunction}"
+                                       styleFunction="{CommonUtil.serialStyleFunction}"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.workerId"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.name"/>
+            <mx:AdvancedDataGridColumn dataTipField="person.sex"/>
+            <mx:AdvancedDataGridColumn dataField="oldDepart" dataTipField="oldDepart.name"/>
+            <mx:AdvancedDataGridColumn dataField="oldType"/>
+            <mx:AdvancedDataGridColumn dataField="oldPosition" dataTipField="oldPosition.name"/>
+            <mx:AdvancedDataGridColumn dataField="dest"/>
+            <mx:AdvancedDataGridColumn dataField="reason"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var report:Object;
+      private var qo:Object;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "report.p01.grid");
+        CommonUtil.setDataGridColumns(adg2, "gcc_hr", "report.p01.grid");
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        lName.text=resourceManager.getString("gcc_hr", "report.p01.name", [UserController.branchName]);
+        qo=e.data;
+        PersonalController.reportP01(qo, load);
+      }
+
+      private function load(e:ResultEvent):void
+      {
+        report=e.result;
+        adg1.dataProvider=report.increase;
+        adg2.dataProvider=report.decrease;
+      }
+
+      private function export(e:Event):void
+      {
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(e1:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "exportP01", [qo]);
+        fr.download(ur, resourceManager.getString("gcc_hr", "report.p01.file"));
+
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

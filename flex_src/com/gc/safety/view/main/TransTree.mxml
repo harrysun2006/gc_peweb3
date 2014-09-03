@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off" preinitialize="onPreinitialize()">
+  <mx:Tree id="treeTrans" width="100%" height="100%" showRoot="true" horizontalScrollPolicy="auto"
+           verticalScrollPolicy="auto" labelField="{Constants.PROP_NAME_LABEL}"
+           click="onClick(event)" change="onChange(event)" valueCommit="onValueCommit(event)"
+           iconField="{Constants.PROP_NAME_ICON}"/>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.common.model.Department;
+      import com.gc.safety.Events;
+      import mx.core.UITextField;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.model.Line;
+      import com.gc.common.model.EquOnline;
+      import com.gc.safety.model.TransInfo;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.TransController;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.treeClasses.StyledTreeItemRenderer;
+
+      private var equOnlineAC:ArrayCollection;
+      private var equItemRenderer:AdvancedClassFactory;
+      private var items:Array;
+      private var order:Array=[CommonController.DEPART_ID, CommonController.LINE_ID];
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.EXPAND, onExpand);
+        addEventListener(CommonEvent.EXPAND_ALL, onExpandAll);
+        addEventListener(CommonEvent.COLLAPSE, onCollapse);
+        addEventListener(CommonEvent.COLLAPSE_ALL, onCollapseAll);
+        equItemRenderer=new AdvancedClassFactory(StyledTreeItemRenderer);
+        addEventListener(CommonEvent.GET_SUCCESS, onGetSuccess);
+        addEventListener(CommonEvent.DBLCLICKED,onADGDBClicked);
+      }
+
+      private function onGetSuccess(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var data:Object=e.data;
+        var dateFrom:Date=data.hasOwnProperty("dateFrom") ? data["dateFrom"] : null;
+        equOnlineAC=data.hasOwnProperty("equOnline") ? data["equOnline"] : null;
+        TransController.getTransInfoForSafetyTree(UserController.limit, dateFrom, function(e:ResultEvent):void
+          {
+            var arrs:ArrayCollection=e.result as ArrayCollection;
+            var trans:ArrayCollection = new ArrayCollection();
+            for each (var arr:Object in arrs)
+            {
+              var transInfo:TransInfo = arr[0] as TransInfo;
+              transInfo["depart"] = arr[1] as Department;
+              trans.addItem(transInfo);
+            }
+            for each (var info:TransInfo in trans)
+            {
+              for each (var equOnline:EquOnline in equOnlineAC)
+              {
+                if (info.depart.id == equOnline.depart.id && info.bus.id == equOnline.equipment.id && info.transDate >= equOnline.onDate && (info.transDate < equOnline.downDate || equOnline.downDate == null))
+                {
+                  equOnline.trans.addItem(info);
+                }
+              }
+            }
+          });
+        var root:Object=buildTransTree(equOnlineAC, order);
+        treeTrans.dataProvider=root;
+        // treeTrans.itemRenderer=equItemRenderer;
+        treeTrans.openItems = [root];
+        treeTrans.validateNow();
+//        treeTrans.selectedItem = root;
+      }
+
+      private function buildTransTree(col:ArrayCollection, order:Array):Object
+      {
+        var root:Object=new Object();
+        var tree:Object;
+        var key:Object;
+        var children:Array;
+        var k:int;
+        for each (var equOnline:EquOnline in col)
+        {
+          tree=root;
+          for each (var column:String in order)
+          {
+            key=getKey(equOnline, column);
+            children=tree["children"] as Array;
+            if (children == null)
+            {
+              children=new Array();
+              tree["children"]=children;
+            }
+            k=CommonUtil.indexOfKey(children, key);
+            if (k < 0)
+            {
+              children.push(key);
+              tree=key;
+            }
+            else
+              tree=children[k];
+          }
+          children=tree["children"] as Array;
+          if (children == null)
+          {
+            children=new Array();
+            tree["children"]=children;
+          }
+          var idx:int=CommonUtil.indexOfKey(children, equOnline.equipmentId, "equipmentId");
+          if (idx >= 0)
+          {
+            var dest:EquOnline=children[idx] as EquOnline;
+            dest.trans.source.concat(equOnline.trans);
+            dest.mileage += equOnline.mileage;
+            dest.downDate=equOnline.downDate;
+            if (dest.downDate != null)
+              dest.style={color: Constants.Red};
+          }
+          else
+          {
+            if (equOnline.downDate != null)
+              equOnline.style={color: Constants.Red};
+            children.push(equOnline);
+          }
+        }
+        root["label"]=resourceManager.getString("gcc_safety", "tree.trans.root");
+        return root;
+      }
+
+      private function getKey(eo:EquOnline, column:String):Object
+      {
+        var key:Object;
+        var scope:String;
+        switch (column)
+        {
+          case CommonController.DEPART_ID:
+            key=eo.depart;
+            break;
+          case CommonController.LINE_ID:
+            key=eo.line == null ? new Line(0, eo.branch, "", Constants.NULL_LABEL) : eo.line;
+            break;
+          default:
+            key=new Object();
+            key[Constants.PROP_NAME_TYPE]=Constants.TYPE_UNKNOWN;
+            break;
+        }
+        key[Constants.PROP_NAME_TYPE]=column;
+        return key;
+      }
+
+      private function visitNode(node:Object):void
+      {
+        if (node && node.hasOwnProperty("children"))
+          items.push(node);
+      }
+
+      private function onExpand(e:CommonEvent):void
+      {
+        items=[];
+        var selectedItems:Array=treeTrans.selectedItems;
+        CommonUtil.visit(selectedItems, visitNode);
+        var openItems:Array=treeTrans.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeTrans.openItems=openItems;
+        treeTrans.validateNow();
+        treeTrans.selectedItems=selectedItems;
+      }
+
+      private function onExpandAll(e:CommonEvent):void
+      {
+        items=[];
+        CommonUtil.visit(treeTrans.dataProvider, visitNode);
+        treeTrans.openItems=items;
+        treeTrans.validateNow();
+        treeTrans.selectedItem=treeTrans.dataProvider[0];
+      }
+
+      private function onCollapse(e:CommonEvent):void
+      {
+        items=[];
+        var selectedItems:Array=treeTrans.selectedItems;
+        CommonUtil.visit(selectedItems, visitNode);
+        var openItems:ArrayCollection=new ArrayCollection(treeTrans.openItems as Array);
+        var k:int;
+        for each (var item:Object in items)
+        {
+          k=openItems.getItemIndex(item);
+          if (k >= 0)
+            openItems.removeItemAt(k);
+        }
+        treeTrans.openItems=openItems.toArray();
+        treeTrans.validateNow();
+        treeTrans.selectedItems=selectedItems;
+      }
+
+      private function onCollapseAll(e:CommonEvent):void
+      {
+        treeTrans.openItems=[];
+        treeTrans.validateNow();
+        treeTrans.selectedItem=treeTrans.dataProvider[0];
+      }
+
+      private function onClick(e:Event):void
+      {
+        if (e.target is UITextField)
+        {
+          var node:Object=treeTrans.selectedItem;
+          treeTrans.expandItem(node, !treeTrans.isItemOpen(node));
+          treeTrans.validateNow();
+        }
+      }
+
+      private function onADGDBClicked(event:CommonEvent):void
+      {
+        items=[];
+        var selectedItems:Array = treeTrans.selectedItems;
+        visit(selectedItems,visitNode);
+        var openItems:Array = treeTrans.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeTrans.openItems = openItems;
+        treeTrans.validateNow();
+        treeTrans.selectedItem = event.data;
+        treeTrans.expandItem(treeTrans.selectedItem,!treeTrans.isItemOpen(treeTrans.selectedItem));
+        onValueCommit(event);
+        event.stopImmediatePropagation();
+      }
+      public function visit(obj:Object, visitor:Function):void
+      {
+        visitor(obj);
+        if (obj is Array || obj is ArrayCollection)
+        {
+          for each (var item:Object in obj)
+          {
+            visit(item, visitor);
+          }
+        }
+      }
+
+      private function onChange(e:Event):void
+      {
+        onValueCommit(e);
+      }
+
+      private function onValueCommit(e:Event):void
+      {
+        var node:Object=treeTrans.selectedItem;
+        if (!node || (node[Constants.PROP_NAME_TYPE] == Constants.TYPE_ROOT && !node.hasOwnProperty("children")))
+          return;
+        else
+        {
+          dispatchEvent(new CommonEvent(CommonEvent.CLICKED, node, [CommonUtil.getAncestors(treeTrans), order]));
+          parent.dispatchEvent(new Events(Events.UPDATE,node));
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

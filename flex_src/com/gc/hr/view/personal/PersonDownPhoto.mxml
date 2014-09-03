@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" 
+                xmlns:controls="com.gc.controls.*" preinitialize="onPreinitialize()"
+                keyDown="CommonUtil.keyDown(event)" width="370" height="180">
+  <mx:Form id="form"  >
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'report.person.downPhotoType')}">
+      <mx:HBox>   
+      	<mx:CheckBox id="pid" label="{resourceManager.getString('gcc_hr', 'report.person.pid')}" selected="true"/>
+      	<mx:CheckBox id="workId" label="{resourceManager.getString('gcc_hr', 'report.person.workId')}"/>        
+      	<mx:CheckBox id="personName" label="{resourceManager.getString('gcc_hr', 'report.person.name')}" />              
+      </mx:HBox> 
+    </mx:FormItem>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import mx.charts.chartClasses.StackedSeries;
+      import mx.rpc.events.FaultEvent;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.Department;
+      import mx.collections.ArrayCollection;
+      import com.gc.common.controller.UserController;
+      import mx.controls.Label;
+      
+      import com.gc.Beans;
+      import com.gc.Constants;
+      import com.gc.util.CommonUtil;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.common.controller.BaseController;
+      import com.gc.CommonEvent;
+
+//      private var qo:Object;
+      private var fileRef:FileReference;
+      private var downPersonsList:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        PersonalController.getAllPersons(UserController.branchId);
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        title=resourceManager.getString("gcc_hr", "menu.person.manage.downphoto",[""]);
+		downPersonsList=e.args[0] as ArrayCollection;
+      }
+
+      private function onFocusIn():void
+      {
+
+      }
+	  
+
+	  
+      private function open(event:Event):void
+      {
+		if(this.pid.selected==false && this.workId.selected==false && this.personName.selected==false){
+			CommonUtil.showError(pid, 2000, resourceManager.getString("gcc_hr", "report.person.photo.error"));
+			return;
+		}
+		try{
+			if(downPersonsList.length <= 0){
+				close();
+              	Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+              	return;
+			}
+          	var fr:FileReference=new FileReference();
+        	fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          	{
+            	Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              	Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          	});
+        	fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          	{
+            	Alert.show(resourceManager.getString("gcc", "download.fail"),
+              	Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          	});
+          	
+          	//qo.persons=downPersonsList.toArray();
+        	var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "downloadPersonsPhoto", [this.pid.selected, this.workId.selected, this.personName.selected,downPersonsList.toArray()]); //第个参数调用java后台的方法名称
+        	fr.download(ur, "照片文件夹.zip");
+//			var fileRef=new FileReference();
+//			fileRef.addEventListener(Event.COMPLETE,doEvent);
+//			File_url=encodeURI("");
+//			var urlReq:URLRequest;
+//			urlReq = new URLRequest(File_url);
+//			fileRef.download(urlReq,fileName);
+//			for each(person in downPersonsList){
+//				var fileName:String="";
+//				//下载名称
+//				if(this.pid.selected)
+//					fileName=fileName+person.pid+" ";
+//				if(this.workId.selected)
+//					fileName=fileName+person.workerId+" ";
+//				if(this.personName.selected)
+//					fileName=fileName+person.name+" ";	
+//			}
+			
+		}catch(e:Error){
+			Alert.show(e.message);
+		}
+		close();	
+      }
+      
+      private function doEvent(evt:Event):void{
+      	 Alert.show("下载成功！");
+      }
+
+      private function close(event:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

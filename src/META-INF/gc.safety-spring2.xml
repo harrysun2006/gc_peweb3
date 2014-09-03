@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		xmlns:p="http://www.springframework.org/schema/p" xmlns:context="http://www.springframework.org/schema/context"
+		xmlns:tx="http://www.springframework.org/schema/tx"
+		xsi:schemaLocation="
+			http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd
+			http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd
+			http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.5.xsd"
+		default-lazy-init="true">
+		
+	<!--bean id="safetyAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcLoggerAdvisor,gcTransactionAdvisor,gcAccessAdvisor"
+		p:beanNames="safetyAccidentDAO, safetyAccidentService, safetyClaimsDAO, safetyClaimsService, safetyCommonDAO, safetyCommonService, safetyGuaranteeDAO, safetyGuaranteeService, safetyTransDAO, safetyTransService, commonBaseDAO"
+		p:proxyTargetClass="true"/-->
+	<bean id="safetyAutoProxyCreator" class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator"
+		p:interceptorNames="gcTransactionAdvisor"
+		p:beanNames="safetyAccidentDAO, safetyAccidentService, safetyClaimsDAO, safetyClaimsService, safetyCommonDAO, safetyCommonService, safetyGuaranteeDAO, safetyGuaranteeService, safetyTransDAO, safetyTransService, commonBaseDAO"
+		p:proxyTargetClass="true"/>	
+
+	<!-- safety Accident/AccType/AccLevel/AccDuty/AccExtent/AccPsn/AccPayPsn/AccObject/AccPayObject/AccProcessor DAO, Service & Util -->
+	<bean id="safetyAccidentDAO" class="com.gc.safety.dao.AccidentDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="safetyAccidentService" class="com.gc.safety.service.AccidentService" p:accidentDAO-ref="safetyAccidentDAO" p:baseDAO-ref="commonBaseDAO"/>
+	<bean id="safetyAccidentServiceUtil" class="com.gc.safety.service.AccidentServiceUtil" p:accidentService-ref="safetyAccidentService"/>
+
+	<!-- 三责理赔表 -->
+	<bean id="safetyClaimsDAO" class="com.gc.safety.dao.ClaimsDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="safetyClaimsService" class="com.gc.safety.service.ClaimsService" p:claimsDAO-ref="safetyClaimsDAO"/>
+	<bean id="safetyClaimsServiceUtil" class="com.gc.safety.service.ClaimsServiceUtil" p:claimsService-ref="safetyClaimsService"/>
+
+	<!-- Safety Common DAO, Service & Util -->
+	<bean id="safetyCommonDAO" class="com.gc.safety.dao.CommonDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="safetyCommonService" class="com.gc.safety.service.CommonService" p:commonDAO-ref="safetyCommonDAO" p:baseDAO-ref="commonBaseDAO"/>
+	<bean id="safetyCommonServiceUtil" class="com.gc.safety.service.CommonServiceUtil" p:commonService-ref="safetyCommonService" lazy-init="true"/>
+
+	<!-- safety Guarantee info/type/insurer DAO, Service & Util -->
+	<bean id="safetyGuaranteeDAO" class="com.gc.safety.dao.GuaranteeDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="safetyGuaranteeService" class="com.gc.safety.service.GuaranteeService" p:guaranteeDAO-ref="safetyGuaranteeDAO"/>
+	<bean id="safetyGuaranteeServiceUtil" class="com.gc.safety.service.GuaranteeServiceUtil" p:guaranteeService-ref="safetyGuaranteeService"/>
+
+	<!-- safety transgress type/info DAO, Service & Util -->
+	<bean id="safetyTransDAO" class="com.gc.safety.dao.TransDAOHibernate" p:sessionFactory-ref="gcSessionFactory"/>
+	<bean id="safetyTransService" class="com.gc.safety.service.TransService" p:transDAO-ref="safetyTransDAO"/>
+	<bean id="safetyTransServiceUtil" class="com.gc.safety.service.TransServiceUtil" p:transService-ref="safetyTransService"/>
+</beans>

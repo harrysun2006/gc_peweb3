@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           creationComplete="onCreationComplete()" xmlns:main="com.gc.safety.view.main.*">
+  <mx:ViewStack id="vsNodeView" width="100%" height="100%" creationPolicy="all"
+                change="onChange(event)">
+    <mx:ModuleLoader id="loaderMain"/>
+    <main:GuaList id="viewGuaList"/>
+    <main:GuaStat id="viewGuaStat"/>
+  </mx:ViewStack>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.GuarInfo;
+      import com.gc.CommonEvent;
+
+      private function onCreationComplete():void
+      {
+        addEventListener(CommonEvent.CLICKED, onTreeNodeClicked);
+        addEventListener(CommonEvent.REFRESH,function(evt:CommonEvent):void
+          {
+            vsNodeView.selectedIndex=0;
+            evt.stopImmediatePropagation();
+          });
+      }
+
+      private function onTreeNodeClicked(event:CommonEvent):void
+      {
+        var item:Object = event.data;
+        var args:Array = event.args;
+        event.stopImmediatePropagation();
+        if (item == null || args == null || args.length != 2)
+          return;
+        var ancestors:Array = args[0] as Array;
+        var orderColumns:Array = args[1] as Array;
+        if (item is GuarInfo)
+        {
+          //显示事故列表
+          vsNodeView.selectedIndex = 1;
+          viewGuaList.listGuas(item,ancestors,orderColumns);
+        }
+        else
+        {
+          //显示统计信息
+          vsNodeView.selectedIndex = 2;
+          viewGuaStat.statGuas(item,ancestors,orderColumns);
+        }
+      }
+
+      private function onChange(event:Event):void
+      {
+        var e:Event = new CommonEvent(CommonEvent.CHANGE_VIEW,vsNodeView.selectedChild);
+        vsNodeView.selectedChild.dispatchEvent(e);
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

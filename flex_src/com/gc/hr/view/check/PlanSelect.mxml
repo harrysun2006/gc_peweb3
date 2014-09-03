@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="800" height="320"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <gc:Voucher width="100%" height="100%" bundle="gcc_hr" code="chkPlan" buttons="none">
+    <mx:AdvancedDataGrid dataProvider="{list}" editable="false" draggableColumns="false"
+                         doubleClickEnabled="true" doubleClick="onGridDoubleClick(event)">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no"/>
+        <mx:AdvancedDataGridColumn dataField="date"/>
+        <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="office"/>
+        <mx:AdvancedDataGridColumn dataField="checker" dataTipField="checker.name"/>
+        <mx:AdvancedDataGridColumn dataField="checkDate"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.CommonEvent;
+
+      [Bindable]
+      private var list:Array;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        title=resourceManager.getString("gcc_hr", "chkPlan.select");
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        list=e.args;
+      }
+
+      private function onGridDoubleClick(e:Event):void
+      {
+        if (e && e.currentTarget)
+        {
+          var grid:AdvancedDataGrid=e.currentTarget as AdvancedDataGrid;
+          if (grid.selectedItem)
+          {
+            owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, grid.selectedItem));
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

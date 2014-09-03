@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           creationComplete="onCreationComplete()">
+  <mx:ToolBar id="form" width="100%" height="100%">
+    <mx:Grid width="100%" height="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="部门" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDept" name="dept.name" text="{accident.dept.name}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="日期时间" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDate" name="date" text="{df.format(accident.date)}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="编号" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiNo" name="no" text="{accident.no}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="工号" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiWorkId" name="driver.workerId" text="{accident.driver.workerId}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="姓名" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiName" name="driver.name" text="{accident.driver.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="证号" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiPid" name="driver.cert1No" text="{accident.driver.cert1No}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="线路" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiLine" name="line.name" text="{accident.line.name}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="车牌号" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiUseId" name="bus.authNo" text="{accident.bus.authNo}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="车型" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiEquType" name="bus.type.name" text="{accident.bus.type.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="事故等级" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiLevel" name="level.name" text="{accident.level.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="事故类型" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiAccType" name="type.name" text="{accident.type.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="事故责任" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiAccDuty" name="duty.name" text="{accident.duty.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="天气" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiWeather" name="weather.name" text="{accident.weather.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="肇事地点" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiAddress" name="address" text="{accident.address}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="道路设施" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiRoadFacility" name="roadFacility" text="{accident.roadFacility}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="路面区域" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc1" name="desc1" text="{accident.desc1}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="路幅路形" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc2" name="desc2" text="{accident.desc2}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="路基路况" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiDesc3" name="desc3" text="{accident.desc3}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="肇事原因" width="100%" horizontalAlign="right">
+            <mx:TextArea id="taReason" name="reason" text="{accident.reason}" width="100%"
+                         editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="事故经过" width="100%" horizontalAlign="right">
+            <mx:TextArea id="taCourse" name="course" text="{accident.course}" width="100%"
+                         editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="处理经过" width="100%" horizontalAlign="right">
+            <mx:TextArea id="taProcessInfo" name="processInfo" text="{accident.processInfo}"
+                         width="100%" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="处理机关" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiProcessor" name="processor.name" text="{accident.processor.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="电脑编号" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiPoliceNo" name="policeNo" text="{accident.policeNo}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%" height="100%">
+          <mx:FormItem label="受损程度" width="100%" horizontalAlign="right">
+            <mx:TextInput id="tiExtent" name="extent.name" text="{accident.extent.name}"
+                          editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem width="100%"/>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem width="100%" height="100%" colSpan="4">
+          <mx:FormItem label="受损情况" width="100%" horizontalAlign="right">
+            <mx:TextArea id="taDestroy" name="destroy" text="{accident.destroy}" width="100%"
+                         editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+  </mx:ToolBar>
+  <mx:DateFormatter id="df" formatString="{Constants.DATETIME_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.util.CommonUtil;
+      import mx.controls.ComboBox;
+      import mx.containers.FormItem;
+      import com.gc.Constants;
+      import com.gc.safety.model.Accident;
+      [Bindable]
+      private var accident:Accident;
+      private var itemWidth:int = 180;
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(form,setItem);
+      }
+
+      protected function setItem(comp:Object):void
+      {
+        if (comp is FormItem)
+        {
+          var fi:FormItem=comp as FormItem;
+          fi.styleName="filterLabel";
+        }
+        else if (comp is TextInput)
+        {
+          var ti:TextInput=comp as TextInput;
+          ti.width=itemWidth;
+        }
+        else if (comp is ComboBox)
+        {
+          var cbox:ComboBox=comp as ComboBox;
+          cbox.width=itemWidth;
+        }
+      }
+
+      public function getAccident(acc:Accident):void
+      {
+        accident = null;
+        accident = acc;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="370" height="272"
+                title="{resourceManager.getString('gcc_hr', 'menu.person.manage.update.contract')}"
+                preinitialize="onPreinitialize()">
+  <mx:Form id="form" width="100%" height="164">
+    <mx:FormItem id="fichangeDate" labelWidth="120" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc_hr', 'psnContract.changeDate')+':'}">
+      <mx:DateField id="changeDate" name="changeDate" editable="true"
+                    formatString="{Constants.DATE_FORMAT}" width="150" yearNavigationEnabled="true"/>
+    </mx:FormItem>
+    <mx:FormItem id="fichangeNo" labelWidth="120" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc_hr', 'pnsContract.changeNo')+':'}">
+      <mx:TextInput id="changeNo" name="changeNo" width="150"/>
+    </mx:FormItem>
+    <mx:FormItem id="fiisLimintCnt" labelWidth="120" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc_hr', 'pnsContract.type')+':'}">
+      <mx:HBox>
+        <mx:RadioButtonGroup id="htlx" change="onRadioButtonChange(event)"/>
+        <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'psnContract.type.value0')}"
+                        groupName="htlx" value="0" selected="true" width="60"/>
+        <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'psnContract.type.value1')}"
+                        groupName="htlx" value="1" width="80"/>
+      </mx:HBox>
+    </mx:FormItem>
+    <mx:FormItem id="fiendDate" labelWidth="120" horizontalAlign="right" width="100%"
+                 label="{resourceManager.getString('gcc_hr', 'psnContract.endDate')+':'}">
+      <mx:DateField id="endDate" name="endDate" editable="true"
+                    formatString="{Constants.DATE_FORMAT}" width="150" yearNavigationEnabled="true"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.utils.ObjectUtil;
+      import mx.validators.Validator;
+      import mx.validators.ValidationResult;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.validators.ValidatorEx;
+
+      private var persons:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED,onCreated);
+      }
+
+      private function onRadioButtonChange(e:Event):void
+      {
+        var rbg:RadioButtonGroup=e.currentTarget as RadioButtonGroup;
+        endDate.enabled=(rbg.selectedValue == 0);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        var coll:ArrayCollection=e.args[0] as ArrayCollection;
+        persons=new ArrayCollection(coll.source.filter(function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            if (item.office == null) item.office = "";
+            return (item.downDate >= Constants.MAX_DATE);
+          }));
+        if (persons.length <= 0)
+        {
+          close();
+          Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+      }
+
+      private function open(e:Event):void
+      {
+        var df:Function=function(value:Object, source:Object, property:String, subFields:Array):ValidationResult
+          {
+            var d:Date=DateUtil.parseDate(value.toString());
+            return (d < CommonController.lastCloseDate) ? new ValidationResult(true, null, "error.beyond.closeDate", 
+              resourceManager.getString("gcc_hr", "error.beyond.closeDate", [DateUtil.formatDate(d), DateUtil.formatDate(CommonController.lastCloseDate)])) : null;
+          };
+        var dv:Validator=new ValidatorEx(df);
+        var dvf:Object={field:"changeDate", validator:dv};
+        var vfs:Array=null;
+        if (htlx.selectedValue==0)
+        {
+          vfs=[dvf, "changeNo", "endDate"];
+          if (endDate != null && ObjectUtil.dateCompare(changeDate.selectedDate,endDate.selectedDate) == 1)
+          {
+            Alert.show("合同开始日大于合同到期日！","",Alert.OK,null,null,Constants.ICON32_ERROR);
+            return;
+          }
+        }
+        else
+          vfs=[dvf,"changeNo"];
+        if (!CommonUtil.validateForm(form, vfs))
+          return;
+        var obj:Object={type:htlx.selectedValue};
+        CommonUtil.loadInstance(form, obj, true);
+        obj["branch.id"]=UserController.branchId;
+        CommonUtil.popupWindow(PersonsUpdateContract, title, owner, [obj, persons]);
+        close();
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="800" height="600"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:Box width="100%">
+      <mx:ToolBar id="form" percentWidth="100">
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc', 'person.downDate')}:"/>
+          <mx:DateField name="downDate" editable="true" formatString="{Constants.DATE_FORMAT}"/>
+        </mx:GridItem>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc', 'person.downReason')}:"/>
+          <mx:TextInput name="downReason" text="{po.downReason}"/>
+        </mx:GridItem>
+      </mx:ToolBar>
+    </mx:Box>
+    <mx:AdvancedDataGrid id="adg" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}"
+                         keyDown="keyDownHandler(event)">
+      <mx:groupedColumns>
+        <mx:AdvancedDataGridColumnGroup 
+                                        headerText="{resourceManager.getString('gcc_hr', 'person.manage.down.note')}"
+                                        textAlign="center">
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                     labelFunction="{CommonUtil.serialLabelFunction}"
+                                     styleFunction="{CommonUtil.serialStyleFunction}"/>
+          <mx:AdvancedDataGridColumn dataField="name"/>
+          <mx:AdvancedDataGridColumn dataField="workerId"/>
+          <mx:AdvancedDataGridColumn dataField="depart" dataTipField="depart.name"/>
+          <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"/>
+          <mx:AdvancedDataGridColumn dataField="contr1From"/>
+          <mx:AdvancedDataGridColumn dataField="contr1End"/>
+          <mx:AdvancedDataGridColumn dataField="pid"/>
+        </mx:AdvancedDataGridColumnGroup>
+      </mx:groupedColumns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="down(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var po:Person;
+      private var list0:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        po=new Person();
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg, "gcc", "person", CommonUtil.complexColumnCompare);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        this.setFocus();
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        if (e.args == null)
+          return;
+        list0=new ArrayCollection(e.args.filter(function(item:Object, idx:uint, arr:Array):Boolean
+          {
+            return (item.downDate >= Constants.MAX_DATE);
+          }));
+        adg.dataProvider=list0;
+        adg.validateNow();
+        if (list0.length <= 0)
+        {
+          close();
+          Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+          return;
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function down(e:Event):void
+      {
+        if (list0.length > 0)
+        {
+          if (!CommonUtil.validateForm(form,
+            [{field: "downDate", error: resourceManager.getString("gcc", "person.downDate.not.null")},
+            {field: "downReason", error: resourceManager.getString("gcc", "person.downReason.not.null")}]))
+            return;
+          CommonUtil.loadInstance(form, po);
+          PersonalController.downPersons(list0.source, po, function(e1:ResultEvent):void
+            {
+              Alert.show(resourceManager.getString("gcc_hr", "person.manage.down.down.success"), 
+                Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+                {
+                  for (var i:int=0; i < list0.length; i++)
+                  {
+                    list0[i].downDate=po.downDate;
+                    list0[i].downReason=po.downReason;
+                  }
+                  close();
+                // owner.dispatchEvent(CommonEvent.REFRESH_EVENT);
+                }, Constants.ICON32_INFO);
+            });
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

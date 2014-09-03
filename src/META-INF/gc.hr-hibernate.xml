@@ -1,0 +1,411 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC 
+    "-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+    "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+
+<hibernate-mapping package="com.gc.hr.po" default-lazy="true">
+
+	<!-- HR Personal -->
+	<class name="People" table="T_PSN_PEOPLE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="PeoplePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="NativePlace" table="T_PSN_NPLACE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="NativePlacePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="MarryStatus" table="T_PSN_MSTATE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="MarryStatusPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="HireType" table="T_PSN_TYPE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="HireTypePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="RegBranch" table="T_PSN_REGBELONG" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="RegBranchPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="PolParty" table="T_PSN_PARTY" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="PolPartyPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="JobGrade" table="T_PSN_GRADE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="JobGradePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="Schooling" table="T_PSN_SCHOOLING" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SchoolingPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="JobSpec" table="T_PSN_SPEC" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="JobSpecPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="SchDegree" table="T_PSN_DEGREE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SchDegreePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="SchGraduate" table="T_PSN_GRADUATE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SchGraduatePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="WorkType" table="T_PSN_WORKTYPE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="WorkTypePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="RegType" table="T_PSN_REGTYPE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="RegTypePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<class name="SalaryType" table="T_PSN_SALARYTYPE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalaryTypePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="name" column="C_NAME"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+		<property name="active" column="C_ACTIVE"/>
+	</class>
+
+	<!-- HR Check -->
+	<class name="ChkGroup" table="T_HRCHK_GROUP" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkHoliday" table="T_HRCHK_HLDAY" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkWork" table="T_HRCHK_WORK" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkExtra" table="T_HRCHK_EXTR" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkDisp" table="T_HRCHK_DISP" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkLongPlan" table="T_HRCHK_LONGPLAN" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="ChkLongPlanPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="fromDate" column="C_FROMDATE"/>
+		<property name="endDate" column="C_ENDDATE"/>
+		<many-to-one name="holiday" column="C_HLDAY" class="ChkHoliday"/>
+		<many-to-one name="lastModifier" column="C_LASTMODIFIER" class="com.gc.common.po.Person"/>
+		<many-to-one name="checker" column="C_CHECKER" class="com.gc.common.po.Person"/>
+		<property name="checkDate" column="C_CHECKDATE"/>
+		<property name="checkDescription" column="C_CHECKDSP"/>
+	</class>
+
+	<class name="ChkPlan" table="T_HRCHK_PLAN" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="ChkPlanPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="date" column="C_DATE"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="office" column="C_OFFICE"/>
+		<property name="checkDate" column="C_CHECKDATE"/>
+		<many-to-one name="checker" column="C_CHECKBY" class="com.gc.common.po.Person"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkPlanD" table="T_HRCHK_PLANDT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="ChkPlanDPK">
+			<key-many-to-one name="plan" class="ChkPlan">
+				<column name="C_BELONG"/>
+				<column name="C_HDNO"/>
+			</key-many-to-one>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="date" column="C_DATE"/>
+		<many-to-one name="holiday" column="C_HLDAY" class="ChkHoliday"/>
+		<many-to-one name="work" column="C_WORK" class="ChkWork"/>
+		<many-to-one name="extra" column="C_EXTR" class="ChkExtra"/>
+	</class>
+
+	<class name="ChkFact" table="T_HRCHK_FACT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="ChkFactPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<property name="date" column="C_DATE"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="office" column="C_OFFICE"/>
+		<property name="checkDate" column="C_CHECKDATE"/>
+		<many-to-one name="checker" column="C_CHECKBY" class="com.gc.common.po.Person"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="ChkFactD" table="T_HRCHK_FACTDT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="ChkFactDPK">
+			<key-many-to-one name="fact" class="ChkFact">
+				<column name="C_BELONG"/>
+				<column name="C_HDNO"/>
+			</key-many-to-one>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="date" column="C_DATE"/>
+		<many-to-one name="holiday" column="C_HLDAY" class="ChkHoliday"/>
+		<many-to-one name="work" column="C_WORK" class="ChkWork"/>
+		<many-to-one name="extra" column="C_EXTR" class="ChkExtra"/>
+		<many-to-one name="disp" column="C_DISP" class="ChkDisp"/>
+	</class>
+
+	<!-- HR Salary -->
+	<class name="SalItem" table="T_HRSAL_ITEM" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<property name="no" column="C_NO"/>
+		<property name="name" column="C_NAME"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<property name="accountDebit" column="C_ACCOUNT_DEBIT"/>
+		<property name="accountCredit" column="C_ACCOUNT_CREDIT"/>
+		<property name="flag" column="C_FLAG"/>
+		<property name="type" column="C_TYPE"/>
+		<property name="print" column="C_PRINT"/>
+		<property name="formula" column="C_FORMULA"/>
+		<property name="editType" column="C_EDITTYPE"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SalDeptPsn" table="T_HRSAL_DEPTPSN" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalDeptPsnPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+			<key-many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		</composite-id>
+		<property name="bank" column="C_BANK"/>
+		<property name="bankCard" column="C_BANKCARD"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SalFixOnline" table="T_HRSAL_FIXONLINE" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalFixOnlinePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+			<key-many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+			<key-many-to-one name="item" column="C_ITEM" class="SalItem"/>
+			<key-property name="onDate" column="C_ONDATE"/>
+		</composite-id>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<property name="amount" column="C_AMOUNT"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<!--class name="SalVarOnline" table="T_HRSAL_VARONLINE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<many-to-one name="item" column="C_ITEM" class="SalItem"/>
+		<property name="onDate" column="C_ONDATE"/>
+		<property name="downDate" column="C_DOWNDATE"/>
+		<property name="rate" column="C_RATE"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class-->
+
+	<class name="SalTemplate" table="T_HRSAL_TEMPLATE" dynamic-update="true" dynamic-insert="true">
+		<id name="id" column="C_ID">
+			<generator class="sequence-identity"/>
+		</id>
+		<many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="name" column="C_NAME"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SalTemplateD" table="T_HRSAL_TEMPLATEDT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalTemplateDPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-many-to-one name="template" column="C_HD" class="SalTemplate"/>
+			<key-property name="no" column="C_NO"/>
+			<key-many-to-one name="item" column="C_ITEM" class="SalItem"/>
+		</composite-id>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="amount" column="C_AMOUNT"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SalTemplateIx" table="T_HRSAL_TEMPLATEIX" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalTemplateIxPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-many-to-one name="template" column="C_HD" class="SalTemplate"/>
+			<key-many-to-one name="item" column="C_ITEM" class="SalItem"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+	</class>
+
+	<class name="SalFact" table="T_HRSAL_FACT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalFactPK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="no" column="C_NO"/>
+		</composite-id>
+		<many-to-one name="depart" column="C_DEPART" class="com.gc.common.po.Department"/>
+		<property name="date" column="C_DATE"/>
+		<property name="issueDate" column="C_ISSUEDATE"/>
+		<property name="issueType" column="C_ISSUETYPE"/>
+		<property name="summary" column="C_SUMMARY"/>
+		<many-to-one name="issuer" column="C_ISSUEBY" class="com.gc.common.po.Person"/>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<class name="SalFactD" table="T_HRSAL_FACTDT" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalFactDPK">
+			<key-many-to-one name="fact" class="SalFact">
+				<column name="C_BELONG"/>
+				<column name="C_HDNO"/>
+			</key-many-to-one>
+			<key-property name="no" column="C_NO"/>
+			<key-many-to-one name="item" column="C_ITEM" class="SalItem"/>
+		</composite-id>
+		<many-to-one name="person" column="C_PERSON" class="com.gc.common.po.Person"/>
+		<property name="amount" column="C_AMOUNT"/>
+	</class>
+
+	<class name="SalFactIx" table="T_HRSAL_FACTIX" dynamic-update="true" dynamic-insert="true">
+		<composite-id name="id" class="SalFactIxPK">
+			<key-many-to-one name="fact" class="SalFact">
+				<column name="C_BELONG"/>
+				<column name="C_HDNO"/>
+			</key-many-to-one>
+			<key-many-to-one name="item" column="C_ITEM" class="SalItem"/>
+		</composite-id>
+		<property name="no" column="C_NO"/>
+	</class>
+
+	<!-- HR Common -->
+	<class name="HrClose" table="T_HR_CLOSE" dynamic-insert="true" dynamic-update="true">
+		<composite-id name="id" class="HrClosePK">
+			<key-many-to-one name="branch" column="C_BELONG" class="com.gc.common.po.Branch"/>
+			<key-property name="date" column="C_DATE"/>
+		</composite-id>
+		<property name="comment" column="C_COMMENT"/>
+	</class>
+
+	<sql-query name="CLEAR_BOOKS">DELETE FROM BOOK</sql-query>
+	<sql-query name="CLEAR_AUTHORS">DELETE FROM AUTHOR</sql-query>
+
+	<sql-query name="HR_NO">SELECT FUN_GET_NEXT_HRNO(:branchId, :type, :accHead) FROM DUAL</sql-query>
+	<!--sql-query name="HR_NO" callable="true">
+		{ ? = call FUN_GET_NEXT_HRNO(:branchId, :type, :accHead) }
+	</sql-query-->
+	<sql-query name="HR_CLOSE" callable="true">
+		{ ? = call FUN_HR_CLOSE(:branchId, :date, :comment, :type, :user) }
+	</sql-query>
+	<sql-query name="HRSAL_FIXONLINE" callable="true">
+		{ call SP_HRSAL_FIXONLINE(:branchId, :departNo, :type, :personNo, :itemNo, :date, :value, :doPerson, :doDate) }
+	</sql-query>
+	<sql-query name="HRSAL_FACTDT" callable="true">
+		{ call SP_HRSAL_FACTDT(:branchId, :hdNo, :no, :itemId, :personId, :amount, :date, :workerId, :type) }
+	</sql-query>
+</hibernate-mapping>

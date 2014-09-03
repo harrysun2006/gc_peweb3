@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%"
+                height="100%" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:VBox width="100%" height="100%">
+    <mx:Label id="lName" width="100%" textAlign="center" fontSize="20" fontWeight="bold"/>
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%">
+        <mx:GridItem width="70%">
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.p03.endDate')}:"/>
+          <mx:Label text="{period}"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" horizontalScrollPolicy="auto"
+                         labelFunction="{CommonUtil.gridLabelFunction}" lockedColumnCount="4">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                   labelFunction="{CommonUtil.serialLabelFunction}"
+                                   styleFunction="{CommonUtil.serialStyleFunction}"/>
+        <mx:AdvancedDataGridColumn dataField="depart.name"/>
+        <mx:AdvancedDataGridColumn dataField="workerId"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="pid"/>
+        <mx:AdvancedDataGridColumn dataField="sex"/>
+        <mx:AdvancedDataGridColumn dataField="birthday"/>
+        <mx:AdvancedDataGridColumn dataField="fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataField="workType"/>
+        <mx:AdvancedDataGridColumn dataField="type"/>
+        <mx:AdvancedDataGridColumn dataField="workLength"/>
+        <mx:AdvancedDataGridColumn dataField="inDate"/>
+        <mx:AdvancedDataGridColumn dataField="thisWorkLength" labelFunction="{getThisWorkLength}"/>
+        <mx:AdvancedDataGridColumn dataField="totalWorkLength" labelFunction="{getTotalWorkLength}"/>
+        <mx:AdvancedDataGridColumn dataField="paySocialInsInit"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="paySocialInsAdj"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="paySocialInsSal"
+                                   formatter="{Constants.NUMBER_FORMATTER_N0}"/>
+        <mx:AdvancedDataGridColumn dataField="paySocialIns$"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'export')}" click="export(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'return')}" click="back(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.utils.ObjectProxy;
+
+      import com.gc.common.model.Person;
+      import com.gc.util.DateUtil;
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var period:String;
+      private var qo:Object;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "report.p03.grid");
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        lName.text=resourceManager.getString("gcc_hr", "report.p03.name", [UserController.branchName]);
+        adg1.dataProvider=e.data.persons;
+        qo=e.data.qo;
+        period=DateUtil.formatDate(qo.date_to, Constants.DATE_FORMAT);
+      }
+
+      private function getThisWorkLength(item:Object, column:Object):String
+      {
+        var p:Person, r:String="";
+        if (item is Person && column is AdvancedDataGridColumn)
+        {
+          p=item as Person;
+          r=p.getThisWorkLength$(qo.date_to);
+        }
+        return r;
+      }
+
+      private function getTotalWorkLength(item:Object, column:Object):String
+      {
+        var p:Person, r:String="";
+        if (item is Person && column is AdvancedDataGridColumn)
+        {
+          p=item as Person;
+          r=p.getTotalWorkLength$(qo.date_to);
+        }
+        return r;
+      }
+
+      private function export(e:Event):void
+      {
+        CommonUtil.export(CommonUtil.getGridData(adg1), CommonUtil.getGridHeaders(adg1), null,
+          resourceManager.getString("gcc_hr", "report.p03.file", [qo.date_to_str]));
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function back(e:Event=null):void
+      {
+        close();
+        CommonUtil.popupWindow(ReportP03Select, "", owner, {qo:qo});
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

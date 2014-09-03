@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*" width="600"
+                height="320" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <mx:ToolBar id="form" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'branch')}:">
+      <mx:Label text="{UserController.branchName}" width="320"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.id.no')}:">
+      <mx:TextInput text="{no}" editable="false" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.person')}:">
+      <mx:ComboBox dataProvider="{personList}" name="person" width="180" editable="true"
+                   itemRenderer="mx.controls.Label" labelField="name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.fromDate')}:">
+      <mx:DateField name="fromDate" text="{DateUtil.formatDate(po.fromDate)}" editable="true"
+                    formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.endDate')}:">
+      <mx:DateField id="dfEndDate" name="endDate" text="{DateUtil.formatDate(po.endDate)}"
+                    editable="true" formatString="{Constants.DATE_FORMAT}"
+                    yearNavigationEnabled="true" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.holiday')}:">
+      <mx:ComboBox dataProvider="{CheckController.holidayList}" name="holiday"
+                   itemRenderer="mx.controls.Label" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.lastModifier')}:">
+      <mx:TextInput text="{lastModifierName}" editable="false" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.checker')}:">
+      <mx:ComboBox dataProvider="{checkerList}" name="checker" width="180" editable="true"
+                   itemRenderer="mx.controls.Label" labelField="name"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.checkDate')}:">
+      <mx:DateField name="checkDate" text="{DateUtil.formatDate(po.checkDate)}" editable="true"
+                    formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true" width="180"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkLongPlan.checkDescription')}:">
+      <mx:TextInput name="checkDescription" text="{po.checkDescription}" width="180"/>
+    </mx:FormItem>
+  </mx:ToolBar>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="save(event)"
+               enabled="{UserController.hrWrite}"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.containers.FormItem;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.DateField;
+      import mx.controls.TextInput;
+      import mx.events.CloseEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.model.ChkLongPlan;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      [Bindable]
+      private var po:ChkLongPlan;
+      [Bindable]
+      private var no:String;
+      [Bindable]
+      private var lastModifierName:String;
+      [Bindable]
+      private var personList:ArrayCollection;
+      [Bindable]
+      private var checkerList:ArrayCollection;
+      private var operation:String;
+      private var spo:ChkLongPlan;
+
+      private const labelItemRenderer:IFactory=new ClassFactory(Label);
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreationComplete():void
+      {
+        reset();
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        spo=e.args[0] as ChkLongPlan;
+        po=ObjectUtil.copy(spo) as ChkLongPlan;
+        personList=e.args[1] as ArrayCollection;
+        checkerList=e.args[2] as ArrayCollection;
+        operation = po.no ? Constants.OP_EDIT : Constants.OP_ADD;
+        no = (operation == Constants.OP_ADD) ? "-" : po.no;
+        lastModifierName = (operation == Constants.OP_ADD) ? UserController.personName : po.lastModifierName;
+      }
+
+      private function reset():void
+      {
+        CommonUtil.visit(this, function(obj:Object):void
+          {
+            if (obj is FormItem)
+            {
+              obj.styleName="filterLabel";
+            }
+            else if (obj is ComboBox)
+            {
+              obj.itemRenderer=labelItemRenderer;
+              CommonUtil.selectDefaultItem(obj, CommonUtil.getAccessorValue(po, obj.name));
+            }
+          });
+      }
+
+      private function save(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["person", "fromDate", "endDate", "holiday", "checker", "checkDate"]))
+          return;
+        CommonUtil.loadInstance(form, po);
+        if (po.fromDate > po.endDate)
+        {
+          CommonUtil.showError(dfEndDate, 2000, resourceManager.getString("gcc_hr", "chkLongPlan.error.endDate.lt.fromDate"));
+          dfEndDate.setFocus();
+          return;
+        }
+        CommonUtil.loadInstance({"id.branch": UserController.branch, "lastModifier": UserController.person}, po);
+        CheckController.saveLongPlan(po, function(e1:ResultEvent):void
+          {
+            var no:String=e1.result as String;
+            if (operation == Constants.OP_ADD) {
+              Alert.show(resourceManager.getString("gcc_hr", "chkLongPlan.add.success", [no]), 
+                Constants.APP_NAME, Alert.YES | Alert.NO, null, function(e2:CloseEvent):void
+                {
+                  if (e2.detail == Alert.YES) {
+                    var npo:ChkLongPlan=new ChkLongPlan();
+                    CommonUtil.copyProperties(po, npo, [], ["checker", "checkDate"]);
+                    po=npo;
+                    reset();
+                  } else {
+                    close();
+                  }
+                }, Constants.ICON32_QUESTION);
+            } else {
+              close();
+              CommonUtil.copyProperties(po, spo);
+              Alert.show(resourceManager.getString("gcc_hr", "chkLongPlan.edit.success", [no]), 
+                Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+            }
+          });
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

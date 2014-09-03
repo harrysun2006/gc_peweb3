@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:personal="com.gc.hr.view.personal.*"
+           width="100%" height="100%" creationComplete="onCreationComplete()">
+  <mx:ViewStack id="vsNodeView" width="100%" height="100%" creationPolicy="all"
+                change="onChange(event)">
+    <mx:Box/>
+    <personal:PersonInfo id="viewPersonInfo"/>
+    <personal:PersonList id="viewPersonList"/>
+    <personal:PersonStat id="viewPersonStat"/>
+  </mx:ViewStack>
+  <mx:Script>
+    <![CDATA[
+      import mx.core.UIComponent;
+      import mx.events.IndexChangedEvent;
+      import com.gc.util.CommonUtil;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.FaultEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.PersonalController;
+
+      private function onCreationComplete():void
+      {
+        addEventListener(CommonEvent.CLICKED, onTreeNodeClicked);
+      }
+
+      private function onTreeNodeClicked(event:CommonEvent):void
+      {
+        var item:Object=event.data;
+        var args:Array=event.args;
+        event.stopImmediatePropagation();
+        if (item is Person)
+        { // 显示人员卡片
+          vsNodeView.selectedChild=viewPersonInfo;
+          viewPersonInfo.showPerson(item as Person);
+        }
+        else if (item && args && args.length == 2)
+        {
+          var ancestors:Array=args[0] as Array;
+          var orderColumns:Array=args[1] as Array;
+          if (ancestors.length - 1 == orderColumns.length)
+          { // 显示人员列表
+            vsNodeView.selectedChild=viewPersonList;
+            viewPersonList.listPersons(item, ancestors, orderColumns);
+          }
+          else
+          { // 显示统计信息
+            vsNodeView.selectedChild=viewPersonStat;
+            viewPersonStat.statPersons(item, ancestors, orderColumns);
+          }
+        }
+      }
+
+      private function onChange(event:Event):void
+      {
+        var e:Event=new CommonEvent(CommonEvent.CHANGE_VIEW, vsNodeView.selectedChild);
+        vsNodeView.selectedChild.dispatchEvent(e);
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

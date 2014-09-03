@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:Label text="{resourceManager.getString('gcc_safety','gua.title.name')}" textAlign="left"
+            width="100%"/>
+  <mx:Form id="form" width="100%">
+    <mx:Grid width="100%">
+      <mx:GridRow width="100%" horizontalAlign="left">
+        <mx:GridItem>
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.accNo')}">
+            <mx:TextInput id="tiAccNo" name="id.accNo" text="{guar.id.accNo}" editable="false"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem>
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.inputDate')}">
+            <mx:DateField id="dfInputDate" name="inputDate" text="{df.format(guar.inputDate)}"
+                          editable="false" formatString="{Constants.DATE_FORMAT}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem>
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.type.name')}">
+            <mx:ComboBox id="cbType" labelField="name"
+                         dataProvider="{GuaranteeController.guaTypeList}" text="{guar.type.name}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem horizontalAlign="right">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.insurer.name')}"
+                       horizontalAlign="right">
+            <mx:ComboBox id="cbInsurer" labelField="name"
+                         dataProvider="{GuaranteeController.insurerList}" text="{guar.insurer.name}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%">
+        <mx:GridItem>
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.onDate')}">
+            <mx:DateField id="dfOnDate" name="onDate" text="{df.format(guar.onDate)}"
+                          formatString="{Constants.DATE_FORMAT}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem>
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.downDate')}">
+            <mx:DateField id="dfDownDate" name="downDate" text="{df.format(guar.downDate)}"
+                          formatString="{Constants.DATE_FORMAT}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+        <mx:GridItem horizontalAlign="right">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.insurerPsn')}"
+                       horizontalAlign="right">
+            <mx:TextInput id="tiInsurerPsn" name="insurerPsn" text="{guar.insurerPsn}"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+      <mx:GridRow width="100%" horizontalAlign="left">
+        <mx:GridItem colSpan="3" horizontalAlign="center">
+          <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.desc')}"
+                       horizontalAlign="right" width="100%">
+            <mx:TextArea id="taDesc" name="desc" text="{guar.desc}" width="100%"/>
+          </mx:FormItem>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+  </mx:Form>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.rpc.events.ResultEvent;
+      import mx.effects.Resize;
+      import com.gc.common.controller.UserController;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.Constants;
+      import com.gc.safety.model.Guarantee;
+
+      [Bindable]
+      private var guar:Guarantee;
+      private var branchId:int;
+
+      private function onPreinitialize():void
+      {
+        branchId = UserController.branchId;
+        GuaranteeController.getGuaTypes(branchId);
+        GuaranteeController.getInsurers(branchId);
+      }
+
+      private function onCreationComplete():void
+      {
+        getEqualWidth();
+//        tiAccNo.text = resourceManager.getString('gcc_safety','gua.new.accNo');
+        comEditAble(false);
+        cbType.selectedItem = null;
+        cbInsurer.selectedItem = null;
+      }
+
+      private function getEqualWidth():void
+      {
+        dfInputDate.width = tiAccNo.width;
+        cbType.width = tiAccNo.width;
+        cbInsurer.width = tiAccNo.width;
+        dfOnDate.width = tiAccNo.width;
+        dfDownDate.width = tiAccNo.width;
+      }
+
+      private function comEditAble(able:Boolean):void
+      {
+        this.tiAccNo.editable = able;
+        this.dfInputDate.enabled = able;
+        this.tiInsurerPsn.editable = able;
+        this.dfOnDate.enabled = able;
+        this.dfDownDate.enabled = able;
+        this.cbInsurer.enabled = able;
+        this.cbType.enabled = able;
+        this.taDesc.editable = able;
+      }
+
+      public function showGuar(guar:Guarantee):void
+      {
+        this.guar = guar;
+        CommonUtil.selectItem(guar.type,GuaranteeController.guaTypeList,cbType);
+        CommonUtil.selectItem(guar.insurer,GuaranteeController.insurerList,cbInsurer);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

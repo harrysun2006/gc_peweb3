@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="800" height="440"
+                title="{resourceManager.getString('gcc_safety','gua.list')}"
+                horizontalAlign="center" preinitialize="onPreinitialize()"
+                horizontalScrollPolicy="off" creationComplete="onCreationComplete()"
+                keyDown="escape(event)">
+  <mx:VBox width="100%" horizontalAlign="center" horizontalScrollPolicy="auto">
+    <mx:AdvancedDataGrid id="adgGuas" width="100%" height="300"
+                         labelFunction="{CommonUtil.gridLabelFunction}" doubleClickEnabled="true"
+                         doubleClick="doubleClickItem(event)" itemRenderer="mx.controls.Label"
+                         click="clickItem(adgGuas.selectedItem)" dataProvider="{guas}"
+                         horizontalScrollPolicy="auto">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="id" dataTipField="id.accNo"/>
+        <mx:AdvancedDataGridColumn dataField="inputDate"/>
+        <mx:AdvancedDataGridColumn dataField="type" dataTipField="type.name"/>
+        <mx:AdvancedDataGridColumn dataField="insurer" dataTipField="insurer.name"/>
+        <mx:AdvancedDataGridColumn dataField="onDate"/>
+        <mx:AdvancedDataGridColumn dataField="downDate"/>
+        <mx:AdvancedDataGridColumn dataField="doPsn" dataTipField="doPsn.name"/>
+        <mx:AdvancedDataGridColumn dataField="insurerPsn"/>
+        <mx:AdvancedDataGridColumn dataField="desc"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+    <mx:HBox width="100%" horizontalAlign="center">
+      <mx:Label text="{resourceManager.getString('gcc_safety','gua.info.num')}"/>
+      <mx:Text id="tGuarInfoSum" width="66"/>
+    </mx:HBox>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="5">
+      <mx:Button id="btSure" label="{resourceManager.getString('gcc','ok')}" click="sure(event)"/>
+      <mx:Label width="40"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','cancel')}"
+                 click="cancel(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import com.gc.safety.Events;
+      import com.gc.safety.Events;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.model.Guarantee;
+      import com.gc.util.CommonUtil;
+      import mx.managers.PopUpManager;
+      import mx.events.FocusRequestDirection;
+      import mx.managers.IFocusManagerComponent;
+      import com.gc.CommonEvent;
+      import mx.managers.IFocusManager;
+      import mx.core.Application;
+      import mx.core.Container;
+
+      [Bindable]
+      private var guas:ArrayCollection;
+      private var guarInfos:ArrayCollection;
+      private var gua:Guarantee;
+      private var branchId:int;
+      private var closeDate:Date;
+
+      private function onPreinitialize():void
+      {
+        branchId = UserController.branchId;
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGuas, "gcc_safety", "gua", function(obj:Object):void{});
+        btSure.setFocus();
+        GuaranteeController.getGuasByBCloseD(branchId,CommonController.closeDate,successGetGuas);
+      }
+
+      private function successGetGuas(event:ResultEvent):void
+      {
+        guas = event.result as ArrayCollection;
+      }
+
+      private function clickItem(item:Object):void
+      {
+        gua = item as Guarantee;
+        if (gua != null)
+        {
+          guarInfos = gua.guarInfos;
+          tGuarInfoSum.text = guarInfos.length.toString();
+        }
+      }
+
+      private function doubleClickItem(event:MouseEvent):void
+      {
+//        gua = adgGuas.selectedItem as Guarantee;
+//        if (gua == null)
+//          return;
+//        dispatchEvent(new Events(Events.DBCLICKED,gua));
+//        PopUpManager.removePopUp(this);
+      }
+
+      private function sure(event:Event):void
+      {
+        if (gua == null)
+        {
+          Alert.show(resourceManager.getString('gcc','gua.select.one.process'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+        }
+        else
+        {
+          dispatchEvent(new Events(Events.CLICKED,gua));
+          PopUpManager.removePopUp(this);
+        }
+      }
+
+      private function cancel(event:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+
+      private function escape(event:KeyboardEvent):void
+      {
+        var dobj:DisplayObject=(event.target is DisplayObject) ? CommonUtil.findAncestor(event.target as DisplayObject, Container) : null;
+        var focusManager:IFocusManager=(dobj is Container) ? (dobj as Container).focusManager : Application.application.focusManager;
+        switch (event.keyCode)
+        {
+          case Keyboard.ENTER:
+            var p:IFocusManagerComponent=focusManager.getFocus();
+            if (p is Button)
+            {
+              (p as Button).dispatchEvent(CommonEvent.MOUSE_CLICK_EVENT);
+              return;
+            }
+            focusManager.moveFocus(FocusRequestDirection.FORWARD);
+            var n:IFocusManagerComponent=focusManager.getFocus();
+            if (n is Button)
+              (n as Button).dispatchEvent(CommonEvent.MOUSE_CLICK_EVENT);
+            break;
+          case Keyboard.ESCAPE:
+            cancel(event);
+            break;
+        }
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

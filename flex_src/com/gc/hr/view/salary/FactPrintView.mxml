@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="767" height="1015" creationPolicy="all" verticalScrollPolicy="off"
+		 horizontalScrollPolicy="off" fontFamily="SimSun" backgroundColor="#FFFFFF" fontStyle="normal" fontWeight="bold" paddingTop="50"
+		 paddingBottom="50" paddingLeft="50" paddingRight="50" xmlns:salary="com.gc.hr.view.salary.*">
+
+	<salary:FactPrintHeader id="header"/>
+	<mx:PrintAdvancedDataGrid id="adg" width="100%" sortableColumns="false" height="100%" labelFunction="{CommonUtil.gridLabelFunction}">
+		<mx:groupedColumns>
+			<mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" width="70" formatter="{Constants.NUMBER_FORMATTER_N0}"
+									   styleFunction="{CommonUtil.serialStyleFunction}"/>
+			<mx:AdvancedDataGridColumn dataField="person" dataTipField="person.workerId" width="140"/>
+			<mx:AdvancedDataGridColumn dataField="person" dataTipField="person.name" width="140"/>
+		</mx:groupedColumns>
+	</mx:PrintAdvancedDataGrid>
+
+	<mx:Script>
+		<![CDATA[
+			import com.gc.Constants;
+			import com.gc.util.CommonUtil;
+
+			public function showPage(pageType:String):void
+			{
+				if (pageType == "first")
+				{
+					header.includeInLayout=true;
+					header.visible=true;
+				}
+				if (pageType == "next")
+				{
+					header.includeInLayout=false;
+					header.visible=false;
+				}
+				validateNow();
+			}
+		]]>
+	</mx:Script>
+</mx:VBox>

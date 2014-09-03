@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="480" height="338" layout="vertical"
+                autoLayout="true" preinitialize="onPreinitialize()" paddingLeft="6" paddingTop="6"
+                paddingRight="6" paddingBottom="6">
+  <mx:TabNavigator id="dialog" width="100%" height="100%" creationPolicy="auto"/>
+  <mx:VBox id="config" width="100%" autoLayout="true" visible="false" includeInLayout="false">
+    <mx:RadioButtonGroup id="rbg1"/>
+    <mx:RadioButtonGroup id="rbg2"/>
+    <mx:HBox width="100%" height="120">
+      <mx:VBox width="65%" height="100%" verticalAlign="middle" borderStyle="solid"
+               borderThickness="1" borderColor="#CCCCCC" paddingLeft="6" paddingTop="6"
+               paddingRight="6" paddingBottom="6">
+        <mx:RadioButton group="{rbg1}" label="全部" value="1"/>
+        <mx:HBox width="100%">
+          <mx:RadioButton group="{rbg1}" label="页码范围: " value="2"/>
+          <mx:TextInput id="tiPages"/>
+        </mx:HBox>
+        <mx:Text text="请输入页码或者用逗号分开的页码范围（例如: 1,3,5-12）" width="100%"/>
+      </mx:VBox>
+      <mx:VBox width="35%" height="100%" verticalAlign="middle" borderStyle="solid"
+               borderThickness="1" borderColor="#CCCCCC" paddingLeft="6" paddingTop="6"
+               paddingRight="6" paddingBottom="6">
+        <mx:HBox width="100%">
+          <mx:Label text="份数: "/>
+          <mx:NumericStepper id="nsCopies" minimum="1"/>
+        </mx:HBox>
+        <mx:CheckBox id="cbOneByOne" label="逐份打印"/>
+      </mx:VBox>
+    </mx:HBox>
+    <mx:HBox width="100%" height="80">
+      <mx:VBox width="65%" height="100%" borderStyle="solid" borderThickness="1"
+               borderColor="#CCCCCC" paddingLeft="6" paddingTop="6" paddingRight="6"
+               paddingBottom="6">
+        <mx:HBox width="100%">
+          <mx:Label text="纸张大小: "/>
+          <mx:ComboBox id="cbSize" dataProvider="{Print.SI_LIST}" width="180"/>
+        </mx:HBox>
+      </mx:VBox>
+      <mx:VBox width="35%" height="100%" borderStyle="solid" borderThickness="1"
+               borderColor="#CCCCCC" paddingLeft="6" paddingTop="6" paddingRight="6"
+               paddingBottom="6">
+        <mx:RadioButton group="{rbg2}" label="纵向" value="2"/>
+        <mx:RadioButton group="{rbg2}" label="横向" value="1"/>
+      </mx:VBox>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:HBox width="100%" height="30" horizontalAlign="center">
+    <mx:Button label="确  定" click="dodo(event)"/>
+    <mx:Button label="取  消" click="gogo(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import flash.events.EventDispatcher;
+      import mx.core.UIComponent;
+
+      import com.gc.common.model.Print;
+      import com.gc.CommonEvent;
+
+      private var sylla:Object;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        sylla = e.data;
+        var print:Print = sylla.print as Print;
+        var options:Object = sylla.hasOwnProperty("options") ? sylla.options : null;
+        print.options = (print.options == null) ? new Object() : print.options;
+        title = print.isPrint ? "打印" : print.isPreview ? "打印预览" : print.isExcel ? "导出Excel" : "";
+        config.label = title + "设置";
+        rbg1.selectedValue = print.isAll ? 1 : 2;
+        tiPages.text = print.isAll ? "" : print.pages;
+        nsCopies.value = print.copies;
+        cbOneByOne.selected = print.onebyone;
+        cbSize.selectedItem = print.size$;
+        rbg2.selectedValue = print.isLandscape ? 1 : 2;
+        if (print.isPrint || print.isPreview)
+          dialog.addChild(config);
+        addOptions();
+      }
+
+      private function addOptions():void
+      {
+        var opt:Object;
+        var options:Object = sylla.hasOwnProperty("options") ? sylla.options : null;
+        var f:Function = function(_opt:Object):void
+          {
+            if (_opt is DisplayObject) dialog.addChild(_opt as DisplayObject);
+          };
+        if (options is Array)
+        {
+          for each (opt in options)
+            f(opt);
+        }
+        else if (options is UIComponent)
+        {
+          f(options);
+        }
+        callLater(function():void
+          {
+            if (options == null) return;
+            var h0:Number = height;
+            height = dialog.measuredMinHeight+131;
+            y -= (height - h0)/2;
+          });
+
+      }
+
+      private function notifyOptions():void
+      {
+        var opt:Object;
+        var print:Print = sylla.print as Print;
+        var options:Object = sylla.hasOwnProperty("options") ? sylla.options : null;
+        var f:Function = function(_opt:Object):void
+          {
+            if (_opt is EventDispatcher)
+              (_opt as EventDispatcher).dispatchEvent(new CommonEvent(CommonEvent.CLOSED, print.options));
+          };
+        if (options is Array)
+        {
+          for each (opt in options)
+            f(opt);
+        }
+        else if (options is UIComponent)
+        {
+          f(options);
+        }
+      }
+
+      private function dodo(e:Event):void
+      {
+        var print:Print = sylla.print as Print;
+        print.pages = (rbg1.selectedValue == 1) ? "all" : (rbg1.selectedValue == 2) ? tiPages.text : "";
+        print.copies = nsCopies.value;
+        print.onebyone = cbOneByOne.selected;
+        print.size = cbSize.selectedItem.value;
+        print.orientation = Number(rbg2.selectedValue);
+        notifyOptions();
+        owner.dispatchEvent(new CommonEvent(CommonEvent.RETURN, sylla));
+        gogo();
+      }
+
+      private function gogo(e:Event = null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

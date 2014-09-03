@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="100%"
+                height="100%" xmlns:gc="com.gc.controls.*" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()" verticalGap="0">
+  <mx:AdvancedDataGrid id="adg1" width="100%" height="100%" editable="true" resizableColumns="false"
+                       sortExpertMode="true" horizontalScrollPolicy="auto" lockedColumnCount="4"
+                       visible="false" labelFunction="{CommonUtil.gridLabelFunction}"
+                       itemEditEnd="onItemEditEnd(event)" scroll="onScroll(event)">
+    <mx:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 labelFunction="{CommonUtil.serialLabelFunction}"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.depart.name"/>
+      <mx:AdvancedDataGridColumn dataTipField="id.person.workerId"/>
+      <mx:AdvancedDataGridColumn dataField="person#name" dataTipField="id.person.name"/>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false"
+                                      headerText="{item.no}[{item.name}]">
+        <mx:AdvancedDataGridColumn dataField="onDate" dataTipField="onDate"/>
+        <mx:AdvancedDataGridColumn dataField="amount" itemEditor="{numberInput}"
+                                   formatter="{Constants.NUMBER_FORMATTER_N2}"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page2')}">
+        <mx:AdvancedDataGridColumn dataTipField="id.person.depart.name"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.office"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.allotDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false"
+                                      headerText="{resourceManager.getString('gcc_hr', 'person.manage.update.info.page3')}">
+        <mx:AdvancedDataGridColumn dataTipField="id.person.type"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.grade"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.fkPosition.name"/>
+        <mx:AdvancedDataGridColumn dataTipField="id.person.upgradeDate"/>
+      </mx:AdvancedDataGridColumnGroup>
+    </mx:groupedColumns>
+  </mx:AdvancedDataGrid>
+  <gc:StyledDataGrid id="adg2" width="100%" height="24" visible="false" showHeaders="false"
+                     editable="false" horizontalScrollPolicy="auto" verticalScrollPolicy="off"
+                     lockedColumnCount="4" resizableColumns="false" sortableColumns="false"
+                     labelFunction="{CommonUtil.gridLabelFunction}">
+    <gc:groupedColumns>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                 styleFunction="{CommonUtil.serialStyleFunction}"/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumn/>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false">
+        <mx:AdvancedDataGridColumn dataField="onDate" dataTipField="onDate"/>
+        <mx:AdvancedDataGridColumn dataField="amount" formatter="{Constants.NUMBER_FORMATTER_N2}"/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false">
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+      </mx:AdvancedDataGridColumnGroup>
+      <mx:AdvancedDataGridColumnGroup textAlign="center" editable="false">
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+        <mx:AdvancedDataGridColumn/>
+      </mx:AdvancedDataGridColumnGroup>
+    </gc:groupedColumns>
+  </gc:StyledDataGrid>
+  <mx:HBox horizontalAlign="left" width="100%" paddingBottom="7" paddingLeft="7" id="note">
+    <mx:Label id="_note" color="0xFF0000"/>
+  </mx:HBox>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'set.batch')}" click="batch(event)"/>
+    <mx:Button id="doit" click="dof(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.controls.Alert;
+      import mx.controls.TextInput;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.hr.Events;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalDeptPsn;
+      import com.gc.hr.model.SalFixOnline;
+      import com.gc.hr.model.SalItem;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.ExprUtil;
+      import com.gc.util.HanZiUtil;
+
+      [Bindable]
+      private var dof:Function;
+      [Bindable]
+      private var item:SalItem;
+      [Bindable]
+      private var numberInput:AdvancedClassFactory;
+
+      private var list0:ArrayCollection;
+      private var list1:ArrayCollection;
+      private var list2:ArrayCollection;
+      private var op:String;
+      private var items:ArrayCollection;
+      private var map1:Object;
+      private var map2:Object;
+
+      private function onPreinitialize():void
+      {
+        list0=new ArrayCollection();
+        list2=new ArrayCollection();
+        dof=function(e:Event):void{};
+        item=new SalItem();
+        item.no="";
+        item.name=resourceManager.getString("gcc_hr", "salFixOnline");
+        numberInput=new AdvancedClassFactory(TextInput);
+        numberInput.properties={restrict:"0-9\.\-"};
+        addEventListener(CommonEvent.CLOSED, close);
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.RETURN, onReturn);
+      }
+
+      private function onCreationComplete():void
+      {
+        var sfs:Object={
+            "id.person.workerId":Person.SC_WORKERID,
+            "id.person.name":null, //Person.SC_NAME,
+            "id.person.depart.name":Person.SC_DEPART_NAME,
+            "id.person.type":Person.SC_TYPE,
+            "id.person.fkPosition.name":Person.SC_POSITION_NAME
+          };
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "salDeptPsn", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              obj.sortable=sfs.hasOwnProperty(obj.dataTipField);
+              obj.sortCompareFunction=obj.sortable ? sfs[obj.dataTipField] : null;
+            }
+          });
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        var sfo:SalFixOnline;
+        list0.removeAll();
+        for each (var sdp:SalDeptPsn in e.args[0])
+        {
+          sfo=new SalFixOnline();
+          sfo.id.branch=sdp.branch;
+          sfo.id.depart=sdp.depart;
+          sfo.id.person=sdp.person;
+          sfo["person#name"]=HanZiUtil.pinyin(sdp.person.name);
+          list0.addItem(sfo);
+        }
+        list1=ObjectUtil.copy(list0) as ArrayCollection;
+        adg1.dataProvider=list1;
+
+        op=e.args[1] as String;
+        items=e.args[2] as ArrayCollection;
+        map1=e.args[3];
+        map2=e.args[4];
+        if (op == Constants.OP_ADD)
+        {
+          title=resourceManager.getString("gcc_hr", "salFixOnline.add");
+          dof=add;
+        }
+        else if (op == Constants.OP_EDIT)
+        {
+          title=resourceManager.getString("gcc_hr", "salFixOnline.edit");
+          dof=edit;
+        }
+        else if (op == Constants.OP_DELETE)
+        {
+          title=resourceManager.getString("gcc_hr", "salFixOnline.del");
+          note.visible=note.includeInLayout=true;
+          doit.label=resourceManager.getString("gcc", "terminate");
+          dof=terminate;
+        }
+        CommonUtil.popupWindow(FixOnlineSelect, "", this, [op, list0]);
+        var fields:Array;
+        if (op == Constants.OP_ADD || op == Constants.OP_EDIT)
+        {
+          note.visible=note.includeInLayout=false;
+          doit.label=resourceManager.getString("gcc", "save");
+          fields=["amount"];
+        }
+        else
+          fields=[];
+        CommonUtil.setDataGridColumns(adg1, "gcc_hr", "salFixOnline", function(obj:Object):void
+          {
+            if (obj is AdvancedDataGridColumn)
+            {
+              var f:String=obj.dataTipField ? obj.dataTipField : obj.dataField;
+              obj.editable=fields.indexOf(f) >= 0;
+            }
+          });
+        adg1.visible=true;
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var obj:Object=e.data;
+        if (obj == null || !obj.hasOwnProperty("type"))
+          return;
+        if (obj.type == "select.item")
+          onSelectItem(obj);
+        else if (obj.type == "batch.set")
+          onBatchSet(obj);
+      }
+
+      private function onSelectItem(obj:Object):void
+      {
+        item=obj.item as SalItem;
+        var date:Date=obj.date as Date;
+        var id:String;
+        for each (var sfo:SalFixOnline in list1)
+        {
+          sfo.id.item=item;
+          id="sfo#"+sfo.departId+"#"+sfo.personId+"#"+sfo.itemId;
+          if (map2[id])
+          {
+            if (op == Constants.OP_ADD)
+            {
+              if (map2[id].id.onDate <= date && map2[id].downDate >= date)
+              {
+                Alert.show(resourceManager.getString("gcc_hr", "salFixOnline.error.exist", [sfo.depart.name, sfo.person.name, 
+                  DateUtil.formatDate(map2[id].id.onDate), DateUtil.formatDate(map2[id].downDate), item.name]),
+                  Constants.APP_NAME, Alert.OK, null, function(e1:Event):void{close();}, Constants.ICON32_ERROR);
+                return;
+              }
+              else
+              {
+                sfo.id.onDate=date;
+                sfo.downDate=Constants.MAX_DATE;
+                sfo.amount=0;
+              }
+            }
+            else if (op == Constants.OP_EDIT)
+            {
+              sfo.id.onDate=date;
+              sfo.downDate=Constants.MAX_DATE;
+              sfo.amount=map2[id].amount;
+            }
+            else if (op == Constants.OP_DELETE)
+            {
+              sfo.onDate=map2[id].onDate;
+              sfo.downDate=date;
+              sfo.amount=map2[id].amount;
+            }
+          }
+          else
+          {
+            if (op == Constants.OP_ADD)
+            {
+              sfo.id.onDate=date;
+              sfo.downDate=Constants.MAX_DATE;
+              sfo.amount=0;
+            }
+            /** 2011-1-20: 可能更新或终止当日之后 的固定项目
+               else if (op == Constants.OP_EDIT || op == Constants.OP_DELETE)
+               {
+               Alert.show(resourceManager.getString("gcc_hr", "salFixOnline.error.non-exist", [sfo.depart.name, sfo.person.name, item.name]),
+               Constants.APP_NAME, Alert.OK, null, function(e1:Event):void{close();}, Constants.ICON32_ERROR);
+               return;
+               }
+             **/
+            else if (op == Constants.OP_EDIT || op == Constants.OP_DELETE)
+            {
+              sfo.id.onDate=date;
+              sfo.downDate=date;
+              sfo.amount=0;
+            }
+          }
+        }
+        _note.text=resourceManager.getString("gcc_hr", "salFixOnline.del.query", [item.name]);
+        list1.refresh();
+
+        calculate2();
+        adg2.dataProvider=list2;
+        adg2.visible=true;
+      }
+
+      private function onBatchSet(obj:Object):void
+      {
+        var ii:SalItem=obj.item as SalItem;
+        var ff:String=obj.formula;
+        var rr:Object=obj.rr, cc:Object={}, sfo:SalFixOnline, r:Object;
+        var si:SalItem;
+        for each (sfo in list1)
+        {
+          cc[item.no]=sfo.amount;
+          r=SalItem.evaluate(rr, cc);
+          sfo.amount=r.value["$$"];
+          list1.itemUpdated(sfo);
+        }
+        calculate2();
+      }
+
+      private function batch(e:Event):void
+      {
+        var l:ArrayCollection=new ArrayCollection();
+        l.addItem(item);
+        CommonUtil.popupWindow(BatchSetValue, "", this, {items:l});
+      }
+
+      // 计算合计项
+      private function calculate2():void
+      {
+        var obj:Object;
+        var id:String;
+        var total:Object={amount:0};
+        total[Constants.PROP_NAME_SERIAL]=resourceManager.getString("gcc", "total");
+        for each (var sfo:SalFixOnline in list1)
+        {
+          id="sfo#"+sfo.departId+"#"+sfo.personId+"#"+sfo.itemId;
+          total.amount += sfo.amount;
+        }
+        list2.removeAll();
+        list2.addItem(total);
+        list2.refresh();
+      }
+
+      private function onScroll(event:Event):void
+      {
+        callLater(function():void{adg2.horizontalScrollPosition=adg1.horizontalScrollPosition;});
+      }
+
+      private function onItemEditEnd(e:AdvancedDataGridEvent):void
+      {
+        if (e.itemRenderer && e.reason != AdvancedDataGridEventReason.CANCELLED)
+        {
+          var columnIndex:int=e.columnIndex;
+          if (columnIndex < 3)
+            return;
+          var rowIndex:int=e.rowIndex;
+          var column:AdvancedDataGridColumn=adg1.columns[columnIndex];
+          var data:Object=e.itemRenderer.data;
+          var n0:Number=Number(data[column.dataField]);
+          var n1:Number=Number(adg1.itemEditorInstance[column.editorDataField]);
+          var error:String=null;
+          if (isNaN(n1))
+          {
+            error=resourceManager.getString("gcc_hr", "salFactD.error.amount.nan");
+          }
+          if (error)
+          {
+            e.reason=AdvancedDataGridEventReason.CANCELLED;
+            CommonUtil.showError(adg1.itemEditorInstance, 2000, error);
+          }
+          else if (n1 != n0)
+          {
+            data[column.dataField]=n1;
+            callLater(function():void{calculate2();});
+          }
+        }
+      }
+
+      private function add(e:Event):void
+      {
+        SalaryController.addFixOnlines(list1.source, UserController.personWorkerId, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.ADD_SALFIXONLINE, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function edit(e:Event):void
+      {
+        SalaryController.changeFixOnlines(list1.source, UserController.personWorkerId, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.EDIT_SALFIXONLINE, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function terminate(e:Event):void
+      {
+        SalaryController.terminateFixOnlines(list1.source, UserController.personWorkerId, function(e1:ResultEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "save.success"), Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                owner.dispatchEvent(new Events(Events.DEL_SALFIXONLINE, null, list1.source));
+                _close();
+              }, Constants.ICON32_INFO);
+          });
+      }
+
+      private function _close():void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function close(e:Event=null):void
+      {
+        _close();
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

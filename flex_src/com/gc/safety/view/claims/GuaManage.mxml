@@ -1,0 +1,557 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" horizontalAlign="center" width="100%" height="100%"
+         xmlns:claims="com.gc.safety.view.claims.*">
+  <mx:Label id="lTitle" textAlign="center" width="100%" fontSize="16" fontWeight="bold"/>
+  <mx:VBox horizontalAlign="center" width="100%">
+    <mx:Canvas width="1024" height="50">
+      <mx:HBox width="100%">
+        <mx:Label text="{resourceManager.getString('gcc_safety', 'refNo')}" width="70"/>
+        <mx:TextInput id="tiAccno" editable="false" width="110"/>
+        <mx:HBox horizontalAlign="right" width="100%">
+          <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.date')}" width="70"/>
+          <mx:DateField id="df" formatString="{Constants.DATE_FORMAT}" enabled="false" width="110"/>
+        </mx:HBox>
+      </mx:HBox>
+    </mx:Canvas>
+  </mx:VBox>
+  <mx:VBox horizontalAlign="center" width="100%">
+    <mx:Canvas width="1024" height="400">
+      <mx:VBox width="100%" height="100%">
+        <mx:HBox width="100%">
+          <mx:Label text="{resourceManager.getString('gcc_safety', 'insurer.name')}"/>
+          <mx:ComboBox id="cbInsurer" dataProvider="{GuaranteeController.insurerList}"
+                       labelField="name" enabled="false" width="180"/>
+          <mx:HBox horizontalAlign="right" width="100%">
+            <mx:Label text="{resourceManager.getString('gcc_safety', 'claims.type')}" width="70"
+                      x="700"/>
+            <mx:ComboBox id="cbGuaType" dataProvider="{type}" labelField="name" enabled="false"
+                         width="110"/>
+          </mx:HBox>
+        </mx:HBox>
+        <mx:Canvas width="100%" height="100%">
+          <claims:AccOutADG id="adg1" dataProvider="{adg1AC}" height="100%"/>
+          <claims:AccInADG id="adg2" dataProvider="{adg2AC}" height="100%"/>
+        </mx:Canvas>
+      </mx:VBox>
+    </mx:Canvas>
+  </mx:VBox>
+  <mx:Canvas width="1024" height="50">
+    <mx:HBox width="100%">
+      <mx:Label text="{resourceManager.getString('gcc_safety', 'accInPsnGua.desc')}" width="70"/>
+      <mx:TextArea id="taDesc" width="100%"/>
+    </mx:HBox>
+  </mx:Canvas>
+  <mx:HBox horizontalAlign="center" width="100%">
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'get')}" click="onGetClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'add')}" click="onAddClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'delete')}" click="onDelClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'reset')}" click="onResetClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'export')}"
+               click="onExportClickHandler()" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc_safety', 'print')}"
+               click="onPrintClickHandler()" enabled="false"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="onSaveClickHandler()"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="onCloseClickHandler()"/>
+  </mx:HBox>
+  <mx:NumberFormatter id="nf" precision="2"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+      import mx.controls.ToolTip;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import mx.events.CloseEvent;
+      import mx.managers.ToolTipManager;
+      import mx.managers.PopUpManager;
+      import com.gc.safety.model.AccOutPsnPay;
+      import com.gc.safety.model.AccOutPsn;
+      import com.gc.safety.model.AccOutGua;
+      import com.gc.safety.model.AccInPsnGua;
+      import com.gc.safety.model.Insurer;
+      import com.gc.safety.model.GuaType;
+      import com.gc.safety.controller.ClaimsController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.util.CommonUtil;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+
+      [Bindable]
+      private var adg1AC:ArrayCollection=new ArrayCollection(); // 非客伤ADG dataprovider
+      [Bindable]
+      private var adg2AC:ArrayCollection=new ArrayCollection(); // 客伤ADG dataprovider
+
+      [Bindable]
+      private var type:Array; // 客伤/三责,与保单类型无关
+      private var oldAC:ArrayCollection=new ArrayCollection(); // 建立凭证前的数据源
+      private var newWin:GuaNewWin;
+      private var modifyWin:GuaModifyWin;
+      private var bol:Boolean = false; //标记保存后是否关闭主页面
+
+      private function onPreinitialize():void
+      {
+        type = [resourceManager.getString('gcc', 'claims.type.out'),
+          resourceManager.getString('gcc', 'claims.type.in')];
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            GuaranteeController.preloadLists(UserController.branchId, ["insurerList"]);
+            adg2AC.removeAll();
+            adg2.accidentList2DP.removeAll();
+            adg1AC.removeAll();
+            adg1.accidentList1DP.removeAll();
+            oldAC.removeAll();
+            cbInsurer.selectedIndex = -1;
+            cbGuaType.selectedIndex = -1;
+            tiAccno.text = "";
+            df.text = "";
+            if (e.args[0] == 0)
+            {
+//              adg1.modify = adg2.modify = modify = false;
+              lTitle.text = resourceManager.getString('gcc_safety', 'claims.new');
+              popNewWin();
+            }
+            else
+            {
+//              adg1.modify = adg2.modify = modify = true;
+              lTitle.text = resourceManager.getString('gcc_safety', 'claims.modify');
+              popModifyWin();
+            }
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        adg1AC = adg1.adgAC; // 引用三责理赔的DataProvider
+        adg2AC = adg2.adgAC; // 引用客伤理赔的DataProvider
+      }
+
+      /** 修改凭证弹出窗口 */
+      private function popModifyWin():void
+      {
+        modifyWin = GuaModifyWin(PopUpManager.createPopUp(this, GuaModifyWin, true));
+        modifyWin.confirmBtn.addEventListener(MouseEvent.CLICK, onModifyWinConfirmHandler);
+        modifyWin.cancelBtn.addEventListener(MouseEvent.CLICK, onModifyWinCancelHandler);
+        modifyWin.addEventListener(CloseEvent.CLOSE, onModifyWinCancelHandler);
+        PopUpManager.centerPopUp(modifyWin);
+        modifyWin.tiRefNo.setFocus();
+      }
+
+      private function onModifyWinConfirmHandler(e:Event):void
+      {
+        // validate
+        if (!CommonUtil.validateForm(modifyWin, [{field: "tiRefNo", 
+            error: resourceManager.getString("gcc_safety", "claims.modify.condition.refNo.null")}]))
+          return;
+        var refNo:String = modifyWin.tiRefNo.text;
+        var idx:int = CommonUtil.indexOfKey(modifyWin.adgAC, refNo, "refNo");
+        if (idx == -1)
+        {
+//          var p:Point = modifyWin.tiRefNo.localToGlobal(new Point(modifyWin.tiRefNo.length, 0));
+//          var err:String = resourceManager.getString('gcc_safety', 'claims.refNo.error');
+//          var errTip:ToolTip = ToolTipManager.createToolTip(err, p.x, p.y) as ToolTip;
+//          errTip.x += modifyWin.tiRefNo.width;
+//          errTip.setStyle("styleName", "errorTip");
+//          modifyWin.tiRefNo.setFocus();
+//          flash.utils.setTimeout(ToolTipManager.destroyToolTip, 2000, errTip);
+          CommonUtil.showError(modifyWin.tiRefNo,2000,resourceManager.getString('gcc_safety', 'claims.refNo.error'));
+          return;
+        }
+        else
+        {
+          var vo:Object = modifyWin.adgAC.getItemAt(idx, 0);
+          modifyWin.type = vo.hasOwnProperty("type") ? vo.type : null;
+        }
+        // fulfill
+        adg1.visible = (modifyWin.type == type[0]) ? true : false;
+        adg2.visible = (modifyWin.type == type[0]) ? false : true;
+        cbGuaType.selectedIndex = (modifyWin.type == type[0]) ? 0 : 1;
+        cbInsurer.selectedIndex = CommonUtil.indexOfObject(GuaranteeController.insurerList, modifyWin.insurer);
+        tiAccno.text = refNo;
+        df.text = DateField.dateToString(modifyWin.appDate, Constants.DATE_FORMAT);
+        for each (var item:Array in modifyWin.modiAC)
+        {
+          if (item[2] == refNo)
+          {
+//            item[0].guaSum = (isNaN(item[0].guaSum)) ? 0 : item[0].guaSum;
+            if (adg1.visible)
+            {
+              var list:ArrayCollection=new ArrayCollection();
+              list.addItem(item[0]);
+              var mediFee:Number=0;
+              var other1:Number=0;
+              var other2:Number=0;
+              var objSum:Number=0;
+              for each (var obj:Object in list)
+              {
+                // var accOutGua:AccOutGua=new AccOutGua();
+                // accOutGua.accident=obj.hasOwnProperty("accident") ? obj.accident : null;
+                // accOutGua.fkGuaReport=obj.hasOwnProperty("fkGuaReport") ? obj.fkGuaReport : null;
+                var accOutGua:AccOutGua=obj as AccOutGua;
+                for (var i:int=0; i < obj.accident.accOutObjs.length; i++)
+                {
+                  objSum+=(obj.accident.accOutObjs)[i].payFee;
+                }
+                for (var j:int=0; j < obj.accident.accOutPsns.length; j++)
+                {
+                  var accOutPsn:AccOutPsn = obj.accident.accOutPsns[j] as AccOutPsn;
+                  for (var k:int=0; k < accOutPsn.accOutPsnPays.length; k++)
+                  {
+                    mediFee += (accOutPsn.accOutPsnPays.getItemAt(k, 0) as AccOutPsnPay).mediFee;
+                    other1 += (accOutPsn.accOutPsnPays.getItemAt(k, 0) as AccOutPsnPay).other1;
+                    other2 += (accOutPsn.accOutPsnPays.getItemAt(k, 0) as AccOutPsnPay).other2;
+                  }
+                }
+                accOutGua.payOther1=other1;
+                accOutGua.payOther2=other2;
+                accOutGua.payMediFee=mediFee;
+                accOutGua.payObjSum=objSum;
+                accOutGua.objSum=obj.objSum;
+                accOutGua.hasAccOutGua=obj.hasOwnProperty("hasAccOutGua") ? obj.hasAccOutGua : true;
+                accOutGua.hasGuarInfo=obj.hasOwnProperty("hasGuarInfo") ? obj.hasGuarInfo : false;
+//                accOutGua.guaSum = isNaN(accOutGua.guaSum) ? 0 : accOutGua.guaSum;
+
+                adg1AC.addItem(accOutGua);
+              }
+            }
+            else
+            {
+              adg2AC.addItem(item[0]);
+            }
+          }
+        }
+        oldAC = ObjectUtil.copy((adg1.visible) ? adg1AC : adg2AC) as ArrayCollection;
+//				CommonUtil.copyProperties((adg1.visible) ? adg1AC : adg2AC, oldAC);
+
+        if (adg2.visible)
+          adg2.getAccInPsn(UserController.branchId, modifyWin.insurer);
+        else
+          adg1.getAccOut(UserController.branchId, modifyWin.insurer);
+        PopUpManager.removePopUp(modifyWin);
+      }
+
+      private function onModifyWinCancelHandler(e:Event):void
+      {
+        modifyWin.removeAllChildren();
+        PopUpManager.removePopUp(modifyWin);
+        parent.dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      /** 新建凭证弹出窗口 */
+      private function popNewWin():void
+      {
+        newWin = GuaNewWin(PopUpManager.createPopUp(this, GuaNewWin, true));
+        newWin.cbType.dataProvider = type;
+        newWin.confirmBtn.addEventListener(MouseEvent.CLICK, onNewWinConfirmHandler);
+        newWin.cancelBtn.addEventListener(MouseEvent.CLICK, onNewWinCancelHandler);
+        newWin.addEventListener(CloseEvent.CLOSE, onNewWinCancelHandler);
+        newWin.cbInsurer.selectedIndex = -1;
+        newWin.cbType.selectedIndex = -1;
+        PopUpManager.centerPopUp(newWin);
+      }
+
+      private function onNewWinCancelHandler(e:Event):void
+      {
+        PopUpManager.removePopUp(newWin);
+        parent.dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function onNewWinConfirmHandler(e:Event):void
+      {
+        if (!CommonUtil.validateForm(newWin.vbox, [{field: "df", error: resourceManager.getString('gcc_safety', 'claims.new.condition.date.null')}, 
+          {field: "cbInsurer", error: resourceManager.getString('gcc_safety', 'claims.new.condition.insurer.null')}, 
+          {field: "cbType", error: resourceManager.getString('gcc_safety', 'claims.new.condition.guaType.null')}]))
+          return;
+
+        PopUpManager.removePopUp(newWin);
+        df.text = newWin.df.text;
+        // accInPsnGua.type = 客伤
+        adg1.visible = ((newWin.cbType.selectedItem as String) == type[0]) ? true : false;
+        adg2.visible = ((newWin.cbType.selectedItem as String) == type[0]) ? false : true;
+        cbGuaType.selectedIndex = newWin.cbType.selectedIndex;
+        cbInsurer.selectedIndex = newWin.cbInsurer.selectedIndex;
+
+        var insurer:Insurer = cbInsurer.selectedItem as Insurer;
+        if (adg2.visible)
+          adg2.getAccInPsn(UserController.branchId, insurer);
+        else
+          adg1.getAccOut(UserController.branchId, insurer);
+        oldAC = ObjectUtil.copy((adg1.visible) ? adg1AC : adg2AC) as ArrayCollection;
+      }
+
+      /** 获取按钮 */
+      private function onGetClickHandler():void
+      {
+        if (adg2.visible)
+        {
+          adg2.fulfillADG2();
+        }
+        else if (adg1.visible)
+        {
+          adg1.fulfillADG1();
+        }
+      }
+
+      /** 添加按钮 */
+      private function onAddClickHandler():void
+      {
+        if (adg2.visible)
+        {
+          var accInPsnGua:AccInPsnGua = new AccInPsnGua();
+          accInPsnGua.mediFee = accInPsnGua.other1 = accInPsnGua.other2 = 0;
+          adg2AC.addItem(accInPsnGua);
+        }
+        else if (adg1.visible)
+        {
+          var accOutGua:AccOutGua = new AccOutGua();
+          accOutGua.objSum = accOutGua.payMediFee = accOutGua.payObjSum = accOutGua.payOther1
+            = accOutGua.payOther2 = 0;
+          adg1AC.addItem(accOutGua);
+        }
+      }
+
+      /** 删除按钮 */
+      private function onDelClickHandler():void
+      {
+        if (adg2.visible)
+        {
+          if (adg2.selectedIndex < 0)
+            Alert.show(resourceManager.getString('gcc', 'delete.not.null'),Constants.APP_NAME, Alert.OK,
+              null, null, Constants.ICON32_WARNING);
+          else
+            adg2AC.removeItemAt(adg2.selectedIndex);
+        }
+        else if (adg1.visible)
+        {
+          if (adg1.selectedIndex < 0)
+            Alert.show(resourceManager.getString('gcc', 'delete.not.null'),Constants.APP_NAME, Alert.OK,
+              null, null, Constants.ICON32_WARNING);
+          else
+            adg1AC.removeItemAt(adg1.selectedIndex);
+        }
+      }
+
+      /** 重置按钮 */
+      private function onResetClickHandler():void
+      {
+        if (adg2.visible)
+          adg2AC.removeAll();
+        else if (adg1.visible)
+          adg1AC.removeAll();
+      }
+
+      /** 导出按钮 */
+      private function onExportClickHandler():void
+      {
+      }
+
+      /** 打印按钮 */
+      private function onPrintClickHandler():void
+      {
+      }
+
+      /** 保存按钮 */
+      private function onSaveClickHandler():void
+      {
+        // 组装凭证头
+        var obj:Object;
+        var desc:String = taDesc.text;
+        if (adg1.visible)
+        {
+          if (CommonUtil.validateGrid(adg1, ["accident.no", "objSum"]).length > 0)
+          {
+            bol = false;
+            return;
+          }
+          for each (obj in adg1AC)
+          {
+            var accOutGua:AccOutGua = obj as AccOutGua;
+            accOutGua.id.branch = UserController.branch;
+            accOutGua.id.no = String(adg1AC.getItemIndex(obj) + 1);
+            accOutGua.id.refNo = tiAccno.text;
+            accOutGua.insurer = cbInsurer.selectedItem as Insurer;
+            accOutGua.appPsn = UserController.person;
+            accOutGua.appDesc = (desc == "") ? null : desc;
+            accOutGua.appDate = DateField.stringToDate(df.text, Constants.DATE_FORMAT);
+            accOutGua.other1 = 0;
+            accOutGua.other2 = 0;
+            accOutGua.mediFee = 0;
+          }
+        }
+        else
+        {
+          if (CommonUtil.validateGrid(adg2, ["accident.no", "mediFee"]).length > 0)
+          {
+            bol = false;
+            return;
+          }
+          for each (obj in adg2AC)
+          {
+            var accInPsnGua:AccInPsnGua = obj as AccInPsnGua;
+            accInPsnGua.id.branch = UserController.branch;
+            accInPsnGua.id.no = String(adg2AC.getItemIndex(obj) + 1);
+            accInPsnGua.id.refNo = tiAccno.text;
+            accInPsnGua.insurer = cbInsurer.selectedItem as Insurer;
+            accInPsnGua.appPsn = UserController.person;
+            accInPsnGua.appDesc = (desc == "") ? null : desc;
+            accInPsnGua.appDate = DateField.stringToDate(df.text, Constants.DATE_FORMAT);
+            accInPsnGua.other1 = 0;
+            accInPsnGua.other2 = 0;
+          }
+        }
+        var results:ArrayCollection = (adg1.visible) ? adg1AC : adg2AC;
+        if (ObjectUtil.compare(oldAC, results, 1) == 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, 
+            Alert.OK, null, null, Constants.ICON32_WARNING);
+          bol = false;
+          return;
+        }
+
+        var array:Array = onCheckGua();
+        var err:String = '';
+        if (array.length > 0)
+        {
+          for each (obj in array)
+          {
+            err += obj.hasOwnProperty("error") ? obj.error+'\n' : '';
+          }
+          Alert.show(err + resourceManager.getString('gcc_safety', 'accOutGua.save.apply'), 
+            Constants.APP_NAME, Alert.YES | Alert.NO, null,
+            function(e:CloseEvent):void
+            {
+              if (e.detail == Alert.YES)
+                saveAccGua(results);
+            }, Constants.ICON32_QUESTION);
+        }
+        else
+          saveAccGua(results);
+      }
+
+      // 保存
+      private function saveAccGua(newAC:ArrayCollection):void
+      {
+        if (newAC == adg1AC)
+        {
+          if (oldAC.length > 0 && newAC.length > 0)
+          {
+            for each (var obj:Object in newAC)
+            {
+              obj.id.refNo = (obj.id.refNo == "" || obj.id.refNo == null) ? oldAC[0].id.refNo : obj.id.refNo;
+            }
+          }
+          for each (var aog:AccOutGua in newAC)
+          {
+            aog.guaSum = isNaN(aog.guaSum) ? 0 : aog.guaSum;
+          }
+          ClaimsController.saveAccOutGua(oldAC, newAC, UserController.branchId, onSaveAccOutGuaSuccess);
+        }
+        else if (newAC == adg2AC)
+        {
+          if (oldAC.length > 0 && newAC.length > 0)
+          {
+            for each (var obj1:Object in newAC)
+            {
+              obj1.id.refNo = (obj1.id.refNo == "" || obj1.id.refNo == null) ? oldAC[0].id.refNo : obj1.id.refNo;
+            }
+          }
+          for each (var aig:AccInPsnGua in newAC)
+          {
+            aig.guaSum = isNaN(aig.guaSum) ? 0 : aig.guaSum;
+          }
+          ClaimsController.saveAccInPsnGua(oldAC, newAC, UserController.branchId, onSaveAccInPsnSuccess);
+        }
+      }
+
+      private function onSaveAccOutGuaSuccess(e:ResultEvent):void
+      {
+        // 刷新已有理赔凭证
+        tiAccno.text = (adg1AC.length ==0) ? "" : e.result as String;
+        for each (var obj:Object in adg1AC)
+        {
+          (obj as AccOutGua).id.refNo = e.result as String;
+          (obj as AccOutGua).hasAccOutGua = true;
+        }
+        oldAC = ObjectUtil.copy(adg1AC) as ArrayCollection; //当adg1AC 中有动态属性的时候copy 就会报：“TypeError: Error #1009: 无法访问空对象引用的属性或方法。”但不影响
+        if (tiAccno.text == "")
+          Alert.show("删除成功",
+            Constants.APP_NAME, Alert.OK, null, function(evt:CloseEvent):void 
+            {
+              if(bol)dispatchEvent(CommonEvent.CLOSE_EVENT);
+              bol = false;
+            }, Constants.ICON32_INFO);
+        else
+          Alert.show(resourceManager.getString('gcc_safety', 'accOutGua.save.success', [e.result as String]),
+            Constants.APP_NAME, Alert.OK, null, function(evt:CloseEvent):void 
+            {
+              if(bol)dispatchEvent(CommonEvent.CLOSE_EVENT);
+              bol = false;
+            }, Constants.ICON32_INFO);
+      }
+
+      private function onSaveAccInPsnSuccess(e:ResultEvent):void
+      {
+        tiAccno.text = (adg2AC.length ==0) ? "" : e.result as String;
+        for each (var obj:Object in adg2AC)
+        {
+          (obj as AccInPsnGua).id.refNo = e.result as String;
+          (obj as AccInPsnGua).hasAccInPsnGua = true;
+        }
+        oldAC = ObjectUtil.copy(adg2AC) as ArrayCollection;
+        if (tiAccno.text == "")
+          Alert.show("删除成功",
+            Constants.APP_NAME, Alert.OK, null, function(evt:CloseEvent):void 
+            {
+              if(bol)dispatchEvent(CommonEvent.CLOSE_EVENT);
+              bol = false;
+            }, Constants.ICON32_INFO);
+        else
+          Alert.show(resourceManager.getString('gcc_safety', 'accInPsnGua.save.success', [e.result as String]),
+            Constants.APP_NAME, Alert.OK, null, function(evt:CloseEvent):void 
+            {
+              if(bol)dispatchEvent(CommonEvent.CLOSE_EVENT);
+              bol = false;
+            }, Constants.ICON32_INFO);
+      }
+
+      // 验证新建保单的有效性
+      private function onCheckGua():Array
+      {
+        var result:Array;
+        if (adg1.visible)
+        {
+          result = adg1.onCheckGua();
+        }
+        else if (adg2.visible)
+        {
+          result = adg2.onCheckGua();
+        }
+        return result;
+      }
+
+      /** 关闭按钮 */
+      private function onCloseClickHandler():void
+      {
+        var results:ArrayCollection = (adg1.visible) ? adg1AC : adg2AC;
+        if (ObjectUtil.compare(oldAC, results, 1) != 0)
+        {
+          Alert.show("数据已经修改是否保存", Constants.APP_NAME, 
+            Alert.YES|Alert.NO, null, function(evt:CloseEvent):void
+            {
+              if(evt.detail == Alert.YES){
+                bol =true;
+                onSaveClickHandler();
+              }else{
+                dispatchEvent(CommonEvent.CLOSE_EVENT);   	
+              }
+            }, Constants.ICON32_QUESTION);
+          return;
+        }
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+
+</mx:VBox>

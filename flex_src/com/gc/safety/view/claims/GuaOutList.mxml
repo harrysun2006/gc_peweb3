@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+				creationComplete="onCreationComplete()" width="650" height="350">
+	
+	<mx:AdvancedDataGrid id="adg" labelFunction="{CommonUtil.gridLabelFunction}" doubleClickEnabled="true" editable="false"
+							 horizontalScrollPolicy="auto" width="100%" height="100%">
+		<mx:groupedColumns>
+			<mx:AdvancedDataGridColumn dataField="id" dataTipField="id.no" labelFunction="{CommonUtil.serialLabelFunction}" 
+									   color="0x0000FF" backgroundColor="0xD8D8D8" fontWeight="bold" editable="false" textAlign="center"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.id.refNo"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.no"/>
+			<mx:AdvancedDataGridColumn dataField="fkGuaReport" dataTipField="fkGuaReport.reportNo"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.dept.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.bus.authNo"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.date"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.address"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.driver.workerId"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.driver.name"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.accident.driver.cert1No"/>
+			<mx:AdvancedDataGridColumn dataField="payObjSum"/>
+			<mx:AdvancedDataGridColumn dataField="payMediFee"/>
+			<mx:AdvancedDataGridColumn dataField="payOther1"/>
+			<mx:AdvancedDataGridColumn dataField="payOther2"/>
+			<mx:AdvancedDataGridColumn dataField="fkAccOutGua" dataTipField="fkAccOutGua.objSum"/>
+		</mx:groupedColumns>
+	</mx:AdvancedDataGrid>
+	
+	<mx:Script>
+		<![CDATA[
+			import com.gc.util.CommonUtil;
+			
+			private function onCreationComplete():void
+			{
+				CommonUtil.setDataGridColumns(adg, "gcc_safety", "accoutguapay");
+				adg.validateNow();
+			}
+		]]>
+	</mx:Script>
+</mx:Canvas>

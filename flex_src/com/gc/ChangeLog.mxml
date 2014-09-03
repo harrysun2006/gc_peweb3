@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                layout="vertical" showCloseButton="true" close="close(event)"
+                creationComplete="onCreationComplete()">
+  <mx:TextArea width="100%" height="100%" htmlText="{clog}" editable="false"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.managers.PopUpManager;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var clog:String;
+
+      private function onCreationComplete():void
+      {
+        title=resourceManager.getString("gcc", "change.log");
+        clog=Constants.SETTINGS["change.log"];
+        clog=clog.replace(/\r\n/g, "");
+      }
+
+      private function close(e:Event):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service id="message-service" class="flex.messaging.services.MessageService"
+	messageTypes="flex.messaging.messages.AsyncMessage">
+
+	<adapters>
+		<adapter-definition id="actionscript" class="flex.messaging.services.messaging.adapters.ActionScriptAdapter" default="true" />
+		<adapter-definition id="jms" class="flex.messaging.services.messaging.adapters.JMSAdapter"/>
+	</adapters>
+
+	<default-channels>
+		<channel ref="my-polling-amf" />
+	</default-channels>
+
+	<!--destination id="chat">
+		<properties>
+			<network>
+				<session-timeout>0</session-timeout>
+			</network>
+			<server>
+				<max-cache-size>1000</max-cache-size>
+				<message-time-to-live>0</message-time-to-live>
+				<durable>false</durable>
+			</server>
+		</properties>
+
+		<channels>
+			<channel ref="my-rtmp" />
+		</channels>
+	</destination-->
+
+</service>

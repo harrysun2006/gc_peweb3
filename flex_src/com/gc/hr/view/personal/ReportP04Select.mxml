@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical" width="720" height="300"
+                preinitialize="onPreinitialize()">
+  <mx:VBox width="100%" height="100%">
+    <mx:RadioButtonGroup id="rbga" change="onRadioButtonChange(event)"/>
+    <mx:RadioButtonGroup id="rbgb" change="onRadioButtonChange(event)"/>
+    <mx:RadioButtonGroup id="rbgc" change="onRadioButtonChange(event)"/>
+    <mx:HBox width="100%" horizontalGap="3">
+      <mx:Grid width="33%" height="120" borderStyle="solid" paddingLeft="5" paddingTop="5"
+               paddingRight="5" paddingBottom="5">
+        <mx:GridRow>
+          <mx:GridItem colSpan="2">
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.a1')}"
+                            groupName="rbga" value="11" selected="true"/>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.a2')}"
+                            groupName="rbga" value="12"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:ComboBox id="cbDepart" enabled="false" width="120"/>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.a3')}"
+                            groupName="rbga" value="13"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:ComboBox id="cbRegBelong" enabled="false" width="120"/>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+      <mx:Grid width="33%" height="120" borderStyle="solid" paddingLeft="5" paddingTop="5"
+               paddingRight="5" paddingBottom="5">
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.b1')}"
+                            groupName="rbgb" value="21" selected="true"/>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.b2')}"
+                            groupName="rbgb" value="22"/>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.b3')}"
+                            groupName="rbgb" value="23"/>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+      <mx:Grid width="33%" height="120" borderStyle="solid" paddingLeft="5" paddingTop="5"
+               paddingRight="5" paddingBottom="5">
+        <mx:GridRow>
+          <mx:GridItem colSpan="2">
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.c1')}"
+                            groupName="rbgc" value="31" selected="true"/>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow>
+          <mx:GridItem>
+            <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'report.p01.select.c2')}"
+                            groupName="rbgc" value="32"/>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:ComboBox id="cbPosition" enabled="false" width="120"/>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:HBox>
+    <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period')}:"/>
+    <mx:Grid id="form" width="100%">
+      <mx:GridRow>
+        <mx:GridItem>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period.begin')}:"/>
+          <mx:DateField name="reportBegin" editable="true" width="160"
+                        formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true"/>
+          <mx:Spacer width="36"/>
+          <mx:Label text="{resourceManager.getString('gcc_hr', 'report.period.end')}:"/>
+          <mx:DateField id="dfReportEnd" name="reportEnd" editable="true" width="160"
+                        formatString="{Constants.DATE_FORMAT}" yearNavigationEnabled="true"/>
+          <mx:RadioButtonGroup id="htlx" change="haveEndDate(event)"/>
+          <mx:RadioButton label="{resourceManager.getString('gcc_hr', 'psnContract.type.value1')}"
+                          groupName="htlx" value="1"/>
+        </mx:GridItem>
+      </mx:GridRow>
+    </mx:Grid>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="7" paddingBottom="7">
+      <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="open(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.Label;
+      import mx.core.ClassFactory;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(e:CommonEvent):void
+      {
+        title=resourceManager.getString("gcc_hr", "report.p04");
+        cbDepart.dataProvider=BaseController.departmentList;
+        cbRegBelong.dataProvider=PersonalController.regBranchList;
+        cbPosition.dataProvider=PersonalController.positionList;
+        cbDepart.itemRenderer=cbRegBelong.itemRenderer=cbPosition.itemRenderer=new ClassFactory(Label);
+        cbDepart.selectedIndex=cbRegBelong.selectedIndex=cbPosition.selectedIndex=-1;
+      }
+
+      private function onRadioButtonChange(e:Event):void
+      {
+        var rbg:RadioButtonGroup=e.currentTarget as RadioButtonGroup;
+        if (rbg == null)
+          return;
+        cbDepart.enabled=cbRegBelong.enabled=cbPosition.enabled=false;
+        if (rbga.selectedValue == 12)
+          cbDepart.enabled=true;
+        else if (rbga.selectedValue == 13)
+          cbRegBelong.enabled=true;
+        if (rbgc.selectedValue == 32)
+          cbPosition.enabled=true;
+      }
+
+      private function open(e:Event):void
+      {
+        var qo:Object={a:rbga.selectedValue, b:rbgb.selectedValue, c:rbgc.selectedValue, user:UserController.user};
+        if (qo.a == 12)
+        {
+          qo.depart=cbDepart.selectedItem;
+          if (qo.depart == null)
+          {
+            CommonUtil.showError(cbDepart, 2000, resourceManager.getString("gcc_hr", "report.p01.error.depart.null"));
+            cbDepart.setFocus();
+            return;
+          }
+        }
+        else if (qo.a == 13)
+        {
+          qo.regBelong=cbRegBelong.selectedItem;
+          if (qo.regBelong == null)
+          {
+            CommonUtil.showError(cbRegBelong, 2000, resourceManager.getString("gcc_hr", "report.p01.error.regBelong.null"));
+            cbRegBelong.setFocus();
+            return;
+          }
+        }
+        if (qo.b == 22)
+        {
+          qo.type=resourceManager.getString('gcc_hr', 'report.p01.select.b2');
+        }
+        else if (qo.b == 23)
+        {
+          qo.type=resourceManager.getString('gcc_hr', 'report.p01.select.b3');
+        }
+        if (qo.c == 32)
+        {
+          qo.position=cbPosition.selectedItem;
+          if (qo.position == null)
+          {
+            CommonUtil.showError(cbPosition, 2000, resourceManager.getString("gcc_hr", "report.p01.error.position.null"));
+            cbPosition.setFocus();
+            return;
+          }
+        }
+        if (!CommonUtil.validateForm(form, ["reportBegin"]))
+          return;
+        CommonUtil.loadInstance(form, qo, true);
+        if (qo.reportBegin > qo.reportEnd)
+        {
+          CommonUtil.showError(dfReportEnd, 2000, resourceManager.getString("gcc_hr", "report.p01.error.endDate.lt.beginDate"));
+          dfReportEnd.setFocus();
+          return;
+        }
+        if (dfReportEnd.text == "")
+          qo.reportEnd=Constants.MAX_DATE;
+        close();
+        callLater(function():void{CommonUtil.popupWindow(ReportP04, "", owner, qo);});
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function haveEndDate(e:Event):void
+      {
+        dfReportEnd.enabled = (htlx.selectedValue != 1);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

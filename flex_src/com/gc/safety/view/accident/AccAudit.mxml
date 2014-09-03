@@ -1,0 +1,408 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         xmlns:accident="com.gc.safety.view.accident.*"
+         xmlns:code="http://code.google.com/p/flexlib/" horizontalAlign="center"
+         horizontalScrollPolicy="auto" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox id="vbox" width="90%" horizontalScrollPolicy="off">
+    <mx:Label id="title" text="{resourceManager.getString('gcc_safety','acc.audit.title')}"
+              textAlign="center" width="100%" fontSize="16" fontWeight="bold"/>
+    <mx:Label id="accTitle"
+              text="{resourceManager.getString('gcc_safety','acc.process.basic.info')}"
+              textAlign="left" width="100%"/>
+    <accident:CAccInfo id="accInfo" width="100%"/>
+    <code:WindowShade id="ws1" tabChildren="{ws1.opened}" opened="false" width="100%">
+      <accident:CAccOutPsn id="accOutPsn" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws2" tabChildren="{ws2.opened}" opened="false" width="100%">
+      <accident:CAccOutObj id="accOutObj" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws3" tabChildren="{ws3.opened}" opened="false" width="100%">
+      <accident:CAccInPsn id="accInPsn" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws4" tabChildren="{ws4.opened}" opened="false" width="100%">
+      <accident:CAccGuaReport id="accGuaReport" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws5" tabChildren="{ws5.opened}" opened="false" width="100%">
+      <accident:GuaInfos id="guaInfos" width="100%"/>
+    </code:WindowShade>
+    <mx:Form width="100%">
+      <mx:Grid width="100%">
+        <mx:GridRow width="100%">
+          <mx:GridItem width="70%" height="100%">
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initor')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiInitor" name="initor.name" text="{accident.initor.name}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initDate')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiInitDate" name="initDate" text="{df.format(accident.initDate)}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:Form>
+    <code:WindowShade id="ws6" tabChildren="{ws6.opened}" opened="false" width="100%">
+      <mx:VBox id="pVbox" width="100%" borderStyle="solid" borderThickness="1">
+        <accident:ProcessIdeal id="pIdeal" width="100%"/>
+      </mx:VBox>
+    </code:WindowShade>
+    <mx:Form width="100%">
+      <mx:Grid width="100%">
+        <mx:GridRow width="100%">
+          <mx:GridItem width="70%" height="100%">
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.deptor')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiDeptor" name="deptor.name" text="{accident.deptor.name}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.deptDate')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiDeptDate" name="deptDate" text="{df.format(accident.deptDate)}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:Form>
+    <code:WindowShade id="ws7" tabChildren="{ws7.opened}" opened="false" width="100%">
+      <accident:OutGuaAndPay id="outGuaAndPay" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws8" tabChildren="{ws8.opened}" opened="false" width="100%">
+      <accident:InPsnGuaAndPay id="inPsnGuaAndPay" width="100%"/>
+    </code:WindowShade>
+    <mx:VBox id="cVbox" width="100%" borderStyle="solid" borderThickness="1">
+      <accident:CompIdeal id="cIdeal" width="100%"/>
+    </mx:VBox>
+    <mx:Form width="100%">
+      <mx:Grid width="100%">
+        <mx:GridRow width="100%">
+          <mx:GridItem width="70%" height="100%">
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.compor')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiCompor" name="compor.name" text="{accident.compor.name}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.compDate')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiCompDate" name="compDate" text="{df.format(accident.compDate)}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:Form>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10">
+      <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="save(event)"
+                 width="70" height="35"/>
+      <mx:Label width="40"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)" width="70" height="35"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.AccOutPsn;
+      import com.gc.safety.model.AccInPsnPay;
+      import com.gc.safety.model.AccOutPsnPay;
+      import mx.events.CloseEvent;
+      import com.gc.safety.model.AccInPsn;
+      import com.gc.safety.model.AccInPsnGua;
+      import com.gc.safety.model.AccOutGua;
+      import com.gc.safety.model.AccInPsnGuaPay;
+      import com.gc.safety.model.AccOutGuaPay;
+      import mx.controls.Alert;
+      import com.gc.safety.controller.ClaimsController;
+      import mx.controls.DateField;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.rpc.events.ResultEvent;
+      import mx.collections.ArrayCollection;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.AccidentController;
+      import mx.utils.ObjectUtil;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import com.gc.safety.model.Accident;
+      import com.gc.Constants;
+
+      private var branchId:int;
+      [Bindable]
+      private var accident:Accident;
+      private var oldData:Accident;
+      [Bindable]
+      public var clickType:String = "a";
+      private var outPsnFees:Number = 0;
+      private var outObjFees:Number = 0;
+      private var inPsnFees:Number = 0;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED,function init(event:CommonEvent):void {
+            branchId = UserController.branchId;
+            AccidentController.preloadBaseLists(branchId);
+            oldData = null;
+            var popup:PAccNoWin = CommonUtil.popupWindow(PAccNoWin,resourceManager.getString('gcc_safety','acc.audit.title')) as PAccNoWin;
+            popup.clickType = clickType;
+            new Events(Events.GET).stopImmediatePropagation();
+            // 需处理的事故
+            popup.addEventListener(Events.GET,getAccByNo);
+            // 赔偿金额计算
+            addEventListener(Events.ADD_OUTPSNFEE, addOutPsnFees);
+            addEventListener(Events.ADD_OUTOBJFEE, addOutObjFees);
+            addEventListener(Events.ADD_INPSNFEE, addInPsnFees);
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        ws1.label = resourceManager.getString('gcc_safety','acc.ws1.label');
+        ws2.label = resourceManager.getString('gcc_safety','acc.ws2.label');
+        ws3.label = resourceManager.getString('gcc_safety','acc.ws3.label');
+        ws4.label = resourceManager.getString('gcc_safety','acc.ws4.label');
+        ws5.label = resourceManager.getString('gcc_safety','acc.ws5.label');
+        ws6.label = resourceManager.getString('gcc_safety','acc.process.title');
+        ws7.label = resourceManager.getString('gcc_safety','acc.ws7.label');
+        ws8.label = resourceManager.getString('gcc_safety','acc.ws8.label');
+      }
+
+      private function getAccByNo(event:Events):void
+      {
+        var acc:Accident = event.data as Accident;
+        CommonUtil.close([ws1,ws2,ws3,ws4,ws5,ws6,ws7,ws8]);
+        oldData = ObjectUtil.copy(acc) as Accident;
+        accident = acc;
+        if (acc.compor == null)
+        {
+          accident.compor = UserController.person;
+          accident.compDate = DateField.stringToDate(df.format(new Date()),df.formatString);
+        }
+        accInfo.getAccident(acc);
+        pIdeal.showDeptProcessAcc(acc);
+        for each (var obj:Object in acc.accOutPsns)
+        {
+          var aop:AccOutPsn = obj as AccOutPsn;
+          aop.mediFee =0;
+          aop.other1 =0;
+          aop.other2=0;
+          for each (var obj1:Object in aop.accOutPsnPays)
+          {
+            var aopp:AccOutPsnPay = obj1 as AccOutPsnPay;
+            aop.mediFee += aopp.mediFee;
+            aop.other1 += aopp.other1;
+            aop.other2 += aopp.other2;
+          }
+        }
+        for each (var obj2:Object in acc.accInPsns)
+        {
+          var aip:AccInPsn = obj2 as AccInPsn;
+          aip.mediFee =0;
+          aip.other1 =0;
+          aip.other2=0;
+          for each (var obj3:Object in aip.accInPsnPays)
+          {
+            var aipp:AccInPsnPay = obj3 as AccInPsnPay;
+            aip.mediFee += aipp.mediFee;
+            aip.other1 += aipp.other1;
+            aip.other2 += aipp.other2;
+          }
+        }
+        accOutPsn.getOutPsns(acc.accOutPsns);
+        accOutObj.getOutObjs(acc.accOutObjs);
+        accInPsn.getInPsns(acc.accInPsns);
+        accGuaReport.getGuaReports(acc.guaReports);
+        GuaranteeController.getGIsByBusIdAndAccDate(branchId,acc.bus.id,acc.date,successGIs_3);
+        AccidentController.getOutInGuaAndPays(branchId,accident.id.id, successGetOutInGPs);
+        cIdeal.showAuditAccident(acc);
+        pIdeal.setEnable(false);
+        if (acc.status == 1)
+        {
+          setAdgEditable(true);
+        }
+        else if (acc.status == 2)
+        {
+          setAdgEditable(false);
+        }
+      }
+
+      private function successGIs_3(event:ResultEvent):void
+      {
+        var guarInfos:ArrayCollection = event.result as ArrayCollection;
+        guaInfos.getGuaInfosAndReports(guarInfos,accident.guaReports);
+      }
+
+      private function successGetOutInGPs(event:ResultEvent):void
+      {
+        var arr:ArrayCollection = event.result as ArrayCollection;
+        var outGuas:ArrayCollection = arr[0];
+        var outGuaPays:ArrayCollection = arr[1];
+        var inPsnGuas:ArrayCollection = arr[2];
+        var inPsnGuaPays:ArrayCollection = arr[3];
+        var ogps:ArrayCollection = new ArrayCollection();
+        var pgps:ArrayCollection = new ArrayCollection();
+        var accOutGuaPay:AccOutGuaPay = null;
+        var accInPsnGuaPay:AccInPsnGuaPay = null;
+        if (outGuas.length > 0)
+        {
+          for each (var outGua:AccOutGua in outGuas)
+          {
+            accOutGuaPay = new AccOutGuaPay();
+            accOutGuaPay.fkAccOutGua = outGua;
+            accOutGuaPay.fkAccOutGua.guaSum = outGua.mediFee + outGua.objSum + outGua.other1 + outGua.other2;
+            accOutGuaPay.paySum = 0;
+            ogps.addItem(accOutGuaPay);
+          }
+        }
+        if (outGuaPays.length > 0)
+        {
+          for each (var outGuaPay:AccOutGuaPay in outGuaPays)
+          {
+            outGuaPay.fkAccOutGua.guaSum = outGuaPay.fkAccOutGua.objSum + outGuaPay.fkAccOutGua.mediFee + outGuaPay.fkAccOutGua.other1 + outGuaPay.fkAccOutGua.other2;
+            outGuaPay.paySum  = outGuaPay.objSum + outGuaPay.mediFee + outGuaPay.other1 + outGuaPay.other2;
+            ogps.addItem(outGuaPay);
+          }
+        }
+        if (inPsnGuas.length > 0)
+        {
+          for each (var inPsnGua:AccInPsnGua in inPsnGuas)
+          {
+            accInPsnGuaPay = new AccInPsnGuaPay();
+            for each (var inPsn:AccInPsn in accident.accInPsns)
+            {
+              if (inPsn.id.no == inPsnGua.cstmNo)
+              {
+                inPsnGua.cstmName = inPsn.name;
+                break;
+              }
+            }
+            accInPsnGuaPay.fkAccInPsnGua = inPsnGua;
+            accInPsnGuaPay.fkAccInPsnGua.guaSum = inPsnGua.mediFee + inPsnGua.other1 + inPsnGua.other2;
+            accInPsnGuaPay.paySum = 0;
+            pgps.addItem(accInPsnGuaPay);
+          }
+        }
+        if (inPsnGuaPays.length > 0)
+        {
+          for each (var inPsnGuaPay:AccInPsnGuaPay in inPsnGuaPays)
+          {
+            for each (var ip:AccInPsn in accident.accInPsns)
+            {
+              if (ip.id.no == inPsnGuaPay.fkAccInPsnGua.cstmNo)
+              {
+                inPsnGuaPay.fkAccInPsnGua.cstmName = ip.name;
+                break;
+              }
+            }
+            inPsnGuaPay.fkAccInPsnGua.guaSum = inPsnGuaPay.fkAccInPsnGua.mediFee + inPsnGuaPay.fkAccInPsnGua.other1 + inPsnGuaPay.fkAccInPsnGua.other2;
+            inPsnGuaPay.paySum = inPsnGuaPay.mediFee + inPsnGuaPay.other1 + inPsnGuaPay.other2;
+            pgps.addItem(inPsnGuaPay);
+          }
+        }
+        outGuaAndPay.getOutGuaPays(ogps);
+        inPsnGuaAndPay.getInPsnGuaPays(pgps);
+      }
+
+      // 赔偿金额
+      private function addOutPsnFees(event:Events):void
+      {
+        outPsnFees = event.data as Number;
+        pIdeal.setFees(outPsnFees+outObjFees+inPsnFees);
+      }
+      private function addOutObjFees(event:Events):void
+      {
+        outObjFees = event.data as Number;
+        pIdeal.setFees(outPsnFees+outObjFees+inPsnFees);
+      }
+      private function addInPsnFees(event:Events):void
+      {
+        inPsnFees = event.data as Number;
+        pIdeal.setFees(outPsnFees+outObjFees+inPsnFees);
+      }
+
+      private function save(event:Event):void
+      {
+        accident.compor = UserController.person;
+        accident.compDate = DateField.stringToDate(df.format(new Date()),df.formatString);
+        accident.accOutPsns = accOutPsn.outPsns;
+        accident.accOutObjs = accOutObj.outObjs;
+        accident.accInPsns = accInPsn.inPsns;
+        if (cIdeal.taCompDesc.text != "")
+          accident.compDesc = cIdeal.taCompDesc.text;
+        else
+          accident.compDesc = null;
+        if (accident.status == 1)
+        {
+          ClaimsController.getOutAndInGuaByAccId(branchId,accident.id.id, successGetOIG);
+        }
+        else if (accident.status == 2)
+        {
+          AccidentController.saveAccident1(oldData,accident,successSave);
+        }
+      }
+
+      private function successGetOIG(event:ResultEvent):void
+      {
+        var m:int = event.result as int;
+        if (m > 0)
+        {
+          Alert.show(resourceManager.getString('gcc_safety','acc.gua.donot.audit'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        else
+        {
+          AccidentController.saveAccident1(oldData,accident,successSave);
+        }
+      }
+
+      private function successSave(event:ResultEvent):void
+      {
+        if (accident.status == 2)
+        {
+          setAdgEditable(false);
+        }
+        else if (accident.status == 1)
+        {
+          setAdgEditable(true);
+        }
+        AccidentController.getAccidentByNo(UserController.branchId,accident.no,function(e:ResultEvent):void 
+          {
+            oldData = ObjectUtil.copy((e.result as ArrayCollection)[0]) as Accident;
+            Alert.show(resourceManager.getString('gcc','save.success'), Constants.APP_NAME, Alert.OK,null,null,Constants.ICON32_INFO);
+          });
+      }
+
+      // dataGrid 不可编辑
+      private function setAdgEditable(able:Boolean):void
+      {
+        accOutPsn.setAdgEditable(able);
+        accOutObj.setAdgEditable(able);
+        accInPsn.setAdgEditable(able);
+        cIdeal.comEnable(able);
+      }
+
+      private function close(event:Event):void
+      {
+        Alert.show(resourceManager.getString('gcc_safety','gua.out.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO) return;
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          },Constants.ICON32_QUESTION);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

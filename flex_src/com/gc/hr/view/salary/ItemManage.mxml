@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" preinitialize="onPreinitialize()"
+                creationComplete="onCreationComplete()">
+  <gc:Voucher id="v" width="100%" height="100%" autoLayout="true" clazz="{SalItem}" bundle="gcc_hr"
+              code="salItem" validator="{validator}">
+    <mx:AdvancedDataGrid id="adg" lockedColumnCount="3">
+      <mx:columns>
+        <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        <mx:AdvancedDataGridColumn dataField="no" width="60" itemEditor="{noInput}"/>
+        <mx:AdvancedDataGridColumn dataField="name"/>
+        <mx:AdvancedDataGridColumn dataField="status" width="60" dataTipField="status.label"
+                                   editorDataField="selectedItem" itemEditor="{comboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="onDate" editorDataField="selectedDate"
+                                   itemEditor="{dateField}"/>
+        <mx:AdvancedDataGridColumn dataField="downDate" editorDataField="selectedDate"
+                                   itemEditor="{dateField}"/>
+        <mx:AdvancedDataGridColumn dataField="flag$" dataTipField="flag$.label" visible="false"
+                                   editorDataField="selectedItem" itemEditor="{comboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="type$" dataTipField="type$.label"
+                                   editorDataField="selectedItem" itemEditor="{comboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="print$" width="100" dataTipField="print$.label"
+                                   editorDataField="selectedItem" itemEditor="{comboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="etype$" width="120" dataTipField="etype$.label"
+                                   editorDataField="selectedItem" itemEditor="{comboBox}"/>
+        <mx:AdvancedDataGridColumn dataField="formula"/>
+        <mx:AdvancedDataGridColumn dataField="comment"/>
+        <mx:AdvancedDataGridColumn dataField="accountDebit"/>
+        <mx:AdvancedDataGridColumn dataField="accountCredit"/>
+      </mx:columns>
+    </mx:AdvancedDataGrid>
+  </gc:Voucher>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.containers.Form;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.ComboBox;
+      import mx.controls.DateField;
+      import mx.controls.Label;
+      import mx.controls.TextInput;
+      import mx.core.ClassFactory;
+      import mx.events.FlexEvent;
+      import mx.validators.RegExpValidator;
+      import mx.validators.Validator;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.model.SalItem;
+      import com.gc.validators.FormulaValidator;
+      import com.gc.util.CommonUtil;
+
+      [Bindable]
+      private var noInput:AdvancedClassFactory;
+      [Bindable]
+      private var comboBox:AdvancedClassFactory;
+      [Bindable]
+      private var dateField:AdvancedClassFactory;
+      private var lists:Object;
+
+      private function onPreinitialize():void
+      {
+        comboBox=new AdvancedClassFactory(ComboBox);
+        comboBox.properties={itemRenderer:new ClassFactory(Label)};
+        comboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onComboBoxCreateComplete}];
+        noInput=new AdvancedClassFactory(TextInput);
+        noInput.properties={restrict: "0-9A-Z_"};
+        dateField=new AdvancedClassFactory(DateField);
+        dateField.properties={editable:true, formatString:Constants.DATE_FORMAT, showToday:true, yearNavigationEnabled:true};
+        addEventListener(CommonEvent.CREATED, onCreated);
+        addEventListener(CommonEvent.SAVE_SUCCESS, function(e1:CommonEvent):void
+          {
+            SalaryController.salItemList=e1.data as ArrayCollection;
+            SalItem.refresh();
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+      }
+
+      private function onCreated(event:CommonEvent):void
+      {
+        var nov:RegExpValidator=new RegExpValidator();
+        nov.expression="^[A-Z][A-Z_0-9]*$";
+        nov.noMatchError=resourceManager.getString("gcc_hr", "salItem.no.error");
+        lists={status:SalItem.STATUS_LIST, 
+            "flag$":SalItem.FLAG_LIST,
+            "type$":SalItem.TYPE_LIST,
+            "print$":SalItem.PRINT_LIST,
+            "etype$":SalItem.ETYPE_LIST};
+        v.vfields=[{field:"no", validator:nov}, "name", "onDate", "downDate", "flag$", "type$", "print$", "etype$"];
+        v.flist=SalaryController.getAllItems;
+        v.faccess=UserController.hrWrite;
+      }
+
+      private function onComboBoxCreateComplete(event:Event):void
+      {
+        if (event.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=event.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData && cbox.data is SalItem)
+          {
+            var listData:AdvancedDataGridListData=cbox.listData as AdvancedDataGridListData;
+            var dataField:String=listData.dataField;
+            var list:Object=lists.hasOwnProperty(dataField) ? lists[dataField] : null;
+            var si:SalItem=cbox.data as SalItem;
+            cbox.dataProvider=list;
+            cbox.selectedIndex=(list != null) ? CommonUtil.indexOfKey(list, si[dataField], "value") : -1;
+          }
+        }
+      }
+
+      private function validator(list:ArrayCollection, grid:Object, vfields:Array):Boolean
+      {
+        var r:Object=SalItem.validate(list);
+        var arr:Array=vfields.slice(0);
+        arr.push({field:"formula", validator:new FormulaValidator(r)});
+        return CommonUtil.validateGrid(grid, arr, null, 1, 5000).length <= 0;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

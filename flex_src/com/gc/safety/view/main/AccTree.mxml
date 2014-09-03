@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off" preinitialize="onPreinitialize()"
+           creationComplete="onCreationComplete()">
+  <mx:Tree id="treeAcc" enabled="true" width="100%" height="100%" showRoot="true"
+           horizontalScrollPolicy="auto" verticalScrollPolicy="auto"
+           labelField="{Constants.PROP_NAME_LABEL}" iconField="{Constants.PROP_NAME_ICON}"
+           click="onClick(event)" doubleClick="onDoubleClick(event)" doubleClickEnabled="true"
+           change="onChange(event)" valueCommit="onValueCommit(event)"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.utils.ObjectUtil;
+      import mx.core.UIComponent;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.controls.treeClasses.StyledTreeItemRenderer;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.common.model.EquOnline;
+      import com.gc.common.model.Line;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+      import mx.core.UITextField;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.model.Department;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.safety.model.Accident;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.Constants;
+
+      private var accs:ArrayCollection = new ArrayCollection();
+      private var orderColumns:Array=AccidentController.DEFAULT_ACC_ORDER_COLUMNS;
+      private var equItemRenderer:AdvancedClassFactory;
+      private var items:Array;
+
+      private function onPreinitialize():void
+      {
+//        loadAccTree(UserController.limit,orderColumns);
+        addEventListener(CommonEvent.EXPAND, onExpand);
+        addEventListener(CommonEvent.EXPAND_ALL, onExpandAll);
+        addEventListener(CommonEvent.COLLAPSE, onCollapse);
+        addEventListener(CommonEvent.COLLAPSE_ALL, onCollapseAll);
+        addEventListener(CommonEvent.GET_SUCCESS, onGetSuccess);
+        equItemRenderer=new AdvancedClassFactory(StyledTreeItemRenderer);
+//        addEventListener(Events.PERSON_TREE_REFILTERING, onRefiltering);
+//        addEventListener(Events.PERSON_TREE_REORGANIZING, onReorganizing);
+        addEventListener(CommonEvent.DBLCLICKED,onADGDBClicked);
+      }
+
+      private function onGetSuccess(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var data:Object = e.data;
+        var equOnlineAC:ArrayCollection = data.hasOwnProperty("equOnline") ? data["equOnline"] : null;
+        var dateFrom:Date = data.hasOwnProperty("dateFrom") ? data["dateFrom"] : new Date();
+        AccidentController.getAccsByDateFrom(UserController.limit,dateFrom,function(event:ResultEvent):void 
+          {
+            var accs:ArrayCollection = event.result as ArrayCollection;
+            if(equOnlineAC.length > 0) {
+              for each (var equOnline:EquOnline in equOnlineAC){
+                for each (var acc:Accident in accs) {
+                  if(equOnline.equipmentId == acc.bus.id && equOnline.departId == acc.dept.id
+                    && (equOnline.line == null || (equOnline.line != null && equOnline.line.id == acc.line.id)))
+                    equOnline.accs.addItem(acc);
+                }
+              }
+            }
+            var root:Object = buildAccTree(equOnlineAC,orderColumns);
+            if(treeAcc) {
+              treeAcc.dataProvider = root;
+//              treeAcc.itemRenderer = equItemRenderer;
+              treeAcc.openItems=[root];
+              treeAcc.validateNow();
+//              treeAcc.selectedItem = root; 	//如果三个都加了会出现混乱 ，原因：初始化页面选中的是一个页面，所以一直由当前页面派发clicked
+            }
+          });
+      }
+
+      private function loadAccTree(limit:SecurityLimit, orderColumns:Array):void
+      {
+      }
+
+      private function buildAccTree(coll:ArrayCollection, orderColumns:Array):Object
+      {
+        var root:Object = new Object();
+        var tree:Object;
+        var key:Object;
+        var children:Array;
+        var k:int;
+        for each (var equOnline:EquOnline in coll)
+        {
+          tree = root;
+          for each (var column:String in orderColumns)
+          {
+            key = getKey(equOnline,column);
+            children = tree["children"] as Array;
+            if (children == null)
+            {
+              children = new Array();
+              tree["children"] = children;
+            }
+            k = CommonUtil.indexOfKey(children,key);
+            if (k < 0)
+            {
+              children.push(key);
+              tree = key;
+            }
+            else
+            {
+              tree = children[k];
+            }
+          }
+          children = tree["children"] as Array;
+          if (children == null)
+          {
+            children = new Array;
+            tree["children"] = children;
+          }
+          if (equOnline.onDate >= CommonController.now)
+            continue;
+          var idx:int=CommonUtil.indexOfKey(children, equOnline.equipmentId, "equipmentId");
+          if (idx >= 0)
+          {
+            var dest:EquOnline=children[idx] as EquOnline;
+            dest.accs.source.concat(equOnline.accs);
+            dest.mileage += equOnline.mileage;
+            dest.downDate=equOnline.downDate;
+//            if (dest.downDate != null)
+//              dest.style={color: Constants.Red};
+          }
+          else
+          {
+//            if (equOnline.downDate != null)
+//              equOnline.style={color: Constants.Red};
+            children.push(equOnline);
+          }
+        }
+        root["label"] = resourceManager.getString("gcc_safety", "tree.acc.root.label");
+        return root;
+      }
+      private function getKey(acc:EquOnline, orderColumn:String):Object
+      {
+        var key:Object;
+        var scope:String;
+        switch (orderColumn)
+        {
+          case "depart.id":
+            key=new Department(acc.depart== null ? 0 : acc.depart.id, acc.branch, acc.depart== null ? "" : acc.depart.name);
+            break;
+          case "line.id":
+            key=new Line(acc.line == null ? 0 : acc.line.id, acc.branch, acc.line == null ? "" : acc.line.no, acc.line == null ? Constants.NULL_LABEL : acc.line.name);
+            break;
+          default:
+            key=new Object();
+            key[Constants.PROP_NAME_TYPE]=Constants.TYPE_UNKNOWN;
+            break;
+        }
+        key[Constants.PROP_NAME_TYPE]=orderColumn;
+        return key;
+      }
+
+      private function onCreationComplete():void
+      {
+
+      }
+
+      private function onClick(event:Event):void
+      {
+        if (event.target is UITextField)
+        {
+          var node:Object = treeAcc.selectedItem;
+          treeAcc.expandItem(node,!treeAcc.isItemOpen(node));
+        }
+      }
+      /**
+       * 当 树的节点收缩起来的时候，有问题
+       */
+      private function onADGDBClicked(event:CommonEvent):void
+      {
+        items=[];
+        var selectedItems:Array = treeAcc.selectedItems;
+        visit(selectedItems,visitNode);
+        var openItems:Array = treeAcc.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeAcc.openItems = openItems;
+        treeAcc.validateNow();
+        treeAcc.selectedItem = event.data;
+        treeAcc.expandItem(treeAcc.selectedItem,!treeAcc.isItemOpen(treeAcc.selectedItem));
+        onValueCommit(event);
+        event.stopImmediatePropagation();
+      }
+      public function visit(obj:Object, visitor:Function):void
+      {
+        visitor(obj);
+        if (obj is Array || obj is ArrayCollection)
+        {
+          for each (var item:Object in obj)
+          {
+            visit(item, visitor);
+          }
+        }
+      }
+
+      private function onDoubleClick(event:Event):void
+      {
+      }
+
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      private function onValueCommit(event:Event):void
+      {
+        var node:Object = treeAcc.selectedItem;
+        if (!node || (node[Constants.PROP_NAME_TYPE] == Constants.TYPE_ROOT && !node.hasOwnProperty("children")))
+          return;
+        else
+        {
+          dispatchEvent(new CommonEvent(CommonEvent.CLICKED, node, [CommonUtil.getAncestors(treeAcc), orderColumns]));
+          parent.dispatchEvent(new Events(Events.UPDATE,node));
+        }
+      }
+
+      private function visitNode(node:Object):void
+      {
+        if (node && node.hasOwnProperty("children"))
+          items.push(node);
+      }
+
+      private function onExpand(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array = treeAcc.selectedItems;
+        CommonUtil.visit(selectedItems,visitNode);
+        var openItems:Array = treeAcc.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeAcc.openItems = openItems;
+        treeAcc.validateNow();
+        treeAcc.selectedItems = selectedItems;
+      }
+
+      private function onExpandAll(event:Event):void
+      {
+        if (treeAcc.selectedItem == null)
+          return;
+        items=[];
+        CommonUtil.visit(treeAcc.dataProvider,visitNode);
+        treeAcc.openItems = items;
+        treeAcc.validateNow();
+        treeAcc.selectedItem = treeAcc.dataProvider[0];
+      }
+
+      private function onCollapse(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array = treeAcc.selectedItems;
+        CommonUtil.visit(selectedItems,visitNode);
+        var openItems:ArrayCollection = new ArrayCollection(treeAcc.openItems as Array);
+        var k:int;
+        for each (var item:Object in items)
+        {
+          k = openItems.getItemIndex(item);
+          if (k >= 0)
+            openItems.removeItemAt(k);
+        }
+        treeAcc.openItems = openItems.toArray();
+        treeAcc.validateNow();
+        treeAcc.selectedItems = selectedItems;
+      }
+
+      private function onCollapseAll(event:Event):void
+      {
+        if (treeAcc.selectedItem == null)
+          return;
+        treeAcc.openItems = [];
+        treeAcc.validateNow();
+        treeAcc.selectedItem = treeAcc.dataProvider[0];
+      }
+
+      private function onRefiltering(event:Event):void
+      {
+
+      }
+
+      private function onReorganizing(event:Event):void
+      {
+
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

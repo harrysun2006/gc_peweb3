@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                verticalAlign="top" layout="vertical" width="360" height="330"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()">
+  <mx:ToolBar id="form" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'branch')}:">
+      <mx:Label text="{UserController.branchName}" width="200"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkFact.date')}:">
+      <mx:DateField name="date" editable="true" formatString="{Constants.DATE_FORMAT}" width="200"
+                    change="onDateChange(event)"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkFact.depart')}:">
+      <mx:ComboBox id="cbDepart" name="depart" width="200" itemRenderer="mx.controls.Label"
+                   change="onDepartChange(event)"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkFact.office')}:">
+      <mx:ComboBox id="cbOffice" name="office" editable="true" itemRenderer="mx.controls.Label"
+                   width="200"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc_hr', 'chkFact.comment')}:">
+      <mx:TextArea name="comment" height="70" width="200"/>
+    </mx:FormItem>
+  </mx:ToolBar>
+  <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+    <mx:Button label="{resourceManager.getString('gcc', 'ok')}" click="manage(event)"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.containers.FormItem;
+      import mx.controls.DateField;
+      import mx.core.Container;
+      import mx.events.CalendarLayoutChangeEvent;
+      import mx.events.ListEvent;
+      import mx.events.ValidationResultEvent;
+      import mx.rpc.events.ResultEvent;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Department;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.model.ChkFact;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.RETURN, onReturn);
+        CheckController.getDepartmentsAndGroups(UserController.hrDepartId, function(e:ResultEvent):void
+          {
+            cbDepart.dataProvider=e.result as ArrayCollection;
+            cbDepart.selectedIndex=-1;
+            if (UserController.hrSub) {
+              cbDepart.enabled=false;
+              cbDepart.selectedIndex=CommonUtil.indexOfKey(e.result, UserController.hrDepart);
+              onDepartChange();
+            }
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.visit(this, function(obj:Object):void
+          {
+            if (obj is FormItem)
+            {
+              obj.styleName="filterLabel";
+            }
+          });
+      }
+
+      private function onDateChange(e:CalendarLayoutChangeEvent):void
+      {
+        if (e.newDate != null && e.currentTarget is DateField)
+        {
+          var date:Date=new Date(e.newDate.fullYear, e.newDate.month, 1);
+          var df:DateField=e.currentTarget as DateField;
+          df.text=DateUtil.formatDate(date, df.formatString);
+        }
+      }
+
+      private function onDepartChange(e:Event=null):void
+      {
+        if (cbDepart.selectedItem is Department)
+        {
+          var depart:Department=cbDepart.selectedItem as Department;
+          cbOffice.dataProvider=depart.checkGroups;
+          cbOffice.selectedIndex=-1;
+        }
+      }
+
+      private function manage(e:Event):void
+      {
+        if (!CommonUtil.validateForm(form, ["date", "depart", {field: "office", validator: Constants.VALIDATOR_NOEMPTY}]))
+          return;
+        var po:ChkFact=new ChkFact();
+        var self:Container=this;
+        CommonUtil.loadInstance(form, po);
+        CommonUtil.loadInstance({"id.branch": UserController.branch, depart:cbDepart.selectedItem, office: cbOffice.text}, po);
+        CheckController.getFacts(po, function(e:ResultEvent):void
+          {
+            var arr:ArrayCollection=e.result as ArrayCollection;
+            if (arr.length <= 0) { // add
+              CommonUtil.popupWindow(FactVoucher, null, null, po, true);
+              close();
+            } else if (arr.length == 1) { // edit
+              po=arr[0];
+              po.depart=cbDepart.selectedItem as Department;
+              CommonUtil.popupWindow(FactVoucher, null, null, po, true);
+              close();
+            } else { // select then edit
+              CommonUtil.popupWindow(FactSelect, null, self, arr);
+            }
+          });
+      }
+
+      private function onReturn(e:CommonEvent):void
+      {
+        if (e.data is ChkFact)
+        {
+          CommonUtil.popupWindow(FactVoucher, null, null, e.data, true);
+          close();
+        }
+      }
+
+      private function close(e:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

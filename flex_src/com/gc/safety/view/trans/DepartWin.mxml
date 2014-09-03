@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)" width="300" height="250">
+  <mx:ToolBar id="form" width="100%" paddingTop="30" paddingBottom="30" verticalGap="20">
+    <mx:Label text="{resourceManager.getString('gcc', 'depart.name')}: "/>
+    <mx:ComboBox id="cbDept" dataProvider="{BaseController.departmentList}" width="160"/>
+    <mx:Label text="结账日期: "/>
+    <mx:Label id="lCloseDate" width="160"/>
+  </mx:ToolBar>
+  <mx:HBox width="100%" horizontalAlign="center" horizontalGap="40">
+    <mx:Button id="btOk" label="{resourceManager.getString('gcc', 'ok')}" click="onOkClick(event);"
+               width="70"/>
+    <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="onCloseClick(event)"
+               width="70"/>
+  </mx:HBox>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.Constants;
+      import mx.controls.Alert;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.controller.TransController;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.util.DateUtil;
+      import com.gc.CommonEvent;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.Events;
+      import com.gc.util.CommonUtil;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.controller.BaseController;
+
+      private function onPreinitialize():void
+      {
+        BaseController.getDepartments(UserController.branchId, onGetDepartSuccess);
+      }
+
+      private function onCreationComplete():void
+      {
+        lCloseDate.text = DateUtil.formatDate(CommonController.closeDate);
+        cbDept.setFocus();
+      }
+
+      private function onGetDepartSuccess(event:ResultEvent):void
+      {
+        if (UserController.safetyLimit == 2 || UserController.safetyLimit == 3)
+        {
+          // 分公司权限只能录入本部门数据
+          cbDept.selectedIndex = CommonUtil.indexOfKey(BaseController.departmentList, UserController.safetyDepartId,"id");
+          cbDept.enabled = false;
+        }
+        else
+          cbDept.selectedIndex = -1;
+      }
+
+      private function onOkClick(event:Event):void
+      {
+        if (!CommonUtil.validateForm(form,[{field: 'cbDept',error: '请选择部门'}]))
+          return;
+        TransController.getTransListByDeptCloseD(UserController.branchId,cbDept.selectedItem.id,CommonController.closeDate,function(evt:ResultEvent):void
+          {
+            var transList:ArrayCollection = evt.result as ArrayCollection;
+            if(transList.length>0)
+              dispatchEvent(new Events(Events.GET,transList,[cbDept.selectedItem]));
+            else
+            {
+              Alert.show("没有相应的违章信息", Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+              return;
+            }
+          });
+      }
+
+      private function onCloseClick(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

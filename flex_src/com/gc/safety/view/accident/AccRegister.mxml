@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         xmlns:accident="com.gc.safety.view.accident.*"
+         xmlns:code="http://code.google.com/p/flexlib/" horizontalAlign="center"
+         horizontalScrollPolicy="auto" preinitialize="onPreinitialize()"
+         creationComplete="onCreationComplete()" keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox id="vbox" width="90%">
+    <mx:Label id="title" text="{resourceManager.getString('gcc_safety','acc.register.title.name')}"
+              textAlign="center" width="100%" fontSize="16" fontWeight="bold"/>
+    <mx:Label id="accTitle"
+              text="{resourceManager.getString('gcc_safety','acc.process.basic.info')}"
+              textAlign="left" width="100%"/>
+    <accident:AccInfo id="accInfo" width="100%"/>
+    <code:WindowShade id="ws1" tabChildren="{ws1.opened}" opened="false" width="100%">
+      <accident:NAccOutPsn id="accOutPsn" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws2" tabChildren="{ws2.opened}" opened="false" width="100%">
+      <accident:NAccOutObj id="accOutObj" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws3" tabChildren="{ws3.opened}" opened="false" width="100%">
+      <accident:NAccInPsn id="accInPsn" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws4" tabChildren="{ws4.opened}" opened="false" width="100%">
+      <accident:NAccGuaReport id="accGuaReport" width="100%"/>
+    </code:WindowShade>
+    <code:WindowShade id="ws5" tabChildren="{ws5.opened}" opened="false" width="100%">
+      <accident:GuaInfos id="guaInfos" width="100%"/>
+    </code:WindowShade>
+    <mx:Form width="100%">
+      <mx:Grid width="100%">
+        <mx:GridRow width="100%">
+          <mx:GridItem width="70%" height="100%">
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initor')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiInitor" name="initor.name" text="{accident.initor.name}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem width="15%" height="100%" horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.initDate')}"
+                         width="100%" horizontalAlign="right">
+              <mx:TextInput id="tiInitDate" name="initDate" text="{df.format(accident.initDate)}"
+                            editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:Form>
+    <mx:Label text="注：* 表示必填项,其中驾驶员、线路和车牌号在填写过之后必须选择，因为和车等存在联动关系" paddingTop="10"/>
+    <mx:HBox width="100%" horizontalAlign="center" paddingTop="10" paddingBottom="10">
+      <mx:Button id="btSave" label="{resourceManager.getString('gcc','save')}" click="save(event)"
+                 width="70" height="35"/>
+      <mx:Label width="40"/>
+      <mx:Button id="btClose" label="{resourceManager.getString('gcc','close')}"
+                 click="close(event)" width="70" height="35"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.core.IFlexDisplayObject;
+      import mx.events.CloseEvent;
+      import mx.utils.ObjectUtil;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.model.AccExtent;
+      import com.gc.safety.model.AccProcessor;
+      import com.gc.common.model.Weather;
+      import com.gc.safety.model.AccDuty;
+      import com.gc.safety.model.AccType;
+      import com.gc.safety.model.AccLevel;
+      import com.gc.common.model.Equipment;
+      import com.gc.common.model.Line;
+      import com.gc.common.model.Person;
+      import mx.controls.Alert;
+      import mx.validators.Validator;
+      import com.gc.common.controller.BaseController;
+      import com.gc.Constants;
+      import com.gc.safety.model.Accident;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.AccidentController;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import com.gc.CommonEvent;
+
+      private var branchId:int;
+      [Bindable]
+      private var accident:Accident;
+      private var oldData:Accident;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED,function init(event:CommonEvent):void {
+            oldData = null;
+            accident = new Accident();
+            branchId = UserController.branchId;
+            AccidentController.preloadBaseLists(branchId);
+            BaseController.getWeathers(branchId);
+            BaseController.getLines(branchId);
+            BaseController.getEquipmentsByBranchId(branchId);
+            var popup:IFlexDisplayObject = CommonUtil.popupWindow(DeptarAndDateWin,resourceManager.getString('gcc_safety','acc.register.title.name'));
+            new Events(Events.GET).stopImmediatePropagation();
+            // 部门输入框
+            popup.addEventListener(Events.GET,getDepartAndDate);
+            // 车号选择
+            addEventListener(Events.SELECTED, getUseId);
+            // 报案号填写
+            addEventListener(Events.ADD_REPORTNO, getReportNo);
+          });
+      }
+
+      private function onCreationComplete():void
+      {
+        ws1.label = resourceManager.getString('gcc_safety','acc.ws1.label');
+        ws2.label = resourceManager.getString('gcc_safety','acc.ws2.label');
+        ws3.label = resourceManager.getString('gcc_safety','acc.ws3.label');
+        ws4.label = resourceManager.getString('gcc_safety','acc.ws4.label');
+        ws5.label = resourceManager.getString('gcc_safety','acc.ws5.label');
+      }
+
+      private function getDepartAndDate(event:Events):void
+      {
+        accident = event.data as Accident;
+        CommonUtil.close([ws1,ws2,ws3,ws4,ws5]);
+        accInfo.getDepartAndDate(accident);
+        accInfo.tiNo.setFocus();
+        accOutPsn.outPsns.removeAll();
+        accOutObj.outObjs.removeAll();
+        accInPsn.inPsns.removeAll();
+        accGuaReport.guaReports.removeAll();
+        guaInfos.guarInfos.removeAll();
+      }
+
+
+      private function getUseId(event:Events):void
+      {
+        GuaranteeController.getGIsByBusIdAndAccDate(branchId,event.data as int,accident.date,successGIs);
+      }
+
+      private function successGIs(event:ResultEvent):void
+      {
+        var guarInfos:ArrayCollection = event.result as ArrayCollection;
+        guaInfos.getGuaInfos(guarInfos);
+        accGuaReport.getGuarInfos(guarInfos);
+      }
+
+      private function getReportNo(event:Events):void
+      {
+        guaInfos.getReportNo(event.data as Array);
+      }
+
+      private function save(event:Event):void
+      {
+//			if (!CommonUtil.validateForm(accInfo.form, ["no","cbWorkId","name","cbAuthNo","cbLevel","cbAccType","cbAccDuty","cbWeather"]))
+        if (accInfo.tiNo.text == "")
+        {
+          Alert.show(resourceManager.getString('gcc_safety','acc.no')+resourceManager.getString('gcc_safety','acc.not.null'),
+            Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        if (accInfo.cbWorkId.selectedItem == null)
+        {
+          if (accInfo.cbWorkId.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.driver.workerId')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var x:int = CommonUtil.indexOfKey(accInfo.cbWorkId.dataProvider, accInfo.cbWorkId.selectedItem, "workerId");
+            if (x >= 0)
+              accInfo.cbWorkId.selectedIndex = x;
+          }
+        }
+        else
+        {
+          if (CommonUtil.indexOfKey(accInfo.cbWorkId.dataProvider, accInfo.cbWorkId.selectedItem, "workerId") < 0)
+          {
+            Alert.show("你填写的驾驶员工号不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        if (accInfo.cbLine.selectedItem == null)
+        {
+          if (accInfo.cbLine.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.line.name')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var y:int = CommonUtil.indexOfKey(accInfo.cbLine.dataProvider, accInfo.cbLine.selectedItem, "name");
+            if (y >= 0)
+              accInfo.cbLine.selectedIndex = y;
+          }
+        }
+        else
+        {
+          if (CommonUtil.indexOfKey(accInfo.cbLine.dataProvider, accInfo.cbLine.selectedItem, "name") < 0)
+          {
+            Alert.show("你填写的线路不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        if (accInfo.cbAuthNo.selectedItem == null)
+        {
+          if (accInfo.cbAuthNo.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.bus.useId')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+//            var z:int = CommonUtil.indexOfKey(accInfo.cbAuthNo.dataProvider, accInfo.cbAuthNo.selectedItem, "useId");
+//            if (z >= 0)
+//              accInfo.cbAuthNo.selectedIndex = m;
+            Alert.show("请选择一条线路出事故车牌号列表",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          }
+        }
+        else
+        {
+          if (CommonUtil.indexOfKey(accInfo.cbAuthNo.dataProvider, accInfo.cbAuthNo.selectedItem, "useId") < 0)
+          {
+            Alert.show("你填写的事故车牌号不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        if (accInfo.cbLevel.selectedItem == null)
+        {
+          if (accInfo.cbLevel.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.level.name')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var z:int = CommonUtil.indexOfKey(accInfo.cbLevel.dataProvider,accInfo.cbLevel.text,"name");
+            if (z >= 0)
+              accInfo.cbLevel.selectedIndex = z;
+            else
+            {
+              Alert.show("你填写的事故等级不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          }
+        }
+
+        if (accInfo.cbAccType.selectedItem == null)
+        {
+          if (accInfo.cbAccType.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.type.name')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var a:int = CommonUtil.indexOfKey(accInfo.cbAccType.dataProvider,accInfo.cbAccType.text,"name");
+            if (a >= 0)
+              accInfo.cbAccType.selectedIndex = a;
+            else
+            {
+              Alert.show("你填写的事故类别不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          }
+        }
+        if (accInfo.cbAccDuty.selectedItem == null)
+        {
+          if (accInfo.cbAccDuty.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.duty.name')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var b:int = CommonUtil.indexOfKey(accInfo.cbAccDuty.dataProvider,accInfo.cbAccDuty.text,"name");
+            if (b >= 0)
+              accInfo.cbAccDuty.selectedIndex = b;
+            else
+            {
+              Alert.show("你填写的事故责任不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          }
+        }
+        if (accInfo.cbWeather.selectedItem == null)
+        {
+          if (accInfo.cbWeather.text == "")
+          {
+            Alert.show(resourceManager.getString('gcc_safety','accident.weather.name')+resourceManager.getString('gcc_safety','acc.not.null'),
+              Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+          else
+          {
+            var c:int = CommonUtil.indexOfKey(accInfo.cbWeather.dataProvider,accInfo.cbWeather.text,"name");
+            if (c >= 0)
+              accInfo.cbWeather.selectedIndex = c;
+            else
+            {
+              Alert.show("你填写的天气不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+              return;
+            }
+          }
+        }
+
+        if (accInfo.cbProcessor.text != "")
+        {
+          var d:int = CommonUtil.indexOfKey(accInfo.cbProcessor.dataProvider,accInfo.cbProcessor.text,"name");
+          if (d >= 0)
+            accInfo.cbProcessor.selectedIndex = d;
+          else
+          {
+            Alert.show("你填写的处理机关不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+        if (accInfo.cbExtent.text != "")
+        {
+          var e:int = CommonUtil.indexOfKey(accInfo.cbExtent.dataProvider,accInfo.cbExtent.text,"name");
+          if (e >= 0)
+            accInfo.cbExtent.selectedIndex = e;
+          else
+          {
+            Alert.show("你填写的受损程度不在列表中,请重新选择",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+            return;
+          }
+        }
+
+        CommonUtil.loadInstance(accInfo.form,accident);
+        accident.driver = accInfo.cbWorkId.selectedItem as Person;
+        accident.line = accInfo.cbLine.selectedItem as Line;
+        accident.bus = accInfo.cbAuthNo.selectedItem as Equipment;
+        accident.level = accInfo.cbLevel.selectedItem as AccLevel;
+        accident.type = accInfo.cbAccType.selectedItem as AccType;
+        accident.duty = accInfo.cbAccDuty.selectedItem as AccDuty;
+        accident.weather = accInfo.cbWeather.selectedItem as Weather;
+        accident.processor = accInfo.cbProcessor.selectedItem as AccProcessor;
+        accident.extent = accInfo.cbExtent.selectedItem as AccExtent;
+        accident.status = 0;
+        accident.billNum = 0;
+        accident.lost = 0;
+        accident.deptDate = accident.compDate = accident.archDate = Constants.MAX_DATE;
+        accident.id.branch = UserController.branch;
+        //accOutPsn 撞击人员
+        var outPsns_1:ArrayCollection = accOutPsn.outPsns;
+        if (outPsns_1.length > 0)
+        {
+          var i:int, j:int;
+          var checkFields1:Array=["name","duty","maim"];
+          var checks_CN1:Array = [resourceManager.getString('gcc_safety','accoutpsn.name'),
+            resourceManager.getString('gcc_safety','accoutpsn.duty.name'),
+            resourceManager.getString('gcc_safety','accoutpsn.maim.label')];
+          for (i=0; i < outPsns_1.length; i++)
+          {
+            for (j=0; j < checkFields1.length; j++)
+            {
+              if (outPsns_1[i][checkFields1[j]] == null || outPsns_1[i][checkFields1[j]] == "")
+              {
+                accOutPsn.adgOutPsn.errorString = resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[i+1,checks_CN1[j]]);
+                Alert.show(resourceManager.getString('gcc_safety','acc.ws1.label')+resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[i+1,checks_CN1[j]]),
+                  Constants.APP_NAME, Alert.OK,null, null, Constants.ICON32_WARNING);
+                return;
+              }
+            }
+            outPsns_1[i]["id"]["branch"] = UserController.branch;
+          }
+        }
+        // accOutObj 撞击对象
+        var outObjs_1:ArrayCollection = accOutObj.outObjs;
+        if (outObjs_1.length > 0)
+        {
+          var k:int, m:int;
+          var checkFields2:Array=["obj","duty"];
+          var checks_CN2:Array = [resourceManager.getString('gcc_safety','accoutobj.obj.name'),
+            resourceManager.getString('gcc_safety','accoutobj.duty.name')];
+          for (k=0; k < outObjs_1.length; k++)
+          {
+            for (m=0; m < checkFields2.length; m++)
+            {
+              if (outObjs_1[k][checkFields2[m]] == null || outObjs_1[k][checkFields2[m]] == "")
+              {
+                accOutObj.adgOutObj.errorString = resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[k+1,checks_CN2[m]]);
+                Alert.show(resourceManager.getString('gcc_safety','acc.ws2.label') + resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[k+1,checks_CN2[m]]),
+                  Constants.APP_NAME, Alert.OK,null, null, Constants.ICON32_WARNING);
+                return;
+              }
+            }
+            outObjs_1[k]["id"]["branch"] = UserController.branch;
+            outObjs_1[k]["payFee"] = 0;
+          }
+        }
+        //accInPsn 车上人员
+        var inPsns_1:ArrayCollection = accInPsn.inPsns;
+        if (inPsns_1.length > 0)
+        {
+          var n:int, p:int;
+          var checkFields3:Array=["name","duty","maim"];
+          var checks_CN3:Array = [resourceManager.getString('gcc_safety','accinpsn.name'),
+            resourceManager.getString('gcc_safety','accinpsn.duty.name'),
+            resourceManager.getString('gcc_safety','accinpsn.maim.label')];
+          for (n=0; n < inPsns_1.length; n++)
+          {
+            for (p=0; p < checkFields3.length; p++)
+            {
+              if (inPsns_1[n][checkFields3[p]] == null || inPsns_1[n][checkFields3[p]] == "")
+              {
+                accInPsn.adgInPsn.errorString = resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[n+1,checks_CN3[p]]);
+                Alert.show(resourceManager.getString('gcc_safety','acc.ws3.label') + resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[n+1,checks_CN3[p]]),
+                  Constants.APP_NAME, Alert.OK,null, null, Constants.ICON32_WARNING);
+                return;
+              }
+            }
+            inPsns_1[n]["id"]["branch"] = UserController.branch;
+          }
+        }
+        // accGuaReport 保险报案
+        var guaReports_1:ArrayCollection = accGuaReport.guaReports;
+        if (guaReports_1.length > 0)
+        {
+          var q:int, r:int;
+          var checkFields4:Array=["id","reportNo"];
+          var checks_CN4:Array=[resourceManager.getString('gcc_safety','accguareport.id.insurer.name'),
+            resourceManager.getString('gcc_safety','accguareport.reportNo')];
+          for (q=0; q < guaReports_1.length; q++)
+          {
+            for (r=0; r < checkFields4.length; r++)
+            {
+              if (guaReports_1[q][checkFields4[r]] == null || guaReports_1[q][checkFields4[r]] == "")
+              {
+                accGuaReport.adgGuaReport.errorString = resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[q+1,checks_CN4[r]]);
+                Alert.show(resourceManager.getString('gcc_safety','acc.ws4.label') + resourceManager.getString('gcc_safety','acc.accoutpsn.validate.not.null',[q+1,checks_CN4[r]]),
+                  Constants.APP_NAME, Alert.OK,null, null, Constants.ICON32_WARNING);
+                return;
+              }
+            }
+            guaReports_1[q]["id"]["branch"] = UserController.branch;
+            guaReports_1[q]["closeNo"] = "-";
+          }
+        }
+        accident.accOutPsns = outPsns_1;
+        accident.accOutObjs = outObjs_1;
+        accident.accInPsns = inPsns_1;
+        accident.guaReports = guaReports_1;
+        if (oldData == null)
+          AccidentController.saveAccident(accident,oldData,successSave);
+        else
+          AccidentController.saveAccident1(oldData,accident,successSave);
+      }
+
+      private function successSave(event:ResultEvent):void
+      {
+        AccidentController.getAccidentByNo(UserController.branchId,accident.no,function(e:ResultEvent):void 
+          {
+            oldData = ObjectUtil.copy((e.result as ArrayCollection)[0]) as Accident;
+            Alert.show(resourceManager.getString('gcc','save.success'), Constants.APP_NAME, Alert.OK,null,null,Constants.ICON32_INFO);
+          });
+      }
+
+      private function close(event:Event):void
+      {
+        Alert.show(resourceManager.getString('gcc_safety','gua.out.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,
+          function(evt:CloseEvent):void 
+          {
+            if(evt.detail == Alert.NO) return;
+            dispatchEvent(CommonEvent.CLOSE_EVENT);
+          },Constants.ICON32_QUESTION);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

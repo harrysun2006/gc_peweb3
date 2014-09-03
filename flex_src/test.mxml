@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml"
+                xmlns:flexlib="http://code.google.com/p/flexlib/" xmlns:gc="com.gc.controls.*"
+                xmlns:common="com.gc.common.view.*" xmlns:personal="com.gc.hr.view.personal.*"
+                xmlns:check="com.gc.hr.view.check.*" xmlns:test="com.gc.test.view.*"
+                layout="absolute" minWidth="800" minHeight="600" width="100%" height="100%"
+                paddingLeft="0" paddingTop="0" paddingRight="0" paddingBottom="0"
+                backgroundColor="#FFFFFF" horizontalScrollPolicy="off" verticalScrollPolicy="off"
+                preinitialize="onPreinitialize()" applicationComplete="onApplicationComplete()">
+  <mx:VBox height="100%" width="100%" x="0" y="0" verticalGap="0">
+    <mx:MenuBar id="menuTest" width="100%" height="24"/>
+    <mx:ViewStack id="vsTest" width="100%" height="100%" minHeight="300" creationPolicy="auto"
+                  horizontalCenter="true" change="onChange(event)">
+      <test:OtherTest id="view1"/>
+      <test:PersonTest id="view2"/>
+      <test:PeopleTest id="view3"/>
+      <test:SalItemTest id="view4"/>
+      <personal:PersonTreeNode id="viewPersonTreeNode"/>
+      <common:WeatherManage id="weatherManage"/>
+      <check:GroupManage id="groupManage"/>
+    </mx:ViewStack>
+  </mx:VBox>
+  <mx:Style source="skins/gcc.css"/>
+  <!-- 注意一定要将locale/{locale}加入到additional source folders, 参考.actionScriptProperties文件 -->
+  <mx:Metadata>
+		[ResourceBundle("gcc")]
+	</mx:Metadata>
+  <mx:Metadata>
+		[ResourceBundle("gcc_hr")]
+	</mx:Metadata>
+  <mx:Metadata>
+		[ResourceBundle("gcc_safety")]
+	</mx:Metadata>
+  <mx:Script>
+    <![CDATA[
+      import org.swizframework.Swiz;
+
+      import mx.collections.ArrayCollection;
+      import mx.containers.ViewStack;
+      import mx.controls.Alert;
+      import mx.core.IFlexDisplayObject;
+      import mx.events.CloseEvent;
+      import mx.events.IndexChangedEvent;
+      import mx.events.MenuEvent;
+      import mx.managers.PopUpManager;
+      import mx.modules.Module;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.Base64Decoder;
+      import mx.utils.Base64Encoder;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Beans;
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.model.Weather;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.hr.model.ChkGroup;
+      import com.gc.hr.model.ChkLongPlan;
+      import com.gc.hr.model.People;
+      import com.gc.hr.model.Schooling;
+      import com.gc.safety.model.Accident;
+      import com.gc.safety.model.AccInPsn;
+      import com.gc.test.controller.TestController;
+      import com.gc.test.view.*;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+
+      /**
+       * .actionScriptProperties添加如下编译条件OK:
+       * 		-default-size 800 600 -default-background-color 0xffffff -default-frame-rate 31
+       * 如下的标签对mxml无效
+       * 		[SWF(width="800",height="600",backgroundColor="#ffffff",frameRate="31")]
+       * mxml可以直接在<mx:Application/>中定义
+       **/
+      private function onPreinitialize():void
+      {
+        // load up swiz beans
+        Constants.init();
+        Swiz.loadBeans([Beans]);
+      }
+
+      private function onApplicationComplete():void
+      {
+        loadMenu();
+        mockLogin();
+        addEventListener(CloseEvent.CLOSE, close);
+        systemManager.addEventListener(CloseEvent.CLOSE, close);
+      }
+
+      private function loadMenu():void
+      {
+        var marr:Array=[{label: resourceManager.getString("gcc_hr", "menu.system"), 
+            children: [
+            {label: resourceManager.getString("gcc_hr", "menu.system.return"), view: view1},
+              {label: checkFullScreen(), command: toggleFullScreen},
+              {label: resourceManager.getString("gcc_hr", "menu.system.exit"), command: exit},
+            ]}, 
+          {label: "HR & Safety",
+            children: [{label: "Person", view: view2},
+              {label: "People", view: view3},
+              {label: "Sal Item", view: view4},
+            ]}, 
+          {label: "Print", 
+            children: [{label: "Print Control", popup: Print1},
+              {label: "Print Sprite", popup: Print2},
+            ]}, 
+          {label: "Google MAP", popup: Map1},
+          {label: "Grid",
+            children: [{label: "Group & Summary", popup: Grid1},
+              {label: "HierarchicalData & Tree", popup: Grid2},
+              {label: "ItemEditor & Component", popup: Grid3},
+              {label: "SuperDataGridHeaderRenderer", popup: Grid4},
+              {label: "Column Width & Format", popup: Grid5},
+              {label: "Big AdvancedDataGrid", popup: Grid6},
+            ]},
+          {label: "Tree",
+            children: [{label: "StyledTreeItemRenderer", popup: Tree1},
+            ]},
+          {label: "Other",
+            children: [{label: "GroupManage(Object params)", command: function(e:Event, args:Object=null):void {CommonUtil.selectView(groupManage, args);},
+              args: {clazz:ChkGroup, bundle:"gcc_hr", code:"chkGroup", flist:CheckController.getGroups, vfields:["no", "name", "depart"]}},
+              {label: "GroupManage(Array params)", view: groupManage,
+                args: [ChkGroup, "gcc_hr", "chkGroup", CheckController.getGroups, ["no", "name", "depart"]]},
+              {label: "WeatherManage(ViewStack)", view: weatherManage,
+                args: [Weather, "gcc", "", BaseController.getWeathers, ["name"]]},
+              {label: "WeatherManage(PopUp)", popup:WeatherManage,
+                args: [Weather, "gcc", "", BaseController.getWeathers, ["name"]]},
+              {type: "separator"},
+              {label: "TestAmf(Flex Object --> Java Map)", command: test10},
+              {label: "TestAmf(ArrayCollection <--> Set/List)", command: test11},
+              {label: "TestAmf(Object <--> Map)", command: test12},
+              {label: "TestPoly", command: test13},
+              {type: "separator"},
+              {label: "Download", command: test20},
+              {label: "Upload", command: test21},
+              {label: "Person Check Report", command: test22},
+            ]},
+          ];
+        menuTest.dataProvider=CommonUtil.buildMenu(marr);
+        menuTest.addEventListener(MenuEvent.ITEM_CLICK, CommonUtil.menuItemClick);
+        menuTest.addEventListener(MouseEvent.CLICK, CommonUtil.menuItemClick);
+        menuTest.validateNow();
+      }
+
+      private function mockLogin():void
+      {
+        var user:SecurityUser=UserController.user;
+        user.useId="lk1"
+        user.password1="1234";
+        UserController.user=user;
+        BaseController.preloadLists(user.branchId);
+      }
+
+      private function onChange(event:IndexChangedEvent):void
+      {
+        if (event.currentTarget is ViewStack)
+        {
+          var vs:ViewStack=event.currentTarget as ViewStack;
+          vs.getChildAt(event.newIndex).width=vs.width;
+        }
+      }
+
+      private function checkFullScreen():String
+      {
+        var action:String=(stage.displayState == StageDisplayState.FULL_SCREEN) ? "exit" : "enter";
+        return resourceManager.getString("gcc_hr", "menu.system.fullScreen." + action);
+      }
+
+      private function toggleFullScreen(event:MenuEvent):void
+      {
+        stage.displayState=(stage.displayState == StageDisplayState.FULL_SCREEN) ? StageDisplayState.NORMAL : StageDisplayState.FULL_SCREEN
+        event.item["label"]=checkFullScreen();
+      }
+
+      private function close(event:Event):void
+      {
+        event.stopImmediatePropagation();
+        var obj:Object=null;
+        if (event is CommonEvent)
+          obj=(event as CommonEvent).data;
+        else
+          obj=event.target;
+        var vs:DisplayObject=CommonUtil.findAncestor(obj, ViewStack);
+        if (vs is ViewStack && (vs as ViewStack).selectedChild == obj)
+        {
+          vsTest.selectedIndex=0;
+        }
+        if (obj is IFlexDisplayObject)
+        {
+          var window:IFlexDisplayObject=obj as IFlexDisplayObject;
+          PopUpManager.removePopUp(window);
+        }
+      }
+
+      private function exit(event:Event):void
+      {
+        var player:String=Capabilities.playerType;
+        if (player == "StandAlone")
+        {
+          // fscommand("quit"); //same as this
+          flash.system.System.exit(0);
+        }
+        else if (player == "Desktop")
+        {
+          fscommand("quit");
+        }
+        else
+        {
+          var url:URLRequest=new URLRequest("javascript:window.opener=null;window.close()");
+          navigateToURL(url, "_self");
+        }
+      }
+
+      private function test10(event:Event):void
+      {
+        var obj:Object=new Object();
+        obj["depart.id"]=2;
+        obj["name"]="Harry Sun";
+        obj["sex"]=null;
+        obj["fkPosition.id.no"]="0";
+        obj["id"]=NaN;
+        TestController.testAmf(obj, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+        obj.setPropertyIsEnumerable("fkPosition.id.no", false);
+        TestController.testAmf(obj, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+        var po:Person=new Person();
+        po.name="Harry Sun";
+        TestController.testAmf(po, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+      }
+
+      private function test11(event:Event):void
+      {
+        var p:Person=new Person(8888, "8888", "Flex");
+        var clp:ChkLongPlan=new ChkLongPlan(null, "A09-000001");
+        p.chkLongPlans=new ArrayCollection();
+        p.chkLongPlans.addItem(clp);
+        TestController.testList(p, function(e:ResultEvent):void
+          {
+            p=e.result as Person;
+            for each (clp in p.chkLongPlans) trace(clp.no + ": " + clp.checkDescription);
+          });
+        var acc:Accident=new Accident(null, 1);
+        var aip:AccInPsn=new AccInPsn(null, 1);
+        aip.name="test";
+        acc.accInPsns=new ArrayCollection();
+        acc.accInPsns.addItem(aip);
+        TestController.testSet(acc, function(e:ResultEvent):void
+          {
+            acc=e.result as Accident;
+            for each (aip in acc.accInPsns) trace(aip.name);
+          });
+      }
+
+      private function test12(event:Event):void
+      {
+        var obj:Object=new Object();
+        obj["depart.id"]=2;
+        obj["name"]="Harry Sun";
+        obj["sex"]=null;
+        obj["fkPosition.id.no"]="0";
+        obj["id"]=NaN;
+        TestController.testMap(obj, function(e:ResultEvent):void
+          {
+            trace(ObjectUtil.toString(e.result));
+          });
+      }
+
+      private function test13(event:Event):void
+      {
+        var s:Schooling=new Schooling(null, "SCHOOLING");
+        TestController.testPoly(s, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+        var obj:Object=new Object();
+        obj["name"]="Harry Sun";
+        TestController.testPoly(obj, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+        var p:People=new People(null, "PEOPLE");
+        TestController.testPoly(p, function(e:ResultEvent):void{trace(ObjectUtil.toString(e.result));});
+      }
+
+      private function test20(event:Event):void
+      {
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_CHECK, "reportPersonCheck");
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.fail"),
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          });
+        fr.download(ur, "test.xls");
+      }
+
+      private function test21(event:Event):void
+      {
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_CHECK, "reportPersonCheck");
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "upload.success"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, function(e:DataEvent):void
+          {
+            var d:Base64Decoder=new Base64Decoder();
+            d.decode(e.data);
+            var b:ByteArray=d.drain();
+            var r:Object=b.readObject();
+            if (r.hasOwnProperty("message"))
+              Alert.show(r.message, Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          });
+        fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "upload.fail"),
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          });
+        fr.addEventListener(Event.SELECT, function(event:Event):void
+          {
+            fr.upload(ur);
+          });
+        fr.browse();
+      }
+
+      private function test22(event:Event):void
+      {
+        var today:Date=new Date();
+        var person:Person=new Person(8287);
+        person.workerId="T003";
+        var qo:Object=new Object;
+        qo.person=person;
+        qo["date_from"]=DateUtil.getBeginDate(today, DateUtil.YEAR);
+        qo["date_to"]=DateUtil.getEndDate(today, DateUtil.YEAR);
+        qo["@fetch"]="person.depart, person.chkGroup, person.fkPosition";
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_CHECK, "reportPersonCheck", [qo]);
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.fail"),
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          });
+        fr.download(ur, resourceManager.getString("gcc_hr", "chkFactD.report.person.filename", [person.workerId]));
+      }
+    ]]>
+  </mx:Script>
+</mx:Application>

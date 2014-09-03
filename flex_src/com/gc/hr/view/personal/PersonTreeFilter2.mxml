@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<personal:PersonTreeFilter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                           xmlns:personal="com.gc.hr.view.personal.*" width="100%"
+                           creationComplete="onCreationComplete(formFilter2, tiUpgradeReason)">
+  <mx:Form id="formFilter2" verticalGap="3">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.upgradeDate')}:">
+      <gc:DateSelector name="upgradeDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.upgradeReason')}:">
+      <mx:TextInput id="tiUpgradeReason" name="upgradeReason" text="{qo.upgradeReason}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.regType')}:">
+      <mx:ComboBox name="regType" dataProvider="{PersonalController.regTypeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.type')}:">
+      <mx:ComboBox name="type" dataProvider="{PersonalController.hireTypeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.salaryType')}:">
+      <mx:ComboBox name="salaryType" dataProvider="{PersonalController.salaryTypeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.position')}:">
+      <mx:ComboBox name="position" dataProvider="{PersonalController.positionList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.workType')}:">
+      <mx:ComboBox name="workType" dataProvider="{PersonalController.workTypeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.regBelong')}:">
+      <mx:ComboBox name="regBelong" dataProvider="{PersonalController.regBranchList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.party')}:">
+      <mx:ComboBox name="party" dataProvider="{PersonalController.polPartyList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.grade')}:">
+      <mx:ComboBox name="grade" dataProvider="{PersonalController.jobGradeList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.schooling')}:">
+      <mx:ComboBox name="schooling" dataProvider="{PersonalController.schoolingList}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.hr.controller.PersonalController;
+    ]]>
+  </mx:Script>
+</personal:PersonTreeFilter>

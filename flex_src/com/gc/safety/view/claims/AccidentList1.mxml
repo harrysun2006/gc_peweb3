@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+				creationComplete="onCreationComplete()" width="650" height="350">
+	<mx:VBox width="100%" height="100%">
+		<mx:AdvancedDataGrid id="adg" labelFunction="{CommonUtil.gridLabelFunction}" doubleClickEnabled="true" editable="false"
+							 horizontalScrollPolicy="auto" width="100%" height="100%">
+			<mx:groupedColumns>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.no"/>
+				<mx:AdvancedDataGridColumn dataField="fkGuaReport" dataTipField="fkGuaReport.reportNo"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.dept.name"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.bus.useId"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.bus.authNo"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.date"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.address"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.workerId"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.name"/>
+				<mx:AdvancedDataGridColumn dataField="accident" dataTipField="accident.driver.cert1No"/>
+				<mx:AdvancedDataGridColumn dataField="payObjSum"/>
+				<mx:AdvancedDataGridColumn dataField="payMediFee"/>
+				<mx:AdvancedDataGridColumn dataField="payOther1"/>
+				<mx:AdvancedDataGridColumn dataField="payOther2"/>
+				<mx:AdvancedDataGridColumn dataField="hasGuarInfo" labelFunction="{boolConvert}"
+					 headerText="{resourceManager.getString('gcc_safety', 'claims.hasGuarInfo')}"/>
+				<mx:AdvancedDataGridColumn dataField="hasAccOutGua" labelFunction="{boolConvert}"
+					 headerText="{resourceManager.getString('gcc_safety', 'claims.hasAccInPsnGua')}"/>
+			</mx:groupedColumns>
+		</mx:AdvancedDataGrid>
+	</mx:VBox>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+			import com.gc.util.CommonUtil;
+			
+			private function onCreationComplete():void
+			{
+				CommonUtil.setDataGridColumns(adg, "gcc_safety", "accOutGua");
+				adg.validateNow();
+			}
+			
+			private function boolConvert(item:Object, column:AdvancedDataGridColumn):String
+			{
+				return item.hasOwnProperty(column.dataField) ? item[column.dataField] ? "有" : "无" : null;
+			}
+			
+		]]>
+	</mx:Script>
+</mx:Canvas>

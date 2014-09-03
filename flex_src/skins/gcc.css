@@ -1,0 +1,362 @@
+/* CSS file */
+global
+{
+	color:#000000;
+	cornerRadius:0;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.red
+{
+	color:red;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.blue
+{
+	color:blue;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.black
+{
+	color:black;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.right
+{
+	labelStyleName:customTextAlignLabel;
+  textAlign:right;
+}
+
+.ltAlign
+{
+	textAlign:left;
+}
+
+.ctAlign
+{
+	textAlign:center;
+}
+
+.rtAlign
+{
+	textAlign:right;
+}
+
+.lmAlign
+{
+	textAlign:left;
+	paddingTop:13px;
+}
+
+.cmAlign
+{
+	textAlign:center;
+	paddingTop:13px;
+}
+
+.rmAlign
+{
+	textAlign:right;
+	paddingTop:4px;
+}
+
+.box
+{
+	borderStyle:solid;
+	borderColor:red;
+	borderThickness:1px;
+}
+
+.nohbar
+{
+	downArrowDisabledSkin: ClassReference(null);
+	downArrowDownSkin: ClassReference(null);
+	downArrowOverSkin: ClassReference(null);
+	downArrowUpSkin: ClassReference(null);
+	thumbDownSkin: ClassReference(null);
+	thumbOverSkin: ClassReference(null);
+	thumbUpSkin: ClassReference(null);
+	trackSkin: ClassReference(null);
+	upArrowDisabledSkin: ClassReference(null);
+	upArrowDownSkin: ClassReference(null);
+	upArrowOverSkin: ClassReference(null);
+	upArrowUpSkin: ClassReference(null);
+
+	disabledSkin: ClassReference(null);
+	downSkin: ClassReference(null);
+	overSkin: ClassReference(null);
+	selectedDisabledSkin: ClassReference(null);
+	selectedDownSkin: ClassReference(null);
+	selectedOverSkin: ClassReference(null);
+	selectedUpSkin: ClassReference(null);
+	upSkin: ClassReference(null);
+}
+
+Application
+{
+	backgroundGradientColors:#FFFFFF,#FFFFFF;
+	themeColor: #0000FF;
+}
+
+Alert {
+	titleStyleName: "alertTitle";
+	messageStyleName: "alertMessage";
+	buttonStyleName: "alertButton";
+	headerStyleName: "alertHeader";
+	backgroundColor: #CCCCCC;
+	color: #FFFFFF;
+	areaFill:#CCCCCC;
+	borderColor:#000000;
+	borderStyle:solid;
+	dropShadowEnabled:true;
+	shadowDirection:left;
+	shadowDistance:1;
+	dropShadowColor:#000000;
+	fillColors:#CCCCCC;
+	horizontalAlign: left;
+	headerColors: #5555FF, #0000CC;
+}
+
+.alertHeader
+{
+}
+
+.alertTitle
+{
+	letterSpacing: 0;
+	fontSize: 16px;
+	color: white;
+}
+
+.alertMessage
+{
+	letterSpacing: 0;
+	fontSize: 14px;
+	fontWeight: normal;
+	color: black;
+}
+
+.alertButton
+{
+	letterSpacing: 0;
+	fontSize: 14px;
+	cornerRadius: 2;
+	fontWeight: normal;
+	textRollOverColor: red;
+	color: black;
+}
+
+Button, ComboBox
+{
+	cornerRadius:0;
+	fillAlphas:1.0,1.0;
+	fillColors:#FFFFFF,#FFFFFF;
+	fontStyle:normal;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+FormItem
+{
+	labelStyleName:customTextAlignLabel;
+}
+
+.brBorder
+{
+	horizontalGap:0;
+	verticalGap:0;
+	borderThickness:1;
+	borderSides:bottom,right;
+	borderStyle:solid;
+	borderColor:#000000;
+}
+
+.ltBorder
+{
+	borderSides:left,top;
+	borderThickness:1;
+	borderStyle:solid;
+	borderColor:#000000;
+}
+
+HDividedBox
+{
+	dividerColor:#FF0000;
+	horizontalGap:6px;
+}
+
+ModuleLoader
+{
+	backgroundColor:#FFFFFF;
+}
+
+ToolTip
+{
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+Tree
+{
+	disclosureClosedIcon: Embed(source="assets/icons/16x16/plus.gif");
+	disclosureOpenIcon: Embed(source="assets/icons/16x16/minus.gif");
+}
+
+WindowShade
+{
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.customTextAlignLabel
+{
+	textAlign:right;
+}
+
+.errorTip
+{
+	fontFamily:Arial;
+	fontWeight:normal;
+	fontSize:14px;
+}
+
+.filterLabel
+{
+	labelWidth:72px;
+}
+
+.planHeaderLabel
+{
+	fontFamily:Arial;
+	fontWeight:normal;
+	fontSize:14px;
+	color:#0000FF;
+	textAlign:center;
+}
+
+.factHeaderLabel
+{
+	fontFamily:Arial;
+	fontWeight:normal;
+	fontSize:14px;
+	color:#FF00FF;
+	textAlign:center;
+}
+
+.statusBar
+{
+	color:blue;
+	fontSize:14px;
+	height:24px;
+	backgroundGradientColors:#CCCCCC,#FFFFFF,#CCCCCC;
+  borderColor:#AAB3B3;
+  cornerRadius:0;
+  disabledColor:#AAB3B3;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #CCCCCC, #999999;
+}
+
+/*
+Accordion
+{
+	borderStyle: solid;
+	borderThickness: 1;
+	borderColor: #000000;
+	headerStyleName: accordionHeader;
+	backgroundColor: #FFFFFF;
+	themeColor: #D5D5D5;
+	cornerRadius:0;
+}
+
+Canvas
+{
+	borderColor: #000000;
+	cornerRadius: 0;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #FFFFFF, #FFFFFF, #FFFFFF, #FFFFFF;
+}
+.accordionHeader
+{
+	borderColor: #000000;
+	cornerRadius: 0;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #FFFFFF, #FFFFFF, #FFFFFF, #FFFFFF;
+}
+.dataGridVerticalScrollBar
+{
+	cornerRadius: 0;
+	thumbOffset: 1;
+	trackColors: #FFFFFF, #FFFFFF;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #FFFFFF, #FFFFFF, #FFFFFF, #FFFFFF;
+}
+
+NumericStepper
+{
+	borderThickness: 1;
+	cornerRadius: 0;
+	borderStyle: inset;
+}
+
+DateChooser
+{
+	cornerRadius: 0;
+	headerColors: #FFFFFF, #FFFFFF;
+	selectionColor: #DFDFDF;
+	rollOverColor: #E6E6E6;
+}
+
+DataGrid
+{
+	headerColors: #FFFFFF, #FFFFFF;
+	alternatingItemColors: #FFFFFF, #FFFFFF;
+	horizontalGridLines: true;
+	horizontalGridLineColor: #CCCCCC;
+	rollOverColor: #DDDDDD;
+	selectionColor: #BBBBBB;
+	verticalScrollBarStyleName: dataGridVerticalScrollBar;
+}
+
+Panel
+{
+	padding-top: 2px;
+	padding-left: 2px;
+	padding-right: 2px;
+	padding-bottom: 0px;
+	border-thickness: 1px;
+	border-style: solid;
+	border-color: #999999;
+	header-colors: #cccccc, #999999;
+	highlight-alphas: .9, 0;
+	background-color: #ffffff;
+	corner-radius: 0px;
+	header-height: 25px;
+	shadow-direction: right;
+	drop-shadow-color: #999999;
+}
+
+VScrollBar
+{
+	cornerRadius: 0;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #CCCCCC, #999999;
+	trackColors: #CCCCCC, #999999;
+	thumbOffset: 1;
+}
+
+HScrollBar
+{
+	cornerRadius: 0;
+	fillAlphas: 1.0, 1.0;
+	fillColors: #CCCCCC, #999999;
+	trackColors: #CCCCCC, #999999;
+	thumbOffset: 1;
+}
+*/

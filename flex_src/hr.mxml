@@ -1,0 +1,1034 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Module xmlns:mx="http://www.adobe.com/2006/mxml"
+           xmlns:flexlib="http://code.google.com/p/flexlib/" xmlns:gc="com.gc.controls.*"
+           xmlns:common="com.gc.common.view.*" xmlns:personal="com.gc.hr.view.personal.*"
+           xmlns:check="com.gc.hr.view.check.*" verticalAlign="top" width="100%" height="100%"
+           preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+           keyDown="onKeyDown(event)">
+  <mx:VBox height="100%" width="100%" x="0" y="0" verticalGap="0">
+    <mx:MenuBar id="menuMain" width="100%" height="24" itemClick="CommonUtil.menuItemClick(event)"/>
+    <mx:HDividedBox height="100%" width="100%">
+      <mx:VBox height="100%" minWidth="300" verticalGap="0">
+        <gc:ToolBarNavigator id="stnPersonTree" creationPolicy="auto" width="100%" height="100%"
+                             popUpButtonPolicy="off" borderStyle="none" paddingTop="0"
+                             toolBars="{toolBars}" closePolicy="{SuperTab.CLOSE_NEVER}">
+          <personal:PersonTree id="viewPersonTree" icon="{Constants.ICON16_TREE}"
+                               toolTip="{resourceManager.getString('gcc_hr', 'tree.person')}"/>
+          <personal:PersonTreeOrganizer id="viewPersonTreeOrganizer"
+                                        icon="{Constants.ICON16_TREE_ORGANIZE}"
+                                        toolTip="{resourceManager.getString('gcc_hr', 'tree.person.organize.tooltip')}"/>
+          <personal:PersonTreeFilters id="viewPersonTreeFilters"
+                                      icon="{Constants.ICON16_TREE_FILTER}"
+                                      toolTip="{resourceManager.getString('gcc_hr', 'tree.person.filter.tooltip')}"/>
+        </gc:ToolBarNavigator>
+      </mx:VBox>
+      <mx:VBox width="80%" height="100%" minWidth="480" verticalGap="0">
+        <mx:VDividedBox width="100%" height="100%">
+          <mx:ViewStack id="vsMain" width="100%" height="100%" minHeight="300" creationPolicy="auto"
+                        horizontalCenter="true" change="onChange(event)" resize="onResize(event)">
+            <mx:ModuleLoader id="loaderMain" width="100%" height="100%"/>
+            <personal:PersonTreeNode id="viewPersonTreeNode"/>
+            <common:WeatherManage id="weatherManage"/>
+            <check:GroupManage id="groupManage"/>
+          </mx:ViewStack>
+          <mx:VBox id="boxPersons" width="100%" height="200" minHeight="180" verticalGap="0">
+            <mx:Box width="100%" height="24" styleName="gradient">
+              <mx:Label width="100%" height="24" textAlign="center"
+                        text="{resourceManager.getString('gcc_hr', 'statusbar.tip.selectBox')}"/>
+            </mx:Box>
+            <mx:TileList id="lstPersons" width="100%" height="100%" columnWidth="135"
+                         direction="vertical" rowHeight="25"
+                         itemRenderer="mx.controls.listClasses.ListItemRenderer" showDataTips="true"
+                         textAlign="left" doubleClickEnabled="true"
+                         doubleClick="onDblClickList(event)" allowMultipleSelection="true"
+                         dataProvider="{persons}" keyDown="onListKeyDown(event)"
+                         change="onListChange(event)"
+                         toolTip="{resourceManager.getString('gcc_hr', 'statusbar.tip.selectBox')}"/>
+          </mx:VBox>
+        </mx:VDividedBox>
+      </mx:VBox>
+    </mx:HDividedBox>
+    <mx:HBox width="100%" minWidth="800" horizontalScrollPolicy="off">
+      <mx:HBox width="100%" minWidth="800" id="hboxStatusBar" styleName="statusBar"
+               horizontalScrollPolicy="off"/>
+      <mx:Label text="{Constants.VERSION}" styleName="statusBar" click="showChanges(event)"
+                toolTip="{resourceManager.getString('gcc_hr', 'statusbar.tip.version')}"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Metadata>
+    [ResourceBundle("gcc_hr")]
+	</mx:Metadata>
+  <mx:Metadata>
+		[ResourceBundle("gcc_report")]
+	</mx:Metadata>
+  <mx:Style>
+  .gradient 
+  { 
+    borderStyle: solid;
+    borderThickness: 1;
+    borderColor: #B7BABC;
+    /* gcc.css开启了Compile CSS to SWF, ClassReference的编译不稳定, 经常出错 */
+    borderSkin: ClassReference("skins.GradientBorder");
+    cornerRadius: 0;
+  	fillAlphas: 1.0, 1.0;
+  	fillColors: #FFFFFF, #EBEBEB;
+  }
+  </mx:Style>
+  <mx:Script>
+    <![CDATA[
+      import flash.display.DisplayObject;
+      import flexlib.controls.tabBarClasses.SuperTab;
+
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.Alert;
+      import mx.controls.Label;
+      import mx.controls.List;
+      import mx.controls.Tree;
+      import mx.core.Application;
+      import mx.core.Container;
+      import mx.core.DragSource;
+      import mx.core.IFlexDisplayObject;
+      import mx.core.UIComponent;
+      import mx.events.DragEvent;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.MenuEvent;
+      import mx.events.ModuleEvent;
+      import mx.events.IndexChangedEvent;
+      import mx.events.ItemClickEvent;
+      import mx.events.ResourceEvent;
+      import mx.managers.DragManager;
+      import mx.managers.PopUpManager;
+      import mx.modules.IModuleInfo;
+      import mx.modules.ModuleManager;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.Base64Encoder;
+      import mx.utils.Base64Decoder;
+      import mx.utils.ObjectUtil;
+
+      import com.gc.Beans;
+      import com.gc.ChangeLog;
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.LoadModuleEvent;
+      import com.gc.common.controller.BaseController;
+      import com.gc.common.controller.UserController;
+      import com.gc.common.model.Branch;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.common.model.SecurityUser;
+      import com.gc.common.model.Weather;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.CommonController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.hr.controller.SalaryController;
+      import com.gc.hr.Events;
+      import com.gc.hr.model.*;
+      import com.gc.hr.view.AccClose;
+      import com.gc.hr.view.check.*;
+      import com.gc.hr.view.personal.*;
+      import com.gc.hr.view.salary.*;
+      import com.gc.hr.view.upload.*;
+      import com.gc.report.*;
+      import com.gc.util.AideUtil;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      import com.gc.util.PrintUtil;
+
+      private var fo:ArrayCollection=new ArrayCollection();
+      private var modified:Boolean=false;
+      private var fullMenu:Array;
+      private var arrMenu:Array;
+      [Bindable]
+      private var toolBars:ArrayCollection=new ArrayCollection();
+      [Bindable]
+      private var persons:ArrayCollection=new ArrayCollection();
+
+      // 在arrTreeHr定义处resourceManager为null, 所以放到此处初始化
+      private function onPreinitialize():void
+      {
+        var allItems:Array=[
+          {icon:Constants.ICON16_TREE_EXPAND, toolTip:resourceManager.getString("gcc", "tree.expand.selected"), click:expand},
+          {icon:Constants.ICON16_TREE_EXPANDALL, toolTip:resourceManager.getString("gcc", "tree.expand.all"), click:expandAll},
+          {icon:Constants.ICON16_TREE_COLLAPSE, toolTip:resourceManager.getString("gcc", "tree.collapse.selected"), click:collapse},
+          {icon:Constants.ICON16_TREE_COLLAPSEALL, toolTip:resourceManager.getString("gcc", "tree.collapse.all"), click:collapseAll},
+          {icon:Constants.ICON16_REFRESH, toolTip:resourceManager.getString("gcc", "refresh"), click:refresh},
+          {icon:Constants.ICON16_RESET, toolTip:resourceManager.getString("gcc", "reset"), click:reset},
+          {icon:Constants.ICON16_APPLY, toolTip:resourceManager.getString("gcc", "apply"), click:apply},
+          ];
+        // toolBars:每个SuperTab对应的ToolBar
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[0], allItems[1], allItems[2], allItems[3], allItems[4]]));
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[5], allItems[6]]));
+        toolBars.addItem(CommonUtil.buildToolBar([allItems[5], allItems[6]]));
+        registerRemoteClasses();
+        Person.init();
+        preload();
+      }
+
+      private function registerRemoteClasses():void
+      {
+        registerClassAlias("com.gc.hr.po.HrClose", HrClose);
+        registerClassAlias("com.gc.hr.po.HrClosePK", HrClosePK);
+
+        registerClassAlias("com.gc.hr.po.HireType", HireType);
+        registerClassAlias("com.gc.hr.po.HireTypePK", HireTypePK);
+        registerClassAlias("com.gc.hr.po.JobGrade", JobGrade);
+        registerClassAlias("com.gc.hr.po.JobGradePK", JobGradePK);
+        registerClassAlias("com.gc.hr.po.JobSpec", JobSpec);
+        registerClassAlias("com.gc.hr.po.JobSpecPK", JobSpecPK);
+        registerClassAlias("com.gc.hr.po.MarryStatus", MarryStatus);
+        registerClassAlias("com.gc.hr.po.MarryStatusPK", MarryStatusPK);
+        registerClassAlias("com.gc.hr.po.NativePlace", NativePlace);
+        registerClassAlias("com.gc.hr.po.NativePlacePK", NativePlacePK);
+        registerClassAlias("com.gc.hr.po.People", People);
+        registerClassAlias("com.gc.hr.po.PeoplePK", PeoplePK);
+        registerClassAlias("com.gc.hr.po.PolParty", PolParty);
+        registerClassAlias("com.gc.hr.po.PolPartyPK", PolPartyPK);
+        registerClassAlias("com.gc.hr.po.PsnContractRpt", PsnContractRpt);
+        registerClassAlias("com.gc.hr.po.RegBranch", RegBranch);
+        registerClassAlias("com.gc.hr.po.RegBranchPK", RegBranchPK);
+        registerClassAlias("com.gc.hr.po.SchDegree", SchDegree);
+        registerClassAlias("com.gc.hr.po.SchDegreePK", SchDegreePK);
+        registerClassAlias("com.gc.hr.po.SchGraduate", SchGraduate);
+        registerClassAlias("com.gc.hr.po.SchGraduatePK", SchGraduatePK);
+        registerClassAlias("com.gc.hr.po.Schooling", Schooling);
+        registerClassAlias("com.gc.hr.po.SchoolingPK", SchoolingPK);
+        registerClassAlias("com.gc.hr.po.WorkType", WorkType);
+        registerClassAlias("com.gc.hr.po.WorkTypePK", WorkTypePK);
+        registerClassAlias("com.gc.hr.po.RegType", RegType);
+        registerClassAlias("com.gc.hr.po.RegTypePK", RegTypePK);
+        registerClassAlias("com.gc.hr.po.SalaryType", SalaryType);
+        registerClassAlias("com.gc.hr.po.SalaryTypePK", SalaryTypePK);
+
+        registerClassAlias("com.gc.hr.po.ChkDisp", ChkDisp);
+        registerClassAlias("com.gc.hr.po.ChkExtra", ChkExtra);
+        registerClassAlias("com.gc.hr.po.ChkFact", ChkFact);
+        registerClassAlias("com.gc.hr.po.ChkFactD", ChkFactD);
+        registerClassAlias("com.gc.hr.po.ChkFactDPK", ChkFactDPK);
+        registerClassAlias("com.gc.hr.po.ChkFactPK", ChkFactPK);
+        registerClassAlias("com.gc.hr.po.ChkGroup", ChkGroup);
+        registerClassAlias("com.gc.hr.po.ChkHoliday", ChkHoliday);
+        registerClassAlias("com.gc.hr.po.ChkLongPlan", ChkLongPlan);
+        registerClassAlias("com.gc.hr.po.ChkLongPlanPK", ChkLongPlanPK);
+        registerClassAlias("com.gc.hr.po.ChkPlan", ChkPlan);
+        registerClassAlias("com.gc.hr.po.ChkPlanD", ChkPlanD);
+        registerClassAlias("com.gc.hr.po.ChkPlanDPK", ChkPlanDPK);
+        registerClassAlias("com.gc.hr.po.ChkPlanPK", ChkPlanPK);
+        registerClassAlias("com.gc.hr.po.ChkWork", ChkWork);
+
+        registerClassAlias("com.gc.hr.po.SalItem", SalItem);
+        registerClassAlias("com.gc.hr.po.SalDeptPsn", SalDeptPsn);
+        registerClassAlias("com.gc.hr.po.SalDeptPsnPK", SalDeptPsnPK);
+        registerClassAlias("com.gc.hr.po.SalFixOnline", SalFixOnline);
+        registerClassAlias("com.gc.hr.po.SalFixOnlinePK", SalFixOnlinePK);
+        registerClassAlias("com.gc.hr.po.SalTemplate", SalTemplate);
+        registerClassAlias("com.gc.hr.po.SalTemplateD", SalTemplateD);
+        registerClassAlias("com.gc.hr.po.SalTemplateDPK", SalTemplateDPK);
+        registerClassAlias("com.gc.hr.po.SalTemplateIx", SalTemplateIx);
+        registerClassAlias("com.gc.hr.po.SalTemplateIxPK", SalTemplateIxPK);
+        registerClassAlias("com.gc.hr.po.SalFact", SalFact);
+        registerClassAlias("com.gc.hr.po.SalFactPK", SalFactPK);
+        registerClassAlias("com.gc.hr.po.SalFactD", SalFactD);
+        registerClassAlias("com.gc.hr.po.SalFactDPK", SalFactDPK);
+        registerClassAlias("com.gc.hr.po.SalFactIx", SalFactIx);
+        registerClassAlias("com.gc.hr.po.SalFactIxPK", SalFactIxPK);
+      }
+
+      private function preload():void
+      {
+        var branchId:int=UserController.branchId;
+        if (UserController.hrRead)
+        {
+          BaseController.preloadLists(branchId, BaseController.PERSONAL_LISTNAMES);
+          PersonalController.preloadLists(branchId, PersonalController.PERSONAL_LISTNAMES);
+        }
+        if (UserController.hrCheckRead)
+        {
+          CheckController.preloadLists(branchId);
+        }
+        if (UserController.hrSalRead)
+        {
+          SalaryController.preloadLists(branchId);
+        }
+      }
+
+      private function onCreationComplete():void
+      {
+        initFO();
+        loadMenu();
+        loadUserInfo();
+        loadPersons();
+        CommonUtil.setDrag2List(lstPersons, false, function(src:Object, dest:Object, items:Array):Boolean
+          {
+            if (!(src is Tree))
+              return false;
+            for each (var obj:Object in items)
+            {
+              if (!(obj is Person))
+                return false;
+            }
+            return true;
+          });
+        CommonUtil.setDrag4List(lstPersons, true);
+        addEventListener(ResourceEvent.COMPLETE, loadMenu);
+        addEventListener(CommonEvent.CLICKED, onTreeNodeClicked);
+        addEventListener(CommonEvent.DBLCLICKED, onTreeNodeDblClicked);
+        addEventListener(CommonEvent.CHANGED, onTreeFilteringQOChanged);
+        addEventListener(CommonEvent.CHANGE_VIEW, onChangeView);
+        addEventListener(CommonEvent.UPDATE_MENU, updateMenu);
+        addEventListener(LoadModuleEvent.LOAD_MODULE, loadModule);
+        addEventListener(LoadModuleEvent.UNLOAD_MODULE, unloadModule);
+        addEventListener(CommonEvent.REFRESH, refresh);
+        addEventListener(CloseEvent.CLOSE, close);
+        systemManager.addEventListener(CloseEvent.CLOSE, close);
+        // stnPersonTree.setClosePolicyForTab(0, SuperTab.CLOSE_NEVER);
+        CommonController.getLastCloseDate(UserController.branchId);
+      }
+
+      // 初始化Person's Filter对象
+      private function initFO():void
+      {
+        var prop:Object=new Object();
+        prop[Constants.PROP_NAME_NAME]=Person.DOWN_STATUS;
+        prop[Constants.PROP_NAME_VALUE]=Person.DEFAULT_SEARCH[Person.DOWN_STATUS];
+        prop[Constants.PROP_NAME_LABEL]=resourceManager.getString("gcc", "person.downStatus." + Person.DEFAULT_SEARCH[Person.DOWN_STATUS]);
+        prop[Constants.PROP_NAME_SHOW]=true;
+        fo.removeAll();
+        fo.addItem(prop);
+      }
+
+      // 加载菜单
+      private function loadMenu(e:ResourceEvent=null):void
+      {
+        fullMenu=[{label:resourceManager.getString("gcc_hr", "menu.system"), 
+            children:[
+            {label:checkFullScreen(), command:toggleFullScreen, enabled:(flash.system.Capabilities.playerType == "StandAlone"), visible:false}, 
+              {label:resourceManager.getString("gcc_hr", "menu.system.refresh"), command:refresh},
+              {label:resourceManager.getString("gcc_hr", "menu.system.window"), 
+                children:[
+                {label:resourceManager.getString("gcc_hr", "menu.system.window.persons"), type:"check", toggled:true, 
+                    command:function(event:MenuEvent):void{CommonUtil.show(boxPersons, event.item.hasOwnProperty("toggled") && event.item.toggled);}}
+                ]},  
+              {type:"separator"},
+              {id:"export", label:resourceManager.getString("gcc_hr", "menu.system.export"), enabled:false},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.system.return"), command:_return},
+              {label:resourceManager.getString("gcc_hr", "menu.system.logout"), command:logout},
+              {label:resourceManager.getString("gcc_hr", "menu.system.exit"), command:exit}
+            ]}, 
+          {label:resourceManager.getString("gcc_hr", "menu.info.manage"), access:UserController.HR_READ,
+            children:[
+            {label:resourceManager.getString("gcc_hr", "menu.info.manage.depart&office"), popup:DepartOfficeManage, icon:Branch.ICON, accelerator:"Ctrl+D"}, 
+              {label:resourceManager.getString("gcc_hr", "menu.info.manage.position"), popup:PositionManage},
+              {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn"),
+                children:[
+                {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.people"), popup:CodeManage, args:[People, "people", PersonalController.getPeoples]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.nativePlace"), popup:CodeManage, args:[NativePlace, "nativePlace", PersonalController.getNativePlaces]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.marryStatus"), popup:CodeManage, args:[MarryStatus, "marryStatus", PersonalController.getMarryStatusList]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.hireType"), popup : CodeManage, args:[HireType, "hireType", PersonalController.getHireTypes]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.regBranch"), popup:CodeManage, args:[RegBranch, "regBranch", PersonalController.getRegBranches]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.polParty"), popup:CodeManage, args:[PolParty, "polParty", PersonalController.getPolParties]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.jobGrade"), popup:CodeManage, args:[JobGrade, "jobGrade", PersonalController.getJobGrades]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.schooling"), popup:CodeManage, args:[Schooling, "schooling", PersonalController.getSchoolings]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.jobSpec"), popup:CodeManage, args:[JobSpec, "jobSpec", PersonalController.getJobSpecs]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.schDegree"), popup:CodeManage, args:[SchDegree, "schDegree", PersonalController.getSchDegrees]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.schGraduate"), popup:CodeManage, args:[SchGraduate, "schGraduate", PersonalController.getSchGraduates]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.regType"), popup : CodeManage, args:[RegType, "regType", PersonalController.getRegTypes]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.salaryType"), popup : CodeManage, args:[SalaryType, "salaryType", PersonalController.getSalaryTypes]},
+                  {label:resourceManager.getString("gcc_hr", "menu.info.manage.psn.workType"), popup : CodeManage, args:[WorkType, "workType", PersonalController.getWorkTypes]},
+                ]}
+            ]},
+          {label:resourceManager.getString("gcc_hr", "menu.person.manage"), 
+            children:[
+            {label:resourceManager.getString("gcc_hr", "menu.person.manage.allot.depart"), command:allotPersonsDepart, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.allot.line"), command:allotPersonsLine, access:[1,3,4,7,8]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.update.status"), command:updatePersonsStatus, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.update.contract"), command:updatePersonsContract, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.update.info"), popup:PersonsUpdateInfo, access:[1,3,4], callback:dispatchPersons},
+              {type:"separator", access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.photo"), access:[1,3,4], command:uploadPhotos},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.downphoto"), command:downPhotos, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.cert2no"), command:updateCert2No, access:[1,3,4,7,8]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.card"), access:UserController.HR_READ, command:printCards},
+              {type:"separator", access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.on"), popup:PersonsAdd, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.on.one"), popup:PersonAdd, access:[1,3,4]},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.down"), popup:PersonsDown, access:[1,3,4], callback:dispatchPersons},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.undown"), popup:PersonsUnDown, access:[1,3,4], callback:dispatchPersons},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.reportp01"), popup:ReportP01Select},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.reportp02"), popup:ReportP02Select},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.reportp03"), popup:ReportP03Select},
+              {label:resourceManager.getString("gcc_hr", "menu.person.manage.reportp04"), popup:ReportP04Select},
+            ]},
+          {label:resourceManager.getString("gcc_hr", "menu.check.manage"), access:UserController.HR_READ, 
+            children:[
+            {label:resourceManager.getString("gcc_hr", "menu.check.manage.item"), 
+                children:[
+                {label:resourceManager.getString("gcc_hr", "menu.check.manage.item.holiday"), popup:com.gc.hr.view.check.ItemManage, 
+                    args:[ChkHoliday, "gcc", "", CheckController.getHolidays, ["no", "name"]]},
+                  {label:resourceManager.getString("gcc_hr", "menu.check.manage.item.work"), popup:com.gc.hr.view.check.ItemManage, 
+                    args:[ChkWork, "gcc", "", CheckController.getWorks, ["no", "name"]]},
+                  {label:resourceManager.getString("gcc_hr", "menu.check.manage.item.extra"), popup:com.gc.hr.view.check.ItemManage, 
+                    args:[ChkExtra, "gcc", "", CheckController.getExtras, ["no", "name"]]},
+                  {label:resourceManager.getString("gcc_hr", "menu.check.manage.item.disp"), popup:com.gc.hr.view.check.ItemManage, 
+                    args:[ChkDisp, "gcc", "", CheckController.getDisps, ["no", "name"]]},
+                ]},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.group"), popup:GroupManage, 
+                args:[ChkGroup, "gcc_hr", "chkGroup", CheckController.getGroups, ["no", "name", "depart"]]},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.longplan"), popup:LongPlanManage},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.plan"), popup:PlanManage},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.fact"), popup:com.gc.hr.view.check.FactManage},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.report.ygkq"), popup:PersonCheckSelect},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.report.ygkqhz"), popup:DepartCheckSelect},
+              {label:resourceManager.getString("gcc_hr", "menu.check.manage.close"), popup:AccClose},
+            ]},
+          {label:resourceManager.getString("gcc_hr", "menu.salary.manage"), access:UserController.HR_SAL_READ,
+            children:[
+            {label:resourceManager.getString("gcc_hr", "menu.salary.manage.item"), popup:com.gc.hr.view.salary.ItemManage},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.deptpsn"), popup:DeptPsnManage},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.fixonline.downlist"), popup:FixOnlineDownList},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.template"), popup:TemplateManage},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.fact.add"), popup:FactAE, enabled:UserController.hrSalWrite},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.fact"), popup:com.gc.hr.view.salary.FactManage},
+              {type:"separator"},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.fact.print"), popup:com.gc.hr.view.salary.FactPrint},
+              {label:resourceManager.getString("gcc_hr", "menu.salary.manage.fact.print2"), popup:com.gc.hr.view.salary.FactPrint2}
+            ]},
+          {label:resourceManager.getString("gcc_hr", "menu.report"),
+            children:[
+            {label:resourceManager.getString('gcc_report', "menu.query.equipment"), popup:EquipmentQuery, access:[99999]}
+            ]
+          },
+          {label:resourceManager.getString("gcc_hr", "menu.help"), 
+            children:[{label:resourceManager.getString("gcc_hr", "menu.help.context"), url:""},
+              {label:resourceManager.getString("gcc_hr", "menu.help.calculator"), command:launchCalc, access:[1]}, 
+              {label:resourceManager.getString("gcc_hr", "menu.help.about"), url:""},
+              {label:resourceManager.getString("gcc_hr", "menu.help.upload.persons"), popup:com.gc.hr.view.upload.PersonsUpload}
+            ]},
+          ];
+        arrMenu=CommonUtil.buildMenu(fullMenu, UserController.hrLimit);
+        menuMain.dataProvider=arrMenu;
+        menuMain.validateNow();
+      }
+
+      private function access0(obj:Object, limit:int):Boolean
+      {
+        return limit > 0;
+      }
+
+      private function access1(obj:Object, limit:int):Boolean
+      {
+        return UserController.HR_WRITE.indexOf(limit) >= 0;
+      }
+
+      private function loadModule(e:LoadModuleEvent, url:String=null):DisplayObject
+      {
+        if (e != null)
+          e.stopImmediatePropagation();
+        vsMain.selectedIndex=0;
+        var _url:String=(url != null) ? url : (e != null) ? e.url : "";
+        var r:DisplayObject=null;
+        loaderMain.unloadModule();
+        loaderMain.loadModule("hr/" + _url);
+        // loaderMain.applicationDomain=ApplicationDomain.currentDomain;
+        loaderMain.addEventListener(ModuleEvent.READY, function(e1:Event):void
+          {
+            r=loaderMain.child;
+            if (e.arg is Function)
+            {
+              r.addEventListener(FlexEvent.CREATION_COMPLETE, function(e2:Event):void
+                {
+                  e.arg(r);
+                });
+            }
+          });
+        return r;
+        // loaderMain.url=(url != null) ? url : (event != null) ? event.url : "";
+      /*
+         var m:IModuleInfo=ModuleManager.getModule((url != null) ? url : (event != null) ? event.url : "");
+         m.addEventListener(ModuleEvent.READY, function(e:Event)
+         {var dlg:IUIComponent = m.factory.create();
+         PopUpManager.addPopUp(dlg,…);});
+         m.load(ApplicationDomain.currentDomain);
+       */
+      }
+
+      private function unloadModule(e:LoadModuleEvent=null):void
+      {
+        vsMain.selectedIndex=0;
+        loaderMain.unloadModule();
+        // loaderMain.url="";
+      }
+
+      private function updateMenu(e:CommonEvent):void
+      {
+        var item:Object=e.data;
+        if (item != null && item.hasOwnProperty("id"))
+        {
+          CommonUtil.visit(arrMenu, function(comp:Object):void
+            {
+              if (comp.hasOwnProperty("id") && comp.id == item.id)
+              {
+                CommonUtil.copyProperties(item, comp);
+              }
+            });
+          menuMain.dataProvider=arrMenu;
+          menuMain.validateNow();
+        }
+        e.stopImmediatePropagation();
+      }
+
+      /**
+       * 状态栏
+       */
+      private function loadUserInfo():void
+      {
+        var user:SecurityUser=UserController.user;
+        var limit:SecurityLimit=UserController.limit;
+        var depart:String=(limit.hrLimit >= 2 && limit.hrLimit <= 5) ? resourceManager.getString("gcc_hr", "limit.depart.head") : 
+          (limit.hrLimitDepart == null) ? "" : limit.hrLimitDepart.name;
+        var level:String=resourceManager.getString("gcc_hr", "limit.level" + limit.hrLimit);
+        var texts:Array=[user.useId + "[" + user.person.name + "]", DateUtil.formatDateTime(user.systemTime), limit.id.branch.name, depart, level, getFilteringInfo(fo)];
+        var tips:Array=["login.user", "login.time", "limit.branch", "department", "level", "filter"]
+        var label:Label;
+        for (var i:int=0; i < texts.length; i++)
+        {
+          label=new Label();
+          label.text=texts[i] + "   ";
+          label.toolTip=resourceManager.getString("gcc_hr", "statusbar.tip." + tips[i]);
+          label.styleName="statusBar";
+          hboxStatusBar.addChild(label);
+        }
+      }
+
+      private function onTreeFilteringQOChanged(e:CommonEvent):void
+      {
+        // trace("hr.index:onTreeFilteringQOChanged");
+        if (e == null)
+          return;
+        var changed:Boolean=false;
+        var items:Array=e.args;
+        var oldValue:Object;
+        var qo:Object=Person.qo;
+        var k:int;
+        for each (var item:Object in items)
+        {
+          if (item == null)
+            continue;
+          oldValue=CommonUtil.getAccessorValue(qo, item[Constants.PROP_NAME_NAME]);
+          // oldValue=qo[item[Constants.PROP_NAME_NAME]];
+          item[Constants.PROP_NAME_TYPE]=CommonUtil.getAccessorType(Person, item[Constants.PROP_NAME_NAME]);
+          if (item[Constants.PROP_NAME_VALUE] == "")
+            item[Constants.PROP_NAME_VALUE]=null;
+          if (item[Constants.PROP_NAME_LABEL] == "")
+            item[Constants.PROP_NAME_LABEL]=null;
+          if (item[Constants.PROP_NAME_VALUE] != oldValue || item[Constants.PROP_NAME_TYPE] == "Date")
+          {
+            // trace(item.name + ":" + oldValue + " => " + item.value);
+            // CommonUtil.setValue(qo, item[Constants.PROP_NAME_NAME], item[Constants.PROP_NAME_VALUE]);
+            qo[item[Constants.PROP_NAME_NAME]]=item[Constants.PROP_NAME_VALUE];
+            k=CommonUtil.indexOfKey(fo.toArray(), item[Constants.PROP_NAME_NAME], Constants.PROP_NAME_NAME);
+            if (k >= 0)
+              fo.removeItemAt(k);
+            if ((item[Constants.PROP_NAME_VALUE] != null || item[Constants.PROP_NAME_TYPE] == "Date") 
+              && item[Constants.PROP_NAME_SHOW])
+            {
+              if (k < 0)
+                fo.addItem(item);
+              else
+                fo.addItemAt(item, k);
+            }
+            changed=true;
+            modified=true;
+          }
+        }
+        if (changed || items.length == 0)
+        {
+          var label:Label=hboxStatusBar.getChildAt(hboxStatusBar.getChildren().length - 1) as Label;
+          label.text=getFilteringInfo(fo);
+          label.toolTip=resourceManager.getString("gcc_hr", "statusbar.tip.filter") + ":" + label.text;
+        }
+      }
+
+      private function getFilteringInfo(coll:ArrayCollection):String
+      {
+        var s:String;
+        var and:String=resourceManager.getString("gcc", "logical.and");
+        var info:String="";
+        if (coll != null)
+        {
+          for each (var item:Object in coll)
+          {
+            if (item[Constants.PROP_NAME_LABEL] == null || item[Constants.PROP_NAME_LABEL] == "")
+              continue;
+            s=resourceManager.getString("gcc_hr", "filter.person." + item.name, [item[Constants.PROP_NAME_LABEL]]);
+            if (s == null)
+              continue;
+            info=info + s + and;
+          }
+          info=info.substr(0, info.length - and.length);
+        }
+        return info;
+      }
+
+      /**
+       * 左侧工具条
+       */
+      private function expand(e:Event):void
+      {
+        viewPersonTree.dispatchEvent(CommonEvent.EXPAND_EVENT);
+      }
+
+      private function expandAll(e:Event):void
+      {
+        viewPersonTree.dispatchEvent(CommonEvent.EXPAND_ALL_EVENT);
+      }
+
+      private function collapse(e:Event):void
+      {
+        viewPersonTree.dispatchEvent(CommonEvent.COLLAPSE_EVENT);
+      }
+
+      private function collapseAll(e:Event):void
+      {
+        viewPersonTree.dispatchEvent(CommonEvent.COLLAPSE_ALL_EVENT);
+      }
+
+      private function reset(e:Event):void
+      {
+        switch (stnPersonTree.selectedIndex)
+        {
+          case 0: // TreeView
+            break;
+          case 1: // TreeOrganizeView
+            stnPersonTree.selectedChild.dispatchEvent(CommonEvent.RESET_EVENT);
+            break;
+          case 2: // TreeFiltersView
+            initFO();
+            modified=true;
+            stnPersonTree.selectedChild.dispatchEvent(CommonEvent.RESET_EVENT);
+            break;
+          default:
+            break;
+        }
+      }
+
+      private function apply(e:Event):void
+      {
+        var item:Object=focusManager.getFocus();
+        if (item is UIComponent)
+          (item as UIComponent).dispatchEvent(CommonEvent.FOCUS_OUT_EVENT);
+        var e1:Events;
+        var orderColumns:Array=viewPersonTreeOrganizer.orderColumns;
+        vsMain.selectedIndex=0;
+        if (modified)
+        {
+          e1=new Events(Events.PERSON_TREE_REFILTERING, Person.qo, orderColumns, false);
+        }
+        else
+        {
+          e1=new Events(Events.PERSON_TREE_REORGANIZING, Person.qo, orderColumns, false);
+        }
+        viewPersonTree.dispatchEvent(e1);
+        modified=false;
+        stnPersonTree.selectedIndex=0;
+      }
+
+      private function close(e:Event):void
+      {
+        e.stopImmediatePropagation();
+        var obj:Object=null;
+        if (e is CommonEvent)
+          obj=(e as CommonEvent).data;
+        else
+          obj=e.target;
+        var vs:DisplayObject=CommonUtil.findAncestor(obj, ViewStack);
+        if (obj is Module || (vs is ViewStack && (vs as ViewStack).selectedChild == obj))
+        {
+          unloadModule();
+        }
+        if (obj is IFlexDisplayObject)
+        {
+          var window:IFlexDisplayObject=obj as IFlexDisplayObject;
+          PopUpManager.removePopUp(window);
+          if (window is PersonsDateSelect || window is PersonsUpdateInfo 
+            || window is ReportP01 || window is ReportP02 
+            || window is ReportP03 || window is ReportP04)
+            CommonUtil.removList(lstPersons);
+        }
+      }
+
+      /**
+       * 系统菜单
+       */
+      private function checkFullScreen():String
+      {
+        var action:String=(stage.displayState == StageDisplayState.FULL_SCREEN) ? "exit" : "enter";
+        return resourceManager.getString("gcc_hr", "menu.system.fullScreen." + action);
+      }
+
+      private function toggleFullScreen(e:MenuEvent):void
+      {
+        stage.displayState=(stage.displayState == StageDisplayState.FULL_SCREEN) ? StageDisplayState.NORMAL : StageDisplayState.FULL_SCREEN
+        e.item["label"]=checkFullScreen();
+      }
+
+      private function refresh(e:Event):void
+      {
+        vsMain.selectedIndex=0;
+        viewPersonTree.dispatchEvent(CommonEvent.REFRESH_EVENT);
+        persons.removeAll();
+        loadPersons();
+      }
+
+      private function _return(e:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.RETURN_EVENT);
+      }
+
+      private function logout(e:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.LOGOUT_EVENT);
+      }
+
+      private function exit(e:MenuEvent):void
+      {
+        dispatchEvent(CommonEvent.EXIT_EVENT);
+      }
+
+      private function launchCalc(e:MenuEvent):void
+      {
+        // fscommand("exec", "calc.exe");
+        AideUtil.execute("calc.exe");
+      }
+
+      /**
+       * 人员树相关事件
+       **/
+      private function onTreeNodeClicked(e:CommonEvent):void
+      {
+        vsMain.selectedChild=viewPersonTreeNode;
+        callLater(function():void
+          {
+            lstPersons.selectedIndices=[];
+            lstPersons.validateDisplayList();
+            viewPersonTreeNode.dispatchEvent(e);
+          });
+      }
+
+      private function onTreeNodeDblClicked(e:CommonEvent):void
+      {
+        if (e == null || !(e.data is Person))
+          return;
+        var item:Object=e.data;
+        if (CommonUtil.indexOfObject(persons, item) < 0)
+          persons.addItem(item);
+      }
+
+      /**
+       * 人员选择框相关事件
+       **/
+      private function loadPersons():void
+      {
+        if (Constants.DEBUG)
+        {
+          // var ids:Array=[1141, 2545, 3969, 8285, 8286, 8287, 8288];
+          var ids:Array=[8285, 8286, 8287, 8288];
+          PersonalController.getPersonsByIds(ids, function(e:ResultEvent):void
+            {
+              persons=e.result as ArrayCollection;
+            });
+        }
+      }
+
+      private function onDblClickList(e:Event):void
+      {
+        CommonUtil.removeListItems(lstPersons);
+      }
+
+      private function onListKeyDown(e:KeyboardEvent):void
+      {
+        var p:Object=e.currentTarget;
+        switch (e.keyCode)
+        {
+          case Keyboard.DELETE:
+            CommonUtil.removeListItems(lstPersons);
+            break;
+        }
+      }
+
+      private function onListChange(e:Event):void
+      {
+        callLater(function():void
+          {
+            viewPersonTree.dispatchEvent(CommonEvent.CLEAR_EVENT);
+            viewPersonTreeNode.dispatchEvent(new CommonEvent(CommonEvent.CLICKED, lstPersons.selectedItem));
+          });
+      }
+
+      private function onKeyDown(e:KeyboardEvent):void
+      {
+        var p:Object=e.currentTarget;
+        switch (e.keyCode)
+        {
+          case Keyboard.F5:
+            refresh(e);
+            break;
+        }
+      }
+
+      /**
+       * 正确设置ViewStack的子容器宽度, 从而使PersonList的滚动条OK
+       **/
+      private function onChange(e:IndexChangedEvent):void
+      {
+        if (e.currentTarget is ViewStack)
+        {
+          var vs:ViewStack=e.currentTarget as ViewStack;
+          vs.getChildAt(e.newIndex).width=vs.width;
+        }
+      }
+
+      private function onResize(e:Event):void
+      {
+        if (e.currentTarget is ViewStack)
+        {
+          var vs:ViewStack=e.currentTarget as ViewStack;
+          vs.selectedChild.width=vs.width;
+          vs.selectedChild.height=vs.height;
+        }
+      }
+
+      private function onChangeView(e:CommonEvent):void
+      {
+        if (e.data is DisplayObject)
+        {
+          var status:Boolean=(e.data as DisplayObject).hasEventListener(CommonEvent.EXPORT);
+          updateMenu(new CommonEvent(CommonEvent.UPDATE_MENU, {id:"export", enabled:status}));
+        }
+        e.stopImmediatePropagation();
+      }
+
+      /**
+       * 人事管理--部门调动, 业务配置, 状态变动
+       **/
+      private function allotPersonsDepart(e:Event):void
+      {
+        CommonUtil.popupWindow(PersonsDateSelect, "", this, ["allotDepart", persons]);
+      }
+
+      private function allotPersonsLine(e:Event):void
+      {
+        CommonUtil.popupWindow(PersonsDateSelect, "", this, ["allotLine", persons]);
+      }
+
+      private function updatePersonsStatus(e:Event):void
+      {
+        CommonUtil.popupWindow(PersonsDateSelect, "", this, ["updateStatus", persons]);
+      }
+
+      private function updatePersonsContract(e:Event):void
+      {
+        CommonUtil.popupWindow(PersonsContractDateSelect, "", this, [persons]);
+      }
+
+      private function updateCert2No(e:Event):void
+      {
+        CommonUtil.popupWindow(PersonsDateSelect, "", this, ["updateCert2No", persons]);
+      }
+
+      /**
+       * 人事管理--传递人员列表, 目标窗口(obj): PersonsUpdateInfo, PersonsDown, PersonsUnDown
+       * 派发CREATED事件
+       **/
+      private function dispatchPersons(obj:Object):void
+      {
+        // 传递的人员列表按工号排序
+        persons.sort=Person.SORT_WORKERID;
+        persons.refresh();
+        if (obj is EventDispatcher)
+          (obj as EventDispatcher).dispatchEvent(new CommonEvent(CommonEvent.CREATED, null, persons.toArray()));
+      }
+
+      /**
+       * 人事管理--打印人事卡片
+       **/
+      private function printCards(event:MenuEvent):void
+      {
+        var ids:Array=CommonUtil.getSubArray(persons.source, ["id"]);
+        if (ids.length <= 0)
+        {
+          Alert.show(resourceManager.getString("gcc", "persons.not.down"), Constants.APP_NAME, Alert.OK, 
+            null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        PersonalController.getPersonsCard(ids, function(e1:ResultEvent):void
+          {
+            var coll:ArrayCollection=e1.result as ArrayCollection;
+            var count:int=0;
+            PrintUtil.print(coll, PersonCard, function(page:Object, objs:Array):Boolean
+              {
+                count++;
+                return (count == coll.length);
+              });
+          });
+      }
+
+      private function exportCards(event:MenuEvent):void
+      {
+        var ids:Array=CommonUtil.getSubArray(persons.source, ["id"]);
+        if (ids.length <= 0)
+          return;
+        var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "exportPersonsCard", [ids]);
+        var fr:FileReference=new FileReference();
+        fr.addEventListener(Event.COMPLETE, function(event:Event):void
+          {
+            Alert.show(resourceManager.getString("gcc", "download.complete"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+          });
+        fr.download(ur, "persons.pdf");
+      }
+
+      private var photos:FileReferenceList=new FileReferenceList();
+
+      private function uploadPhotos(event:MenuEvent):void
+      {
+        try
+        {
+          var ff:FileFilter=new FileFilter(resourceManager.getString("gcc", "file.filter.image.tip")
+            , resourceManager.getString("gcc", "file.filter.image"));
+          photos.addEventListener(Event.SELECT, selectPhotosHandler);
+          Alert.show(resourceManager.getString("gcc_hr", "person.photo.upload.filename"), 
+            Constants.APP_NAME, Alert.OK, null, function(e1:CloseEvent):void
+            {
+              photos.browse(new Array(ff));
+            }, Constants.ICON32_INFO);
+        }
+        catch (err:Error)
+        {
+          Alert.show(resourceManager.getString("gcc_hr", "person.manage.photo.browse.error"), 
+            Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+        }
+      }
+
+      private function downPhotos(event:MenuEvent):void
+      {
+        CommonUtil.popupWindow(PersonDownPhoto, "", this, [persons]);
+      }
+
+      private function selectPhotosHandler(event:Event):void
+      {
+        var frl:FileReferenceList=FileReferenceList(event.target);
+        var files:Array=frl.fileList;
+        var t:int=0; // total file count
+        var s:Array=new Array(); // file names:success
+        var f0:Array=new Array(); // file names:other failure 
+        var f1:Array=new Array(); // file names:size error
+        var f2:Array=new Array(); // file names:security error
+        var f3:Array=new Array(); // file names:nonexistent error
+        for each (var file:Object in files)
+        {
+          var fr:FileReference=FileReference(file);
+          fr.addEventListener(IOErrorEvent.IO_ERROR, function(e:IOErrorEvent):void
+            {
+              t++;
+              f0.push(e.currentTarget.name);
+              if (t == files.length) uploadPhotosReport(t, s, f0, f1, f2, f3);
+            });
+          fr.addEventListener(SecurityErrorEvent.SECURITY_ERROR, function(e:SecurityErrorEvent):void
+            {
+              t++;
+              f0.push(e.currentTarget.name);
+              if (t == files.length) uploadPhotosReport(t, s, f0, f1, f2, f3);
+            });
+          fr.addEventListener(DataEvent.UPLOAD_COMPLETE_DATA, function(e:DataEvent):void
+            {
+              t++;
+              var arr:Array;
+              if (e.data == null)
+              {
+                arr=f0;
+              }
+              else
+              {
+                var d:Base64Decoder=new Base64Decoder();
+                d.decode(e.data);
+                var b:ByteArray=d.drain();
+                var r:Object=b.readObject();
+                switch(r)
+                {
+                  case "SUCCESS":
+                    arr=s;
+                    break;
+                  case "SIZE_ERROR":
+                    arr=f1;
+                    break;
+                  case "SECURITY_ERROR":
+                    arr=f2;
+                    break;
+                  case "NONEXISTENT_ERROR":
+                    arr=f3;
+                    break;
+                  default:
+                    arr=f0;
+                    break;
+                }
+              }
+              arr.push(e.currentTarget.name);
+              if (t == files.length) uploadPhotosReport(t, s, f0, f1, f2, f3);
+            });
+          try
+          {
+            var ur:URLRequest=CommonUtil.getServiceRequest(Beans.SERVICE_HR_PERSONAL, "uploadPersonsPhoto", [UserController.user]);
+            fr.upload(ur);
+          }
+          catch (err:Error)
+          {
+            Alert.show(resourceManager.getString("gcc_hr", "person.manage.photo.upload.error"), 
+              Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_ERROR);
+          }
+        }
+      }
+
+      private function uploadPhotosReport(t:int, s:Array, f0:Array, f1:Array, f2:Array, f3:Array):void
+      {
+        var icon:Class=(t == s.length) ? Constants.ICON32_INFO : 
+          (s.length > 0) ? Constants.ICON32_WARNING : Constants.ICON32_ERROR;
+        var text:String=resourceManager.getString("gcc_hr", "person.manage.photo.upload.report", [t]);
+        if (s.length > 0)
+        {
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reports", [s.length]);
+        }
+        if (f1.length > 0)
+        {
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reportf1", [f1.length, f1.toString()]);
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reportf1.note");
+        }
+        if (f2.length > 0)
+        {
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reportf2", [f2.length, f2.toString()]);
+        }
+        if (f3.length > 0)
+        {
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reportf3", [f3.length, f3.toString()]);
+        }
+        if (f0.length > 0)
+        {
+          text += resourceManager.getString("gcc_hr", "person.manage.photo.upload.reportf0", [f0.length, f0.toString()]);
+        }
+        Alert.show(text, Constants.APP_NAME, Alert.OK, null, null, icon);
+      }
+
+      // 显示Change Log
+      private function showChanges(e:Event):void
+      {
+        CommonUtil.popupWindow(ChangeLog, "", this);
+      }
+    ]]>
+  </mx:Script>
+</mx:Module>

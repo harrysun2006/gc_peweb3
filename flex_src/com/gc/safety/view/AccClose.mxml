@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*" 
+				layout="vertical" verticalAlign="top" width="600" height="480"
+				preinitialize="onPreinitialize()">
+	<gc:Voucher width="100%" height="100%" bundle="gcc_safety" code="safetyClose">
+		<mx:Form id="form" width="100%">
+			<mx:GridItem>
+				<mx:Label text="{resourceManager.getString('gcc_safety', 'safetyClose.id.date')}:"/>
+				<mx:DateField name="id.date" formatString="{Constants.DATE_FORMAT}" width="160"/>
+        		<mx:Label text="{resourceManager.getString('gcc_safety', 'safetyClose.comment')}:"/>
+        		<mx:TextInput name="comment" width="100%"/>
+			</mx:GridItem>
+		</mx:Form>
+		<mx:AdvancedDataGrid editable="false" selectionMode="none" dataProvider="{list}">
+			<mx:columns>
+				<mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}"/>
+        		<mx:AdvancedDataGridColumn dataField="id.date"/>
+        		<mx:AdvancedDataGridColumn dataField="comment"/>
+			</mx:columns>
+		</mx:AdvancedDataGrid>
+		<mx:HBox name="buttons" horizontalAlign="center" width="100%" paddingTop="10" paddingRight="10">
+      		<mx:Button label="{resourceManager.getString('gcc', 'close.acc')}" click="closeAcc(event)"
+                 	   enabled="{UserController.hrWrite}"/>
+      		<mx:Button label="{resourceManager.getString('gcc', 'declose.acc')}" click="decloseAcc(event)"
+                 	   enabled="{UserController.hrWrite}"/>
+      		<mx:Button label="{resourceManager.getString('gcc', 'close')}" click="close(event)"/>
+		</mx:HBox>
+	</gc:Voucher>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.rpc.events.ResultEvent;
+			import mx.collections.ArrayCollection;
+			import com.gc.safety.model.SafetyClose;
+			import com.gc.util.CommonUtil;
+			import com.gc.CommonEvent;
+			import com.gc.safety.controller.CommonController;
+			import com.gc.Constants;
+			import com.gc.common.controller.UserController;
+			
+			[Bindable]
+			private var list:ArrayCollection;
+			
+			private function onPreinitialize():void
+			{
+				CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+					{list=e.result as ArrayCollection});
+			}
+			
+			private function closeAcc(e:Event):void
+			{
+				if (!CommonUtil.validateForm(form, ["id.date"])) return;
+				var close:SafetyClose = new SafetyClose();
+				CommonUtil.loadInstance(form, close);
+				CommonUtil.loadInstance({"id.branch": UserController.branch}, close);
+				CommonController.closeAcc(close, UserController.userUseId, function(e:ResultEvent):void
+					{
+						CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+						{list=e.result as ArrayCollection});
+						Alert.show(resourceManager.getString("gcc", "close.acc.success"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+					});
+			}
+			
+			private function decloseAcc(e:Event):void
+			{
+				if (!CommonUtil.validateForm(form, ["id.date"])) return;
+				var close:SafetyClose = new SafetyClose();
+				CommonUtil.loadInstance(form, close);
+				CommonUtil.loadInstance({"id.branch": UserController.branch}, close);
+				CommonController.decloseAcc(close, UserController.userUseId, function(e:ResultEvent):void
+					{
+						CommonController.getCloseList(UserController.branchId, function(e:ResultEvent):void
+						{list=e.result as ArrayCollection});
+						Alert.show(resourceManager.getString("gcc", "declose.acc.success"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_INFO);
+					});
+			}
+			
+			private function close(e:Event=null):void
+			{
+				dispatchEvent(CommonEvent.CLOSE_EVENT);
+			}
+			
+		]]>
+	</mx:Script>
+</mx:TitleWindow>

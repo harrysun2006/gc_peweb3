@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                xmlns:salary="com.gc.hr.view.salary.*" layout="vertical" showCloseButton="true"
+                close="close(event)" preinitialize="onPreinitialize()">
+  <gc:ToolBarNavigator id="pages" creationPolicy="auto" width="100%" height="100%"
+                       borderStyle="none" closePolicy="{SuperTab.CLOSE_NEVER}" dragEnabled="false"
+                       change="onChange(event)">
+    <salary:DeptPsn1 id="a"/>
+    <salary:DeptPsn2 id="b"/>
+    <salary:DeptPsn3 id="c"/>
+    <salary:DeptPsn4 id="d"/>
+  </gc:ToolBarNavigator>
+  <mx:Script>
+    <![CDATA[
+      import flexlib.controls.tabBarClasses.SuperTab;
+
+      import mx.events.CloseEvent;
+      import mx.events.IndexChangedEvent;
+      import mx.managers.PopUpManager;
+
+      import com.gc.CommonEvent;
+      import com.gc.hr.Events;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(Events.ADD_SALDEPTPSN, onAddSalDeptPsn);
+        addEventListener(Events.EDIT_SALDEPTPSN, onEditSalDeptPsn);
+        addEventListener(Events.DEL_SALDEPTPSN, onDelSalDeptPsn);
+        addEventListener(Events.SEL_SALDEPTPSN, onSelSalDeptPsn);
+        addEventListener(Events.ADD_SALFIXONLINE, onAddSalFixOnline);
+        addEventListener(Events.EDIT_SALFIXONLINE, onEditSalFixOnline);
+        addEventListener(Events.DEL_SALFIXONLINE, onDelSalFixOnline);
+      }
+
+      private function onSelSalDeptPsn(e:Events):void
+      {
+        e.stopImmediatePropagation();
+        var data:Object=e.data;
+        var depart:Object=(data && data.depart) ? data.depart : null;
+        e.data=depart;
+        b.dispatchEvent(e);
+      }
+
+      private function onChange(e:IndexChangedEvent):void
+      {
+        pages.getChildAt(e.newIndex).dispatchEvent(CommonEvent.CHANGED_EVENT);
+      }
+
+      private function onAddSalDeptPsn(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (a.hasEventListener(e.type))
+            a.dispatchEvent(e);
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function onEditSalDeptPsn(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (a.hasEventListener(e.type))
+            a.dispatchEvent(e);
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function onDelSalDeptPsn(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (a.hasEventListener(e.type))
+            a.dispatchEvent(e);
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (c.hasEventListener(e.type))
+            c.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function onAddSalFixOnline(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function onEditSalFixOnline(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function onDelSalFixOnline(e:Events):void
+      {
+        if (e.data >= 1 && e.data <=4)
+        {
+          if (b.hasEventListener(e.type))
+            b.dispatchEvent(e);
+          if (d.hasEventListener(e.type))
+            d.dispatchEvent(e);
+        }
+      }
+
+      private function close(e:CloseEvent):void
+      {
+        PopUpManager.removePopUp(this);
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Form xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         creationComplete="onCreationComplete()">
+  <mx:Grid width="100%" height="100%">
+    <mx:GridRow width="100%" height="100%">
+      <mx:GridItem width="100%" height="100%">
+        <mx:FormItem label="{resourceManager.getString('gcc_safety','acc.compDesc')}" width="100%"
+                     height="100%">
+          <mx:TextArea id="taCompDesc" name="compDesc" text="{acc.compDesc}" width="100%"/>
+        </mx:FormItem>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow width="100%" height="100%" id="grReport">
+      <mx:GridItem width="100%" height="100%" horizontalAlign="left">
+        <mx:FormItem label="">
+          <mx:CheckBox id="cbReport"
+                       label="{resourceManager.getString('gcc_safety','acc.report.confirm')}"
+                       labelPlacement="left" click="selectedBox()"/>
+        </mx:FormItem>
+      </mx:GridItem>
+    </mx:GridRow>
+    <mx:GridRow width="100%" height="100%" id="gridrow">
+      <mx:GridItem width="100%" height="100%" horizontalAlign="center">
+        <mx:FormItem label="{resourceManager.getString('gcc_safety','accident.statusStr')}">
+          <mx:HBox>
+            <mx:RadioButtonGroup id="status" itemClick="status_itemClick(event)"/>
+            <mx:RadioButton groupName="status" id="status2"
+                            label="{resourceManager.getString('gcc_safety','acc.audit')}" value="2"/>
+            <mx:RadioButton groupName="status" id="status1"
+                            label="{resourceManager.getString('gcc_safety','acc.donot.audit')}"
+                            value="1"/>
+          </mx:HBox>
+        </mx:FormItem>
+      </mx:GridItem>
+    </mx:GridRow>
+  </mx:Grid>
+  <mx:DateFormatter id="df1" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.ItemClickEvent;
+      import com.gc.safety.model.Accident;
+      import com.gc.Constants;
+
+      [Bindable]
+      public var acc:Accident = new Accident();
+
+      private function onCreationComplete():void
+      {
+        status.selection = status1;
+        acc.status = 1;
+      }
+
+      // 保存过后 除状态外 都不可编辑
+      public function comEnable(able:Boolean):void
+      {
+        taCompDesc.editable = able;
+        cbReport.enabled = able;
+//			status.enabled = able;
+      }
+
+      public function status_itemClick(event:ItemClickEvent):void
+      {
+        if (event.label == resourceManager.getString('gcc_safety','acc.audit'))
+        {
+          acc.status = 2;
+        }
+        else if (event.label == resourceManager.getString('gcc_safety','acc.donot.audit'))
+        {
+          acc.status = 1;
+        }
+      }
+
+      private function selectedBox():void
+      {
+        if (cbReport.selected == true)
+        {
+          acc.report = 1;
+        }
+        else
+        {
+          acc.report = 0;
+        }
+      }
+
+      public function showAuditAccident(accident:Accident):void
+      {
+        acc = accident;
+        if (acc.status == 1)
+        {
+          status.selection = status1;
+        }
+        else
+        {
+          status.selection = status2;
+        }
+        if (acc.report == 1)
+        {
+          cbReport.selected = true;
+        }
+        else
+        {
+          cbReport.selected = false;
+        }
+      }
+
+      //车队处理用
+      public function setEnable(able:Boolean):void
+      {
+        grReport.visible = able;
+        grReport.includeInLayout = able;
+        gridrow.visible = able;
+        gridrow.includeInLayout = able;
+        taCompDesc.editable = able;
+      }
+
+      // 结案存档用
+      public function setEditable(able:Boolean):void
+      {
+        taCompDesc.editable = able;
+        cbReport.enabled = able;
+        gridrow.visible = able;
+        gridrow.includeInLayout = able;
+      }
+
+      public function getAccident(accident:Accident):void
+      {
+        acc = accident;
+      }
+    ]]>
+  </mx:Script>
+</mx:Form>

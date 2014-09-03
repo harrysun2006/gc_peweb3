@@ -1,0 +1,458 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="vertical"
+                creationComplete="onCreationComplete()" preinitialize="onPreinitialize()">
+  <mx:VBox width="100%" height="100%" autoLayout="true">
+    <mx:ToolBar id="form" percentWidth="100">
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.upgradeDate')}:"/>
+        <mx:TextInput name="upgradeDate" editable="false" width="160"
+                      text="{DateUtil.formatDate(po.upgradeDate, Constants.DATE_FORMAT)}"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.upgradeReason')}:"/>
+        <mx:TextInput name="upgradeReason" editable="false" text="{po.upgradeReason}" width="160"/>
+      </mx:GridItem>
+      <mx:GridItem>
+        <mx:Label text="{resourceManager.getString('gcc', 'person.endDate')}:"/>
+        <mx:TextInput id="endDate" name="endDate" editable="false" width="160"
+                      text="{DateUtil.formatDate(po.contr1End, Constants.DATE_FORMAT)}"/>
+      </mx:GridItem>
+    </mx:ToolBar>
+    <mx:HBox width="100%" height="100%">
+      <mx:AdvancedDataGrid id="adg1" width="50%" height="100%" horizontalScrollPolicy="auto"
+                           sortableColumns="false" labelFunction="{CommonUtil.gridLabelFunction}"
+                           lockedColumnCount="3" keyDown="CommonUtil.gridKeyDown(event)"
+                           verticalScrollPolicy="off">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_SERIAL}" width="64"
+                                     labelFunction="{CommonUtil.serialLabelFunction}"
+                                     styleFunction="{CommonUtil.serialStyleFunction}"/>
+          <mx:AdvancedDataGridColumn dataField="name"/>
+          <mx:AdvancedDataGridColumn dataField="workerId"/>
+          <mx:AdvancedDataGridColumnGroup textAlign="left"
+                                          headerText="{resourceManager.getString('gcc_hr', 'person.manage.old.values')}">
+            <mx:AdvancedDataGridColumn dataField="contractNo"/>
+            <mx:AdvancedDataGridColumn dataField="contr1From" editable="false"/>
+            <mx:AdvancedDataGridColumn id="contr1End" dataField="contr1End"
+                                       labelFunction="replaceDateLabelFunction" editable="false"/>
+            <mx:AdvancedDataGridColumn dataField="regType"/>
+            <mx:AdvancedDataGridColumn dataField="type"/>
+            <mx:AdvancedDataGridColumn dataField="salaryType"/>
+            <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"/>
+            <mx:AdvancedDataGridColumn dataField="workType"/>
+            <mx:AdvancedDataGridColumn dataField="regBelong"/>
+            <mx:AdvancedDataGridColumn dataField="party"/>
+            <mx:AdvancedDataGridColumn dataField="grade"/>
+            <mx:AdvancedDataGridColumn dataField="schooling"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+      <mx:AdvancedDataGrid id="adg2" width="50%" height="100%" horizontalScrollPolicy="auto"
+                           editable="true" sortableColumns="false" styleFunction="styleOfPerson"
+                           labelFunction="{CommonUtil.gridLabelFunction}" scroll="onScroll(event)"
+                           keyDown="CommonUtil.gridKeyDown(event)"
+                           itemEditEnd="onItemEditEnd(event)">
+        <mx:groupedColumns>
+          <mx:AdvancedDataGridColumnGroup 
+                                          headerText="{resourceManager.getString('gcc_hr', 'person.manage.new.values')}"
+                                          textAlign="left">
+            <mx:AdvancedDataGridColumn dataField="contractNo" editable="true"/>
+            <!--mx:AdvancedDataGridColumn dataField="contr1From" editable="true"  itemEditor="{dateField}" editorDataField="selectedDate"/>
+                 <mx:AdvancedDataGridColumn dataField="contr1End" editable="false"/-->
+            <mx:AdvancedDataGridColumn dataField="regType" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="type" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="salaryType" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="fkPosition" dataTipField="fkPosition.name"
+                                       editorDataField="selectedItem" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="workType" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="regBelong" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="party" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="grade" itemEditor="{comboBox}"/>
+            <mx:AdvancedDataGridColumn dataField="schooling" itemEditor="{comboBox}"/>
+          </mx:AdvancedDataGridColumnGroup>
+        </mx:groupedColumns>
+      </mx:AdvancedDataGrid>
+    </mx:HBox>
+    <mx:HBox horizontalAlign="center" width="100%" paddingTop="10" paddingBottom="10">
+      <mx:Button label="{resourceManager.getString('gcc', 'update.batch')}" click="refresh(event)"
+                 toolTip="{resourceManager.getString('gcc_hr', 'person.update.batch.tooltip')}"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'save')}" click="update(event)"/>
+      <mx:Button label="{resourceManager.getString('gcc', 'cancel')}" click="close(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import mx.collections.ArrayCollection;
+      import mx.collections.IList;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridColumn;
+      import mx.controls.advancedDataGridClasses.AdvancedDataGridListData;
+      import mx.controls.Alert;
+      import mx.controls.ComboBox;
+      import mx.controls.DateField;
+      import mx.controls.Label;
+      import mx.events.AdvancedDataGridEvent;
+      import mx.events.AdvancedDataGridEventReason;
+      import mx.events.CloseEvent;
+      import mx.events.FlexEvent;
+      import mx.events.ListEvent;
+      import mx.rpc.events.ResultEvent;
+      import mx.utils.ObjectUtil;
+      import mx.utils.StringUtil;
+
+      import com.gc.Constants;
+      import com.gc.CommonEvent;
+      import com.gc.common.model.Person;
+      import com.gc.common.model.PsnStatus;
+      import com.gc.common.controller.UserController;
+      import com.gc.controls.AdvancedClassFactory;
+      import com.gc.controls.AutoCompleteComboBox;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+      import com.gc.util.DateUtil;
+      [Bindable]
+      private var po:Person=new Person();
+      [Bindable]
+      private var comboBox:AdvancedClassFactory;
+      [Bindable]
+      private var dateField:AdvancedClassFactory;
+      private var lists:Object;
+      private var list0:ArrayCollection; // 人员列表, T_PERSONAL
+      private var list1:ArrayCollection; // 原人员变动列表, T_PSN_STATUS, 列表元素对象为Person
+      private var list2:ArrayCollection; // 现人员变动列表, T_PSN_STATUS, 列表元素对象为Person
+      private var columnIndex:int;
+      private var rowIndex:int;
+      private var qo:Object; // 前一个页面的查询条件对象
+
+      private function init():void
+      {
+        lists={
+            regType:PersonalController.regTypeList,
+            type:PersonalController.hireTypeList, 
+            salaryType:PersonalController.salaryTypeList,
+            fkPosition:PersonalController.positionList,
+            position:PersonalController.positionList,
+            workType:PersonalController.workTypeList, 
+            regBelong:PersonalController.regBranchList,
+            party:PersonalController.polPartyList, 
+            grade:PersonalController.jobGradeList, 
+            schooling:PersonalController.schoolingList};
+      }
+
+      private function onPreinitialize():void
+      {
+        columnIndex=-1;
+        rowIndex=-1;
+        comboBox=new AdvancedClassFactory(ComboBox);
+        comboBox.properties={editable:true, itemRenderer:new ClassFactory(Label)};
+        comboBox.listeners=[{type:FlexEvent.CREATION_COMPLETE, listener:onComboBoxCreateComplete}
+          , {type:KeyboardEvent.KEY_UP, listener:CommonUtil.keyUp}];
+        dateField=new AdvancedClassFactory(DateField);
+        dateField.properties={formatString:Constants.DATE_FORMAT, showToday:true, yearNavigationEnabled:true, editable:true};
+        addEventListener(CommonEvent.CREATED, onCreated);
+      }
+
+      private function onCreated(event:CommonEvent):void
+      {
+        init();
+        if (event.args == null)
+          return;
+        var obj:Object=event.args[0];
+        po.upgradeDate=obj.changeDate;
+        po.upgradeReason=obj.changeNo;
+        if (obj.type == 0 && obj.hasOwnProperty("endDate"))
+        {
+          po.contr1End=obj.endDate;
+        }
+        else
+        {
+          po.contr1End=Constants.MAX_DATE;
+          endDate.text=resourceManager.getString('gcc_hr', 'psnContract.type.value1');
+        }
+        list0=event.args[1] as ArrayCollection;
+        adg1.dataProvider=list0;
+        adg1.validateNow();
+        var ids:ArrayCollection=new ArrayCollection(CommonUtil.getSubArray(list0.source, ["id"]));
+        qo={"branch.id":obj["branch.id"], persons:ids, changeDate:obj.changeDate, changeNo:obj.changeNo};
+        var f:Function=function(e1:ResultEvent):void
+          {
+            var pos:ArrayCollection=e1.result as ArrayCollection;
+            var p0:Person, p1:Person, p2:Person, p3:PsnStatus, m:Object=new Object();
+            var loginUser:Person=UserController.person;
+            for each (p3 in pos)
+            {
+              m[p3.personId]=p3;
+            }
+            list1=new ArrayCollection();
+            list2=new ArrayCollection();
+            var positions:ArrayCollection=PersonalController.positionList;
+            for each (p0 in list0)
+            {
+              p3=m[p0.id];
+
+              p1=new Person(p0.id);
+              p2=new Person(p0.id);
+              p1.workerId=p2.workerId=p0.workerId;
+              p1.name=p2.name=p0.name;  
+              p2.upgradeDate=po.upgradeDate;
+              p2.upgradeReason=po.upgradeReason;
+              p1.lastModifier=p2.lastModifier=loginUser;
+
+              p2.contr1From=obj.changeDate; 
+              if(po.contr1End != null)
+                p2.contr1End=po.contr1End;
+              else
+                p2.contr1End=new Date(9999, 11, 31);
+              if (p3)
+              {
+                p1.contractNo=p2.contractNo=p3.isModContract; //p3.upgradeReason;
+                // p1.contr1From=p2.contr1From=p3.onDate;
+                p1.contr1From=p3.onDate;
+                // p2.contr1From=po.upgradeDate;
+                p1.contr1End=p3.contractEnd; //p3.downDate;
+
+                p1.regType=p2.regType=p3.regType;
+                p1.type=p2.type=p3.type;
+                p1.salaryType=p2.salaryType=p3.salaryType;
+                p1.position=p2.position=p3.position;
+                if(p3.fkPosition && p3.fkPosition.id) {
+                  for(var k:int=0; k < positions.length; k++) {
+                    if(positions[k].id.value == p3.fkPosition.id.value) {
+                      p1.fkPosition = p2.fkPosition = p3.fkPosition = positions[k];
+                      break;
+                    }	
+                  }
+                }
+                p1.workType=p2.workType=p3.workType;
+                p1.regBelong=p2.regBelong=p3.regBelong;
+                p1.party=p2.party=p3.party;
+                p1.grade=p2.grade=p3.grade;
+                p1.schooling=p2.schooling=p3.schooling;
+              }
+              else
+              {
+                p1.contractNo=p2.contractNo="无对应合同";
+                p1.contr1From=null;
+
+                // p1.contr1From=p0.onDate;
+                // p2.contr1From=po.upgradeDate;
+                // p1.contr1End=p0.contr1End;
+                // p2.contr1End=po.contr1End;
+
+                p1.regType=p2.regType="-"; //p0.regType;
+                p1.type=p2.type="-"; //p0.type;
+                p1.salaryType=p2.salaryType="-"; //p0.salaryType;
+                p1.position=p2.position="-"; //p0.position;
+                p1.fkPosition=p2.fkPosition=null; //p0.fkPosition;
+                p1.workType=p2.workType="-"; //p0.workType;
+                p1.regBelong=p2.regBelong="-"; //p0.regBelong;
+                p1.party=p2.party="-"; //p0.party;
+                p1.grade=p2.grade="-"; //p0.grade;
+                p1.schooling=p2.schooling="-"; //p0.schooling;
+              }
+              p2.equals=true;
+              list1.addItem(p1);
+              list2.addItem(p2);
+            }
+            adg1.dataProvider=list1;
+            adg1.validateNow();
+            adg2.rowHeight=adg1.rowHeight;
+            adg2.dataProvider=list2;
+            adg2.validateNow();
+          };
+        PersonalController.getContractList(qo, f);
+      }
+
+      private function onComboBoxCreateComplete(event:Event):void
+      {
+        if (event.currentTarget is ComboBox)
+        {
+          var cbox:ComboBox=event.currentTarget as ComboBox;
+          if (cbox.listData is AdvancedDataGridListData && cbox.data is Person)
+          {
+            var listData:AdvancedDataGridListData=cbox.listData as AdvancedDataGridListData;
+            var dataField:String=listData.dataField
+            var list:Object=lists.hasOwnProperty(dataField) ? lists[dataField] : null;
+            var p:Person=cbox.data as Person;
+            cbox.dataProvider=list;
+            cbox.selectedIndex=(list != null) ? CommonUtil.indexOfKey(list, p[dataField], "label") : -1;
+            cbox.setStyle("color", colorOfPerson(cbox.data));
+          }
+        }
+      }
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adg1, "gcc", "person");
+        CommonUtil.setDataGridColumns(adg2, "gcc", "person");
+        this.setFocus();
+      }
+
+      private function styleOfPerson(data:Object, column:AdvancedDataGridColumn):Object
+      {
+        return {color:colorOfPerson(data)};
+      }
+
+      private function colorOfPerson(data:Object):uint
+      {
+        return (data && data.equals) ? Constants.Black : Constants.Blue;
+      }
+
+      private function onScroll(event:Event):void
+      {
+        callLater(function():void{adg1.verticalScrollPosition=adg2.verticalScrollPosition;});
+      }
+
+      private function onItemEditEnd(event:AdvancedDataGridEvent):void
+      {
+        callLater(function():void
+          {
+            columnIndex=event.columnIndex;
+            rowIndex=event.rowIndex;
+            if (columnIndex < 0 || rowIndex < 0)
+              return;
+            var p1:Person=list1.getItemAt(rowIndex) as Person;
+            var p2:Person=list2.getItemAt(rowIndex) as Person;
+            if (p2.contractNo == "") p2.contractNo=null;
+            // if (p2.contr1From == "") p2.contr1From=null;
+            // if (p2.contr1End == "") p2.contr1End=null;
+            p2.equals=equals(p1, p2);
+          });
+      }
+
+      private function equals(p1:Object, p2:Object):Boolean
+      {
+        return p1.contractNo == p2.contractNo 
+          // && p1.contr1From.time == p2.contr1From.time 
+          // && p1.contr1End.time == p2.contr1End.time
+          && p1.contr1End == p2.contr1End
+          && p1.regType == p2.regType
+          && p1.type == p2.type
+          && p1.salaryType == p2.salaryType
+          && p1.fkPosition == p2.fkPosition
+          && p1.workType == p2.workType
+          && p1.regBelong == p2.regBelong
+          && p1.party == p2.party
+          && p1.grade == p2.grade
+          && p1.schooling == p2.schooling;
+      }
+
+      private function get changed():Boolean
+      {
+        var i:int;
+        var r:Boolean=false;
+        for (i=0; i < list1.length; i++)
+        {
+          if (!equals(list1[i], list2[i]))
+          {
+            r=true;
+            break;
+          }
+        }
+        return r;
+      }
+
+      private function refresh(event:Event):void
+      {
+        if (columnIndex < 0 || rowIndex < 0)
+          return;
+        var column:AdvancedDataGridColumn=adg2.columns[columnIndex] as AdvancedDataGridColumn;
+        var df:String=column.dataField;
+        var header:String=column.headerText;
+        var p:Person=list2.getItemAt(rowIndex) as Person;
+        var value:String=adg2.labelFunction(p, column);
+        Alert.show(resourceManager.getString("gcc_hr", "person.update.batch.query", [header, value]), 
+          Constants.APP_NAME, Alert.YES | Alert.NO, null, function(e1:CloseEvent):void
+          {
+            if (e1.detail == Alert.YES) {
+              var i:int;
+              var p1:Person, p2:Person;
+              for (i=0; i<list2.length; i++) {
+                p1=list1[i];
+                p2=list2[i];
+                p2[df]=p[df];
+                p2.equals=equals(p1, p2);
+              }
+            }
+          }, Constants.ICON32_QUESTION);
+      }
+
+      private function update(event:Event):void
+      {
+        // if (CommonUtil.validateGrid(adg2, ["contractNo", "contr1From"]).length > 0) //,"contr1End","regType","type","salaryType","fkPosition","workType","regBelong","party","grade","schooling"
+        //   return;
+        // 2010-2-25: 业务字段没有变化的记录(空变动记录)表示重签合同,前台需要提示!
+        var s1:String="";
+        var i:int;
+        for (i=0; i < list1.length; i++)
+        {
+          if (ObjectUtil.dateCompare(po.upgradeDate,list1[i].contr1From)!=0 && list1[i].contractNo==list2[i].contractNo)
+          {
+            Alert.show(list0[i].name+resourceManager.getString("gcc_hr", "psnContract.sameContractNo"),"",Alert.OK,null,null,Constants.ICON32_ERROR);
+            return;
+          }
+          if (list2[i].contractNo==null || mx.utils.StringUtil.trim(list2[i].contractNo)=="")
+          {
+            Alert.show(list0[i].name+resourceManager.getString("gcc_hr", "psnContract.contractNoIsNull"),"",Alert.OK,null,null,Constants.ICON32_ERROR);
+            return;
+          }
+          // if (equals(list1[i], list2[i])){
+          //   s1+=resourceManager.getString("gcc", "person.format02.nw", [list1[i].name, list1[i].workerId])+"\n";
+          // }
+          if (list1[i].contractNo=="无对应合同" && list2[i].contractNo=="无对应合同")
+          {
+            list1.removeItemAt(i);
+            list2.removeItemAt(i);
+            i--;
+          }
+        }
+        s1=s1.substring(0, s1.length-1);
+        var f1:Function=function(e1:ResultEvent):void
+          {
+            var i:int;
+            if (s1.length > 0)
+              s1=resourceManager.getString("gcc_hr", "person.update.status.info.recontract", [s1]);
+            else
+              s1=resourceManager.getString("gcc", "save.success");
+            Alert.show(s1, Constants.APP_NAME, Alert.OK, null, function(e2:Event):void
+              {
+                close();
+              }, Constants.ICON32_INFO);
+          };
+        if (changed)
+          PersonalController.updatePersonsContract(list2.source, f1);
+        else
+          Alert.show(resourceManager.getString("gcc", "save.no.change"), Constants.APP_NAME, Alert.OK, null, null, Constants.ICON32_WARNING);
+      }
+
+      private function close(event:Event=null):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function checkReminder(event:Event):void
+      {
+        var retString:String="";
+        var retfun:Function=function(e1:ResultEvent):void{
+            for (var key:String in e1.result){
+              retString=retString+ key +" 修改后撤销："+ e1.result[key]+"条数据\n"
+            }
+            Alert.show(retString, Constants.APP_NAME, Alert.YES | Alert.NO,
+              null, function(e:CloseEvent):void
+              {
+                if (e.detail == Alert.YES)
+                  update(event);
+                else
+                  return;
+              }, Constants.ICON32_QUESTION);
+          }
+        PersonalController.getLateDatePsnStatusTotle(qo,retfun);
+      }
+
+      public function replaceDateLabelFunction(data:Object, column:AdvancedDataGridColumn):String
+      {
+        var cell:Object=data[column.dataField];
+        return DateUtil.formatDate(cell,"YYYY-MM-DD")=="9999-12-31"?"无固定期限":DateUtil.formatDate(cell,"YYYY-MM-DD");
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

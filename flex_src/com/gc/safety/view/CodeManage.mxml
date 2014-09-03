@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+         preinitialize="onPreinitialize()" show="loadList(UserController.branchId);">
+  <mx:Canvas width="100%" height="100%">
+    <mx:VBox height="100%" width="100%" autoLayout="true" horizontalAlign="center" verticalGap="10">
+      <mx:Label id="title" text="{resourceManager.getString('gcc_safety', code + '.title')}"
+                textAlign="center" width="100%" fontSize="16" fontWeight="bold"/>
+      <mx:DataGrid id="dg" width="60%" height="60%" click="onSelectItem(dg.selectedItem)">
+        <mx:columns>
+          <mx:DataGridColumn headerText="{resourceManager.getString('gcc_safety', 'no')}"
+                             labelFunction="{CommonUtil.serialLabelFunction}" color="0x0000FF"
+                             backgroundColor="0xD8D8D8" fontWeight="bold" editable="false"
+                             width="30" textAlign="center"/>
+          <mx:DataGridColumn headerText="{resourceManager.getString('gcc_safety', code + '.name')}"
+                             dataField="name" width="100"/>
+          <mx:DataGridColumn headerText="{resourceManager.getString('gcc_safety', code + '.desc')}"
+                             dataField="desc" width="100"/>
+        </mx:columns>
+      </mx:DataGrid>
+      <mx:Label id="lPrompt" width="60%" textAlign="left"/>
+      <mx:HBox width="50%" horizontalAlign="center">
+        <mx:Button label="{resourceManager.getString('gcc', 'add')}" click="onAddClick()"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'modify')}" click="onUpdateClick()"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'delete')}" click="onDeleteClick()"/>
+        <mx:Button label="{resourceManager.getString('gcc', 'close')}" click="onCloseClick()"/>
+      </mx:HBox>
+    </mx:VBox>
+  </mx:Canvas>
+
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.model.GuaType;
+      import com.gc.util.CommonUtil;
+      import com.gc.safety.Events;
+      import com.gc.common.controller.BaseController;
+      import com.gc.Constants;
+      import com.gc.common.controller.UserController;
+      import com.gc.CommonEvent;
+      import mx.events.CloseEvent;
+      import mx.controls.Alert;
+      import mx.controls.dataGridClasses.DataGridColumn;
+      import mx.managers.PopUpManager;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+
+      private var clazz:Class;
+      [Bindable]
+      private var code:String;
+      private var gfunc:Function;
+      private var list:ArrayCollection;
+      private var po:Object;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.CREATED, function(e:CommonEvent):void
+          {
+            clazz = e.args[0] as Class;
+            code = e.args[1] as String;
+            gfunc = e.args[2] as Function;
+            loadList(UserController.branchId);
+            po = null;
+//            if(code == "guaType")
+//              lPrompt.text = "注意：添加的第一个保单类型必须是客伤险";
+          });
+      }
+
+      private function loadList(branchId:int):void
+      {
+        if (gfunc != null)
+          gfunc(branchId, onGetListSuccess);
+      }
+
+      private function onGetListSuccess(e:ResultEvent):void
+      {
+        list = e.result as ArrayCollection;
+        dg.dataProvider = list;
+      }
+
+      private function onAddClick():void
+      {
+        var popWin:CodeManageWin = CodeManageWin(PopUpManager.createPopUp(this, CodeManageWin, true));
+        popWin.title = resourceManager.getString("gcc_safety", code + ".add");
+        popWin.tiName.setFocus();
+        popWin.list = list;
+        popWin.code = code;
+        popWin.clazz = clazz;
+        popWin.addEventListener(Events.ADD_PO, addItem);
+        PopUpManager.centerPopUp(popWin);
+      }
+
+      private function addItem(evt:Events):void
+      {
+        po = evt.data as clazz;
+        if (po.branch == null)
+          po.branch = UserController.branch;
+        BaseController.addObject(po);
+        loadList(UserController.branchId);
+        po = null;
+        Alert.show(resourceManager.getString('gcc', 'save.success'), Constants.APP_NAME, Alert.OK,
+          null, null, Constants.ICON32_INFO);
+      }
+
+      private function onDeleteClick():void
+      {
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString('gcc', 'delete.not.null'), Constants.APP_NAME, Alert.OK,
+            null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        else if (po is GuaType && po.name=="客伤险")
+        {
+          Alert.show("客伤险为关键字，不能删除！", Constants.APP_NAME, Alert.OK,
+            null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        else
+        {
+          Alert.show(resourceManager.getString('gcc', 'delete.confirm'), Constants.APP_NAME, Alert.YES | Alert.NO,
+            null, deleteConfirm, Constants.ICON32_QUESTION);
+        }
+      }
+
+      private function deleteConfirm(evt:CloseEvent):void
+      {
+        if (evt.detail == Alert.YES)
+          BaseController.deleteObject(po, deleteSuccessHandler);
+      }
+
+      private function deleteSuccessHandler(evt:ResultEvent):void
+      {
+        list.removeItemAt(dg.selectedIndex);
+        dg.selectedItem = null;
+        po = null;
+        Alert.show(resourceManager.getString('gcc', 'delete.success'), Constants.APP_NAME, Alert.OK,
+          null, null, Constants.ICON32_INFO);
+      }
+
+      private function onSelectItem(item:Object):void
+      {
+        po = item;
+      }
+
+      private function onUpdateClick():void
+      {
+        if (po == null)
+        {
+          Alert.show(resourceManager.getString('gcc', 'update.not.null'), Constants.APP_NAME, Alert.OK,
+            null, null, Constants.ICON32_WARNING);
+          return;
+        }
+        else
+        {
+          var popWin:CodeManageWin = CodeManageWin(PopUpManager.createPopUp(this, CodeManageWin, true));
+          popWin.title = resourceManager.getString('gcc_safety', code + '.update');
+          popWin.tiName.setFocus();
+          popWin.po = po;
+          popWin.list = list;
+          popWin.code = code;
+          popWin.clazz = clazz;
+          popWin.addEventListener(Events.ADD_PO, addItem);
+          PopUpManager.centerPopUp(popWin);
+        }
+      }
+
+      private function getDataGridRowNo(item:Object, column:DataGridColumn):int
+      {
+        return (list.length > 0) ? list.getItemIndex(item) + 1 : 0;
+      }
+
+      private function onCloseClick():void
+      {
+        parent.dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+    ]]>
+  </mx:Script>
+</mx:VBox>

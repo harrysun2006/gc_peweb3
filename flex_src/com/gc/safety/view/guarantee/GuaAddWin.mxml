@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" width="820" height="350"
+                preinitialize="onPreinitialize()" creationComplete="onCreationComplete()"
+                keyDown="CommonUtil.keyDown(event)">
+  <mx:VBox width="100%" height="100%" horizontalAlign="center">
+    <mx:Label text="{resourceManager.getString('gcc_safety','gua.title.name')}" textAlign="left"
+              width="95%"/>
+    <mx:HBox id="hbGet" width="95%" horizontalAlign="right">
+      <mx:Button id="btGet" label="{resourceManager.getString('gcc_safety','gua.get.matureGua')}"
+                 click="getMatureGuaWin()"/>
+    </mx:HBox>
+    <mx:Form id="form" width="100%">
+      <mx:Grid width="100%">
+        <mx:GridRow width="100%" horizontalAlign="left">
+          <mx:GridItem>
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.accNo')}">
+              <mx:TextInput id="tiAccNo" name="id.accNo" text="{guar.id.accNo}" editable="false"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow width="100%">
+          <mx:GridItem>
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.inputDate')}">
+              <mx:DateField id="dfInputDate" name="inputDate" text="{df.format(guar.inputDate)}"
+                            editable="true" formatString="{Constants.DATE_FORMAT}"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.type.name')}">
+              <mx:ComboBox id="cbType" labelField="name" dataProvider="{guaTypes}" editable="true"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.insurer.name')}"
+                         horizontalAlign="right">
+              <mx:ComboBox id="cbInsurer" labelField="name" dataProvider="{insurers}"
+                           editable="true"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow width="100%">
+          <mx:GridItem>
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.onDate')}">
+              <mx:DateField id="dfOnDate" name="onDate" text="{df.format(guar.onDate)}"
+                            editable="true" formatString="{Constants.DATE_FORMAT}"
+                            yearNavigationEnabled="true"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem>
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.downDate')}">
+              <mx:DateField id="dfDownDate" name="downDate" text="{df.format(guar.downDate)}"
+                            editable="true" formatString="{Constants.DATE_FORMAT}"
+                            yearNavigationEnabled="true"/>
+            </mx:FormItem>
+          </mx:GridItem>
+          <mx:GridItem horizontalAlign="right">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.insurerPsn')}"
+                         horizontalAlign="right">
+              <mx:TextInput id="tiInsurerPsn" name="insurerPsn" text="{guar.insurerPsn}"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+        <mx:GridRow width="100%" horizontalAlign="right">
+          <mx:GridItem colSpan="3" horizontalAlign="center">
+            <mx:FormItem label="{resourceManager.getString('gcc_safety','gua.desc')}"
+                         horizontalAlign="right" width="100%">
+              <mx:TextArea id="taDesc" name="desc" text="{guar.desc}" width="100%"/>
+            </mx:FormItem>
+          </mx:GridItem>
+        </mx:GridRow>
+      </mx:Grid>
+    </mx:Form>
+    <mx:HBox id="hbDown" width="100%" horizontalAlign="center">
+      <mx:Button id="btSure" label="{resourceManager.getString('gcc','ok')}" click="sure(event)"/>
+      <mx:Button id="btCancel" label="{resourceManager.getString('gcc','cancel')}"
+                 click="cancel(event)"/>
+    </mx:HBox>
+  </mx:VBox>
+  <mx:DateFormatter id="df" formatString="{Constants.DATE_FORMAT}"/>
+  <mx:Script>
+    <![CDATA[
+      import mx.events.CloseEvent;
+      import mx.utils.ObjectUtil;
+      import com.gc.safety.Events;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.safety.model.Insurer;
+      import com.gc.safety.model.GuaType;
+      import mx.controls.Alert;
+      import mx.validators.Validator;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import com.gc.common.controller.UserController;
+      import com.gc.safety.controller.GuaranteeController;
+      import mx.managers.PopUpManager;
+      import com.gc.CommonEvent;
+      import com.gc.safety.model.Guarantee;
+      import com.gc.util.CommonUtil;
+      import com.gc.Constants;
+
+      private var branchId:int;
+      [Bindable]
+      private var guar:Guarantee;
+      [Bindable]
+      private var insurers:ArrayCollection = new ArrayCollection();
+      [Bindable]
+      private var guaTypes:ArrayCollection = new ArrayCollection();
+      private var now:Date = new Date();
+      private var guarInfos:ArrayCollection;
+
+      private function onPreinitialize():void
+      {
+        branchId = UserController.branchId;
+        guar = new Guarantee();
+      }
+
+      private function onCreationComplete():void
+      {
+        tiAccNo.text = resourceManager.getString('gcc_safety','gua.new.accNo');
+        cbType.setFocus();
+        getEqualWidth();
+        getInputDate();
+        insurers = GuaranteeController.insurerList;
+        cbInsurer.selectedItem = null;
+        guaTypes = GuaranteeController.guaTypeList;
+        cbType.selectedItem = null;
+      }
+
+      private function getInputDate():void
+      {
+        guar.inputDate = DateField.stringToDate(df.format(now),df.formatString);
+      }
+
+
+      private function getEqualWidth():void
+      {
+        dfInputDate.width = tiAccNo.width;
+        cbType.width = tiAccNo.width;
+        cbInsurer.width = tiAccNo.width;
+        dfOnDate.width = tiAccNo.width;
+        dfDownDate.width = tiAccNo.width;
+      }
+
+      private function sure(event:Event):void
+      {
+//        var fields:Array=[{field:"cbType",error:resourceManager.getString('gcc_safety','gua.select.please') + resourceManager.getString('gcc_safety','gua.type.name')},
+//          {field:"cbInsurer",error:resourceManager.getString('gcc_safety','gua.select.please') + resourceManager.getString('gcc_safety','gua.insurer.name')},
+//          {field:"onDate",error:resourceManager.getString('gcc_safety','gua.select.please') + resourceManager.getString('gcc_safety','gua.onDate')},
+//          {field:"downDate",error:resourceManager.getString('gcc_safety','gua.select.please') + resourceManager.getString('gcc_safety','gua.downDate')},
+//          {field:"insurerPsn",error:resourceManager.getString('gcc_safety','gua.input.please') + resourceManager.getString('gcc_safety','gua.insurerPsn')}];
+        var fields:Array=["inputDate","cbType","cbInsurer","onDate","downDate","insurerPsn"];
+        if (!CommonUtil.validateForm(form,fields))
+          return;
+        CommonUtil.loadInstance(form,guar);
+//        if (ObjectUtil.dateCompare(guar.inputDate,guar.onDate) == 1)
+//        {
+//          Alert.show("生效日期早于投保日期",Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+//          return;
+//        }
+        if (ObjectUtil.dateCompare(guar.onDate,guar.downDate) == 1)
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.downDate.before.onDate'),Constants.APP_NAME,Alert.OK,null,null,Constants.ICON32_WARNING);
+          return;
+        }
+        guar.type = cbType.selectedItem as GuaType;
+        guar.insurer = cbInsurer.selectedItem as Insurer;
+//        var ondate:Date = DateField.stringToDate(DateField.dateToString(guar.onDate,Constants.DATE_FORMAT) + " 00:00:00",Constants.DATETIME_FORMAT);
+//        var downdate:Date = DateField.stringToDate(DateField.dateToString(guar.downDate,Constants.DATE_FORMAT) + " 23:59:59",Constants.DATETIME_FORMAT);
+        guar.doPsn = UserController.person;
+        new CommonEvent(CommonEvent.ADD).stopImmediatePropagation();
+//			if(guarInfos != null){
+//				if(guarInfos.length > 0){
+//					dispatchEvent(new CommonEvent(CommonEvent.ADD,guar));
+//					dispatchEvent(new Events(Events.ADD_PO,guarInfos));
+//				} else {
+//					dispatchEvent(new CommonEvent(CommonEvent.ADD,guar));
+//				}
+//			} else {
+//				dispatchEvent(new CommonEvent(CommonEvent.ADD,guar));
+//			}
+        dispatchEvent(new CommonEvent(CommonEvent.ADD,guar));
+        PopUpManager.removePopUp(this);
+      }
+
+      private function cancel(event:Event):void
+      {
+        dispatchEvent(CommonEvent.CLOSE_EVENT);
+      }
+
+      private function getMatureGuaWin_1():void
+      {
+        var matureGuasWin:MatureGuasWin = MatureGuasWin(PopUpManager.createPopUp(this.parent,MatureGuasWin,true));
+        PopUpManager.centerPopUp(matureGuasWin);
+        matureGuasWin.addEventListener(Events.GET,getMatureGua);
+      }
+
+      private function getMatureGuaWin():void
+      {
+        if (cbType.text != "" || dfOnDate.text != "" || dfDownDate.text != "")
+        {
+          Alert.show(resourceManager.getString('gcc_safety','gua.covering.content.confirm'),Constants.APP_NAME,Alert.YES | Alert.NO,null,
+            function(e:CloseEvent):void 
+            {
+              if(e.detail == Alert.NO) return;
+              getMatureGuaWin_1();
+            });
+        }
+        else
+        {
+          getMatureGuaWin_1();
+        }
+      }
+
+      private function getMatureGua(event:Events):void
+      {
+        guarInfos = event.data as ArrayCollection;
+        for (var j:int=0; j < guarInfos.length; j++)
+        {
+          guarInfos.getItemAt(j).guaNo = null;
+        }
+        guar.type = guarInfos.getItemAt(0).fkGuarantee.type;
+//			CommonUtil.selectItem(guar.type,guaTypes,cbType);
+        for (var i:int = 0; i < guaTypes.length; i++)
+        {
+          if (guar.type.id == guaTypes.getItemAt(i).id)
+          {
+            cbType.selectedItem = guaTypes.getItemAt(i) as GuaType;
+          }
+        }
+        var date:Date = new Date();
+        guar.onDate = new Date(date.setTime(guarInfos.getItemAt(0).fkGuarantee.downDate.getTime() + Constants.MS_PER_DAY));
+        dfOnDate.selectedDate = guar.onDate;
+        guar.downDate = new Date(date.setTime(guarInfos.getItemAt(0).fkGuarantee.downDate.getTime() + 365 * Constants.MS_PER_DAY));
+        dfDownDate.selectedDate = guar.downDate;
+        guar.guarInfos = guarInfos;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

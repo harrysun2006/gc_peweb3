@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           verticalScrollPolicy="off" horizontalScrollPolicy="off" preinitialize="onPreinitialize()"
+           creationComplete="onCreationComplete()">
+  <mx:Tree id="treeGua" enabled="true" width="100%" height="100%" showRoot="true"
+           horizontalScrollPolicy="auto" verticalScrollPolicy="auto"
+           labelField="{Constants.PROP_NAME_LABEL}" iconField="{Constants.PROP_NAME_ICON}"
+           click="onClick(event)" doubleClick="onDoubleClick(event)" doubleClickEnabled="true"
+           change="onChange(event)" valueCommit="onValueCommit(event)"/>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.safety.Events;
+      import mx.utils.ObjectUtil;
+      import mx.controls.DateField;
+      import mx.collections.ArrayCollection;
+      import mx.rpc.events.ResultEvent;
+      import mx.core.UITextField;
+      import com.gc.safety.controller.CommonController;
+      import com.gc.safety.controller.GuaranteeController;
+      import com.gc.safety.model.GuarInfo;
+      import com.gc.common.model.SecurityLimit;
+      import com.gc.common.controller.UserController;
+      import com.gc.CommonEvent;
+      import com.gc.util.CommonUtil;
+      import com.gc.Constants;
+
+      private var gis:ArrayCollection = new ArrayCollection();
+      private var orderColumns:Array=["fkGuarantee.type.id","fkGuarantee.downDate"]
+      private var items:Array;
+
+      private function onPreinitialize():void
+      {
+        addEventListener(CommonEvent.EXPAND, onExpand);
+        addEventListener(CommonEvent.EXPAND_ALL, onExpandAll);
+        addEventListener(CommonEvent.COLLAPSE, onCollapse);
+        addEventListener(CommonEvent.COLLAPSE_ALL, onCollapseAll);
+        addEventListener(CommonEvent.GET_SUCCESS, onGetSuccess);
+        addEventListener(CommonEvent.DBLCLICKED,onADGDBClicked);
+      }
+
+      private function onGetSuccess(e:CommonEvent):void
+      {
+        e.stopImmediatePropagation();
+        var data:Object = e.data;
+        var dateFrom:Date = data.hasOwnProperty("dateFrom") ? data["dateFrom"] : new Date();
+        loadGuaTree(UserController.limit,orderColumns, dateFrom);
+      }
+
+      private function loadGuaTree(limit:SecurityLimit, orderColumns:Array, dateFrom:Date):void
+      {
+        GuaranteeController.getGuaInfosByDateFrom(limit,orderColumns,dateFrom, function(event:ResultEvent):void 
+          {
+            var list:ArrayCollection = event.result as ArrayCollection;
+            var _root:Object=buildGuaTree(event.result as ArrayCollection, orderColumns);
+            treeGua.invalidateDisplayList();
+            treeGua.dataProvider=_root;
+            treeGua.openItems=[_root];
+            treeGua.validateNow();
+//            treeGua.selectedItem = _root;
+          });
+      }
+
+      private function buildGuaTree(coll:ArrayCollection, orderColumns:Array):Object
+      {
+        var root:Object = new Object();
+        var tree:Object;
+        var key:Object;
+        var children:Array;
+        var k:int;
+        for each (var guarInfo:GuarInfo in coll)
+        {
+          tree = root;
+          for each (var column:String in orderColumns)
+          {
+            key = getKey(guarInfo,column);
+            children = tree["children"] as Array;
+            if (children == null)
+            {
+              children = new Array();
+              tree["children"] = children;
+            }
+            k = CommonUtil.indexOfKey(children,key);
+            if (k < 0)
+            {
+              children.push(key);
+              tree = key;
+            }
+            else
+            {
+              tree = children[k];
+            }
+          }
+          children = tree["children"] as Array;
+          if (children == null)
+          {
+            children = new Array;
+            tree["children"] = children;
+          }
+          children.push(guarInfo);
+        }
+        root["label"] = resourceManager.getString("gcc_safety", "tree.gua.root.label");
+        return root;
+      }
+      private function getKey(gi:GuarInfo, orderColumn:String):Object
+      {
+        var key:Object;
+        var scope:String;
+        switch (orderColumn)
+        {
+          case "fkGuarantee.type.id":
+            key = new Object();
+            key[Constants.PROP_NAME_LABEL] = (gi.fkGuarantee.type.name == null) ? Constants.NULL_LABEL : gi.fkGuarantee.type.name;
+            key[Constants.PROP_NAME_VALUE] = (gi.fkGuarantee.type.name == null) ? Constants.NULL_VALUE : gi.fkGuarantee.type.name;
+            break;
+          case "fkGuarantee.downDate":
+            key = new Object();
+            key[Constants.PROP_NAME_LABEL] = (gi.fkGuarantee.downDate == null) ? Constants.NULL_LABEL : (ObjectUtil.dateCompare(gi.fkGuarantee.downDate,CommonController.now) >= 0) ? DateField.dateToString(gi.fkGuarantee.downDate,Constants.DATE_FORMAT) : DateField.dateToString(gi.fkGuarantee.downDate,Constants.DATE_FORMAT) + resourceManager.getString('gcc_safety','tree.gua.downDate.pass');
+            key[Constants.PROP_NAME_VALUE] = (gi.fkGuarantee.downDate == null) ? Constants.NULL_VALUE : (ObjectUtil.dateCompare(gi.fkGuarantee.downDate,CommonController.now) >= 0) ? DateField.dateToString(gi.fkGuarantee.downDate,Constants.DATE_FORMAT) : DateField.dateToString(gi.fkGuarantee.downDate,Constants.DATE_FORMAT) + resourceManager.getString('gcc_safety','tree.gua.downDate.pass');
+            break;
+          default:
+            key=new Object();
+            key[Constants.PROP_NAME_TYPE]=Constants.TYPE_UNKNOWN;
+            break;
+        }
+        key[Constants.PROP_NAME_TYPE]=orderColumn;
+        return key;
+      }
+
+      private function onCreationComplete():void
+      {
+
+      }
+
+      private function onClick(event:Event):void
+      {
+        if (event.target is UITextField)
+        {
+          var node:Object = treeGua.selectedItem;
+          treeGua.expandItem(node,!treeGua.isItemOpen(node));
+        }
+      }
+
+      private function onADGDBClicked(event:CommonEvent):void
+      {
+        items=[];
+        var selectedItems:Array = treeGua.selectedItems;
+        visit(selectedItems,visitNode);
+        var openItems:Array = treeGua.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeGua.openItems = openItems;
+        treeGua.validateNow();
+        treeGua.selectedItem = event.data;
+        treeGua.expandItem(treeGua.selectedItem,!treeGua.isItemOpen(treeGua.selectedItem));
+        onValueCommit(event);
+        event.stopImmediatePropagation();
+      }
+      public function visit(obj:Object, visitor:Function):void
+      {
+        visitor(obj);
+        if (obj is Array || obj is ArrayCollection)
+        {
+          for each (var item:Object in obj)
+          {
+            visit(item, visitor);
+          }
+        }
+      }
+      private function onDoubleClick(event:Event):void
+      {
+
+      }
+
+      private function onChange(event:Event):void
+      {
+        onValueCommit(event);
+      }
+
+      private function onValueCommit(event:Event):void
+      {
+        var node:Object = treeGua.selectedItem;
+        if (!node || (node[Constants.PROP_NAME_TYPE] == Constants.TYPE_ROOT && !node.hasOwnProperty("children")))
+          return;
+        else
+        {
+          dispatchEvent(new CommonEvent(CommonEvent.CLICKED, node, [CommonUtil.getAncestors(treeGua), orderColumns]));
+          parent.dispatchEvent(new Events(Events.UPDATE,node));
+        }
+      }
+
+      private function visitNode(node:Object):void
+      {
+        if (node && node.hasOwnProperty("children"))
+          items.push(node);
+      }
+
+      private function onExpand(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array = treeGua.selectedItems;
+        CommonUtil.visit(selectedItems,visitNode);
+        var openItems:Array = treeGua.openItems as Array;
+        for each (var item:Object in items)
+          openItems.push(item);
+        treeGua.openItems = openItems;
+        treeGua.validateNow();
+        treeGua.selectedItems = selectedItems;
+      }
+
+      private function onExpandAll(event:Event):void
+      {
+        if (treeGua.selectedItem == null)
+          return;
+        items=[];
+        CommonUtil.visit(treeGua.dataProvider,visitNode);
+        treeGua.openItems = items;
+        treeGua.validateNow();
+        treeGua.selectedItem = treeGua.dataProvider[0];
+      }
+
+      private function onCollapse(event:Event):void
+      {
+        items=[];
+        var selectedItems:Array = treeGua.selectedItems;
+        CommonUtil.visit(selectedItems,visitNode);
+        var openItems:ArrayCollection = new ArrayCollection(treeGua.openItems as Array);
+        var k:int;
+        for each (var item:Object in items)
+        {
+          k = openItems.getItemIndex(item);
+          if (k >= 0)
+            openItems.removeItemAt(k);
+        }
+        treeGua.openItems = openItems.toArray();
+        treeGua.validateNow();
+        treeGua.selectedItems = selectedItems;
+      }
+
+      private function onCollapseAll(event:Event):void
+      {
+        if (treeGua.selectedItem == null)
+          return;
+        treeGua.openItems = [];
+        treeGua.validateNow();
+        treeGua.selectedItem = treeGua.dataProvider[0];
+      }
+
+      private function onRefiltering(event:Event):void
+      {
+
+      }
+
+      private function onReorganizing(event:Event):void
+      {
+
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>

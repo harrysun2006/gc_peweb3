@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="utf-8"?>
+<personal:PersonTreeFilter xmlns:mx="http://www.adobe.com/2006/mxml" xmlns:gc="com.gc.controls.*"
+                           xmlns:personal="com.gc.hr.view.personal.*" width="100%"
+                           creationComplete="onCreationComplete(formFilter1, tiWorkerId)">
+  <mx:Form id="formFilter1" verticalGap="3">
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.workerId')}:">
+      <mx:TextInput id="tiWorkerId" name="workerId" text="{qo.workerId}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.name')}:">
+      <mx:TextInput name="name" text="{qo.name}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.pid')}:">
+      <mx:TextInput name="pid" text="{qo.pid}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.sex')}:">
+      <mx:ComboBox name="sex" dataProvider="{Constants.GENDERS}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.people')}:">
+      <mx:ComboBox name="people" dataProvider="{PersonalController.peopleList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.nativePlace')}:">
+      <mx:ComboBox name="nativePlace" dataProvider="{PersonalController.nativePlaceList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.regAddress')}:">
+      <mx:TextInput name="regAddress" text="{qo.regAddress}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.birthday')}:">
+      <gc:DateSelector name="birthday" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.marryStatus')}:">
+      <mx:ComboBox name="marryStatus" dataProvider="{PersonalController.marryStatusList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.annuities')}:">
+      <mx:TextInput name="annuities" text="{qo.annuities}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.accumulation')}:">
+      <mx:TextInput name="accumulation" text="{qo.accumulation}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.chkGroup.name')}:">
+      <mx:ComboBox name="chkGroup.id" dataProvider="{CheckController.groupList}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.onDate')}:">
+      <gc:DateSelector name="onDate" output="{qo}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.downStatus')}:">
+      <mx:ComboBox name="{Person.DOWN_STATUS}" dataProvider="{getYesNo()}"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.downDate')}:">
+      <gc:DateSelector id="pubDownDate" name="downDate" output="{qo}" enabled="false"/>
+    </mx:FormItem>
+    <mx:FormItem label="{resourceManager.getString('gcc', 'person.downReason')}:">
+      <mx:TextInput name="downReason" text="{qo.downReason}"/>
+    </mx:FormItem>
+  </mx:Form>
+  <mx:Script>
+    <![CDATA[
+      import mx.controls.ComboBox;
+
+      import com.gc.CommonEvent;
+      import com.gc.Constants;
+      import com.gc.common.model.Person;
+      import com.gc.hr.controller.CheckController;
+      import com.gc.hr.controller.PersonalController;
+      import com.gc.util.CommonUtil;
+
+      private function getYesNo():Array
+      {
+        var arrStatus:Array=[{value: Person.DOWN_STATUS_NO, label: resourceManager.getString("gcc", "person.downStatus.no")},
+          {value: Person.DOWN_STATUS_YES, label: resourceManager.getString("gcc", "person.downStatus.yes")}];
+        return arrStatus;
+      }
+
+      override protected function valueChanged(cbox:ComboBox):void
+      {
+        super.valueChanged(cbox);
+        if (cbox.name == Person.DOWN_STATUS)
+        {
+          var value:Object=(cbox.selectedItem == null) ? null : cbox.selectedItem.value;
+          pubDownDate.enabled=(value != null && value == Person.DOWN_STATUS_YES);
+          pubDownDate.validateNow();
+
+          if (value == null || value == "" || value.toLowerCase() == Person.DOWN_STATUS_NULL || value.toLowerCase() == Person.DOWN_STATUS_NO)
+          {
+            qo["downDate_from"]=null;
+            qo["downDate_to"]=null;
+          }
+          if (!pubDownDate.enabled)
+          {
+            var prop:Object=new Object();
+            prop[Constants.PROP_NAME_NAME]="downDate";
+            prop[Constants.PROP_NAME_VALUE]=null;
+            prop[Constants.PROP_NAME_LABEL]="";
+            prop[Constants.PROP_NAME_SHOW]=true;
+            dispatchEvent(new CommonEvent(CommonEvent.CHANGED, null, [prop]));
+          }
+        }
+      }
+    ]]>
+  </mx:Script>
+</personal:PersonTreeFilter>

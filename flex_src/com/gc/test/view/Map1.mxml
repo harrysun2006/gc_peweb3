@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:TitleWindow xmlns:mx="http://www.adobe.com/2006/mxml" layout="absolute" showCloseButton="true"
+                close="PopUpManager.removePopUp(this);" creationComplete="init()">
+  <!-- localhost: ABQIAAAA5ErwN5W6so8NxEoA0g9UTRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQHLDXdDlEr-wCI1V_3bw472KtuoA -->
+  <!-- grtcrt.com: ABQIAAAA5ErwN5W6so8NxEoA0g9UTRSB7i4X6qWtwGEVQFJ4VFbyuIXX-BTJDHQOXrvqIrYu98oVQMTBsz8ceQ -->
+  <maps:Map3D xmlns:maps="com.google.maps.*" id="map" width="100%" height="100%" sensor="false"
+              mapevent_mappreinitialize="onMapPreinitialize(event)"
+              mapevent_mapready="onMapReady(event)"
+              key="ABQIAAAA5ErwN5W6so8NxEoA0g9UTRT2yXp_ZAY8_ufC3CFXhHIE1NvwkxQHLDXdDlEr-wCI1V_3bw472KtuoA"/>
+  <mx:Sprite id="sprite" alpha="10" scaleX="1" scaleY="1"/>
+  <mx:VBox top="10" left="10" width="100%" height="100%" visible="false">
+    <mx:HBox width="100%">
+      <mx:TextInput id="angle" text="60"/>
+      <mx:Button label="Rotate" click="rotate(event)"/>
+      <mx:Button label="Reset" click="reset(event)"/>
+      <mx:Button label="+" click="larger(event)"/>
+      <mx:Button label="-" click="smaller(event)"/>
+      <mx:Button label="*" click="one(event)"/>
+    </mx:HBox>
+    <mx:SWFLoader id="loader" width="100%" height="100%"/>
+  </mx:VBox>
+  <mx:Script>
+    <![CDATA[
+      import com.google.maps.LatLng;
+      import com.google.maps.Map3D;
+      import com.google.maps.MapEvent;
+      import com.google.maps.MapOptions;
+      import com.google.maps.MapType;
+      import com.google.maps.View;
+      import com.google.maps.geom.Attitude;
+      import com.google.maps.controls.MapTypeControl;
+      import com.google.maps.controls.NavigationControl;
+      import com.google.maps.controls.OverviewMapControl;
+      import com.google.maps.controls.PositionControl;
+      import com.google.maps.controls.ScaleControl;
+      import com.google.maps.controls.ZoomControl;
+
+      import mx.controls.ToolTip;
+      import mx.managers.PopUpManager;
+      import mx.managers.ToolTipManager;
+
+      private var ss:Array=[
+        {s:new Sprite(), x:150, y:120, 
+          f:function(s:Sprite):void {
+          var g:Graphics = s.graphics;
+          g.clear();
+          g.beginFill(0xFF0000);
+          g.drawRect(0, 0, 100, 30);
+          g.endFill();
+        }},
+        {s:new Sprite(), x:300, y:120, 
+          f:function(s:Sprite):void {
+          var g:Graphics = s.graphics;
+          g.clear();
+          g.lineStyle(1, 0xFF0000);
+          g.moveTo(0, 10);
+          g.lineTo(100, 10);
+        }},
+        {s:new Sprite(), x:450, y:120, 
+          f:function(s:Sprite):void {
+          var g:Graphics = s.graphics;
+          g.clear();
+          g.lineStyle(2, 0xFF0000);
+          g.moveTo(2, 80);
+          g.lineTo(50, 5);
+          g.lineTo(98, 80);
+          g.lineTo(2, 80);
+        }},
+        {s:new Sprite(), x:600, y:120, 
+          f:function(s:Sprite):void {
+          var t:TextField=new TextField();
+          var f:TextFormat=new TextFormat();
+          f.color = 0xFF0000;
+          f.size = 24;
+          f.font = "Arial";
+          t.autoSize = TextFieldAutoSize.RIGHT;
+          t.embedFonts = true;
+          t.text = "Hello World";
+          t.setTextFormat(f);
+          t.selectable = false;
+          while (s.numChildren > 0) s.removeChildAt(0);
+          s.addChild(t);
+        },
+        r0:function(s:Sprite):void {
+          var d:DisplayObject = s.numChildren > 0 ? s.getChildAt(0) : null;
+          if (!d || !d is TextField) return;
+          var t:TextField = d as TextField;
+          var f:TextFormat = t.getTextFormat();
+          t.text = "Hello World~"+angle.text;
+          t.setTextFormat(f);
+        }},
+        {s:new Sprite(), x:150, y:240, 
+          f:function(s:Sprite):void {
+          var t:TextField = new TextField();
+          var f:TextFormat = t.defaultTextFormat;
+          f.color = 0x000000;
+          f.size = 12;
+          // f.bold = true;
+          t.autoSize = TextFieldAutoSize.LEFT;
+          t.text = "北郊变";
+          t.setTextFormat(f);
+          t.x = t.y = 0;
+          t.sharpness = 0;
+          var bd:BitmapData = new BitmapData(t.width, t.height);
+          bd.colorTransform(bd.rect, new ColorTransform(1, 1, 1, 0));
+          bd.draw(t);
+          var b:Bitmap = new Bitmap(bd);
+          b.x = b.y = 0;
+          b.rotation = 60;
+          while (s.numChildren > 0) s.removeChildAt(0);
+          s.addChild(b);
+          var tt:ToolTip;
+          s.addEventListener(MouseEvent.MOUSE_OVER, function(e:Event):void 
+            {
+              var p:Point = new Point(s.x, s.y);
+              p = sprite.localToGlobal(p);
+              tt = ToolTipManager.createToolTip("bitmap", p.x, p.y);
+            });
+          s.addEventListener(MouseEvent.MOUSE_OUT, function(e:Event):void
+            {
+              ToolTipManager.destroyToolTip(tt);
+            });
+        }},
+        {s:new Sprite(), x:300, y:240, 
+          f:function(s:Sprite):void {
+          var t:TextField = new TextField();
+          var f:TextFormat = t.defaultTextFormat;
+          var d:DisplayObject;
+          var ss:StyleSheet = new StyleSheet();
+          var css:String = "div {color:#0000ff; font-weight:bold; writing-mode:tb-rl; text-align:left;}";
+          // var css:String = ".test {color: #ff0000; -moz-transform: rotate(-90deg)}; -webkit-transform: rotate(-90deg); filter: progid:DXImageTransform.Microsoft.BasicImage(rotation=3); }";
+          ss.parseCSS(css);
+          f.color = 0x000000;
+          f.size = 12;
+          f.display = "inline";
+          t.autoSize = TextFieldAutoSize.LEFT;
+          t.setTextFormat(f);
+          t.x = t.y = 0;
+          t.name = "text";
+          t.text = "北郊变";
+          t.width = t.textWidth;
+          // t.text = "北a郊b变c".split("").join("\r");
+          // t.styleSheet = ss;
+          // t.htmlText = "<div>北郊变</div>";
+          t.z = 0;
+          t.rotationZ = 60;
+          var m:Matrix = t.transform.matrix;
+          // m.rotate(90);
+          // m.c = -1;
+          t.transform.matrix = m;
+          // s.addChild(t);
+          d = s.getChildByName("text");
+          if (d) s.removeChild(d);
+          s.addChild(t);
+          var tt:ToolTip;
+          s.addEventListener(MouseEvent.MOUSE_OVER, function(e:Event):void 
+            {
+              var p:Point = new Point(s.x, s.y);
+              p = sprite.localToGlobal(p);
+              tt = ToolTipManager.createToolTip("rotationZ", p.x, p.y);
+            });
+          s.addEventListener(MouseEvent.MOUSE_OUT, function(e:Event):void
+            {
+              setTimeout(function():void{ToolTipManager.destroyToolTip(tt);}, 1000, null);
+            });
+        }},
+        {s:new Sprite(), x:450, y:240, 
+          f:function(s:Sprite):void {
+          var c:Sprite = new Sprite();
+          var g:Graphics = c.graphics;
+          g.clear();
+          g.beginFill(0x0000FF);
+          g.drawRect(0, 0, 100, 30);
+          g.endFill();
+          var m:Matrix = c.transform.matrix;
+          // m.translate(100, 100);
+          // m.scale(0.5, 2);
+          // m.rotate(45);
+          m.b = 1;
+          m.c = -1;
+          c.transform.matrix = m;
+          c.x = c.y = 0;
+          s.addChild(c);
+        }},
+        ];
+
+      private function onMapReady(event:Event):void
+      {
+        // map.setCenter(new LatLng(40.736072,-73.992062), 14, MapType.NORMAL_MAP_TYPE);
+        // map.setCenter(new LatLng(31.202, 121.565), 14, MapType.SATELLITE_MAP_TYPE);
+        // map.setCenter(new LatLng(31.202, 121.565), 14, MapType.HYBRID_MAP_TYPE);
+        map.addControl(new MapTypeControl());
+        map.addControl(new NavigationControl());
+        map.addControl(new OverviewMapControl());
+        // map.addControl(new PositionControl());
+        map.addControl(new ScaleControl());
+        // map.addControl(new ZoomControl());
+      }
+
+      private function onMapPreinitialize(event:MapEvent):void
+      {
+        var mo:MapOptions = new MapOptions();
+        mo.zoom = 12;
+        mo.center = new LatLng(31.202, 121.565);
+        mo.mapType = MapType.SATELLITE_MAP_TYPE;
+        mo.viewMode = View.VIEWMODE_PERSPECTIVE;
+        mo.attitude = new Attitude(20,30,0);
+        map.setInitOptions(mo);
+      }
+
+      private function init():void
+      {
+        var i:int;
+        for (i=0; i < ss.length; i++)
+        {
+          ss[i].s.x = ss[i].x;
+          ss[i].s.y = ss[i].y;
+          sprite.addChild(ss[i].s);
+        }
+        reset();
+        loader.load(sprite);
+        loader.visible=false;
+      }
+
+      private function rotate(e:Event):void
+      {
+        var i:int;
+        for (i=0; i < ss.length; i++)
+        {
+          // select(ss[i], 0x00FF00);
+          ss[i].s.rotation = Number(angle.text);
+          // select(ss[i], 0xFFFF00);
+          if (ss[i].r is Function)
+            ss[i].r(ss[i].s);
+        }
+      }
+
+      private function debugSprite(s:Sprite):void
+      {
+        trace("x="+s.x+", y="+s.y+", width="+s.width+", height="+s.height+", rotation="+s.rotation);
+      }
+
+      private function drawRect(r:Rectangle, c:uint=0, t:uint=1):void
+      {
+        var g:Graphics = sprite.graphics;
+        g.lineStyle(t, c);
+        g.moveTo(r.left, r.top);
+        g.lineTo(r.right, r.top);
+        g.lineTo(r.right, r.bottom);
+        g.lineTo(r.left, r.bottom);
+        g.lineTo(r.left, r.top);
+      }
+
+      private function reset(e:Event=null):void
+      {
+        var g:Graphics = sprite.graphics;
+        var r:Rectangle = new Rectangle(0, 0, loader.width, loader.height);
+        g.clear();
+        g.lineStyle(3, 0x00000);
+        g.beginFill(0xFF00FF);
+        g.drawCircle(1200, 80, 30);
+        g.endFill();
+        g.beginFill(0, 0);
+        g.drawRect(0, 0, loader.width, loader.height);
+        g.endFill();
+        g.lineStyle(1, 0xFF0000);
+        g.beginFill(0, 0);
+        g.drawCircle(1200, 160, 30);
+        g.endFill();
+        drawRect(r, 0x00FF00, 3);
+
+        var i:int;
+        for (i=0; i < ss.length; i++)
+        {
+          ss[i].f(ss[i].s);
+            // ss[i].s.rotation = 0;
+        }
+      }
+
+      private function smaller(e:Event):void
+      {
+        sprite.scaleX = sprite.scaleY = sprite.scaleX*0.8;
+      }
+
+      private function larger(e:Event):void
+      {
+        sprite.scaleX = sprite.scaleY = sprite.scaleX*1.2;
+      }
+
+      private function one(e:Event):void
+      {
+        sprite.scaleX = sprite.scaleY = 1;
+      }
+    ]]>
+  </mx:Script>
+</mx:TitleWindow>

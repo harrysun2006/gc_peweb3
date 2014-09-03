@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" width="100%" height="100%"
+           creationComplete="onCreationComplete()">
+  <mx:AdvancedDataGrid id="adgGuaStatList" width="100%" height="100%" dataProvider="{guaStatList}"
+                       labelFunction="{CommonUtil.gridLabelFunction}" doubleClickEnabled="true"
+                       doubleClick="onDoubleClick(adgGuaStatList.selectedItem)"
+                       styleFunction="onStyleFunction">
+    <mx:columns>
+      <mx:AdvancedDataGridColumn dataField="no" formatter="{Constants.NUMBER_FORMATTER_N0}"
+                                 headerText="序号" sortCompareFunction="onSortCompareFunction"
+                                 textAlign="center" width="64"/>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_LABEL}"/>
+      <mx:AdvancedDataGridColumn dataField="{Constants.PROP_NAME_COUNT}"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="_totalLc" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="_totalFees" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="_totalGuaCosts" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="_totalGuaCounts"
+                                 formatter="{Constants.NUMBER_FORMATTER_N0}" textAlign="right"/>
+      <mx:AdvancedDataGridColumn dataField="_totalGuaPayFees" textAlign="right"/>
+    </mx:columns>
+  </mx:AdvancedDataGrid>
+  <mx:Script>
+    <![CDATA[
+      import com.gc.CommonEvent;
+      import mx.utils.ObjectUtil;
+      import mx.collections.ArrayCollection;
+      import com.gc.safety.model.GuarInfo;
+      import com.gc.util.CommonUtil;
+      import com.gc.Constants;
+
+      [Bindable]
+      private var guaStatList:ArrayCollection = new ArrayCollection();
+
+      private function onCreationComplete():void
+      {
+        CommonUtil.setDataGridColumns(adgGuaStatList,"gcc_safety","tree.guaStat");
+        addEventListener(CommonEvent.EXPORT,function(event:CommonEvent):void 
+          {
+            CommonUtil.export(CommonUtil.getGridData(adgGuaStatList),CommonUtil.getGridHeaders(adgGuaStatList),null,event.data.label + "保单统计列表.xls");
+          });
+      }
+
+      private function onSortCompareFunction(obj1:Object,obj2:Object):int
+      {
+        return ObjectUtil.numericCompare(obj1.no,obj2.no);
+      }
+
+      private function onStyleFunction(data:Object, col:AdvancedDataGridColumn):Object
+      {
+        if (data.hasOwnProperty("color") && data["color"] != null)
+        {
+          return { color:0x8E388E, fontWeight:"bold", fontSize:12 };
+        }
+
+        return {};
+      }
+
+      private function onDoubleClick(item:Object):void
+      {
+        if (item != null)
+          parent.dispatchEvent(new CommonEvent(CommonEvent.DBLCLICKED,item));
+      }
+
+      public function statGuas(item:Object, ancestors:Array, orderColumns:Array):void
+      {
+        if (item == null || !(item["children"] is Array))
+          return;
+        guaStatList.removeAll();
+        counter(item);
+        var children:Array = item["children"] as Array;
+        var i:int = 0;
+        for each (var child:Object in children)
+        {
+          child.no = ++i;
+          child.color = null;
+          guaStatList.addItem(child);
+        }
+        item.no = ++i;
+        item.color = "";
+        guaStatList.addItem(item);
+      }
+
+      private function counter(item:Object):void
+      {
+        if (item == null)
+          return;
+        if (item["children"] == null || !(item["children"] is Array))
+        {
+          item[Constants.PROP_NAME_COUNT] = 1;
+          if (item is GuarInfo && item["id"] == null)
+          {
+            item[Constants.PROP_NAME_COUNT] = 0;
+            item["_totalLc"] = 0;
+            item["_totalFees"] = 0;
+            item["_totalGuaCosts"] = 0;
+            item["_totalGuaCounts"] = 0;
+            item["_totalGuaPayFees"] = 0;
+            return;
+          }
+          item["_totalFees"] = 0;
+          item["_totalGuaCosts"] = 0;
+          item["_totalGuaCounts"] = 0;
+          item["_totalGuaPayFees"] = 0;
+          for each (var gi:GuarInfo in item.gis)
+          {
+            item["_totalFees"] += gi.fee;
+            item["_totalGuaCosts"] += gi.guaCost;
+            for each (var agp:Object in gi.apgs)
+            {
+              item["_totalGuaPayFees"] += agp.mediFee + agp.other1 + agp.other2;
+            }
+          }
+          item["_totalGuaCounts"] = item.ags.length;
+          item["_totalLc"] = item.bus.totalLc;
+          return;
+        }
+        var children:Array = item["children"];
+        var count:int = 0;
+        var totalLc:Number = 0;
+        var totalFees:Number = 0;
+        var totalGuaCosts:Number = 0;
+        var totalGuaCounts:int = 0;
+        var totalGuaPayFees:Number = 0;
+        for each (var child:Object in children)
+        {
+          if (!child.hasOwnProperty(Constants.PROP_NAME_COUNT))
+            counter(child);
+          count += child[Constants.PROP_NAME_COUNT];
+          totalLc += child["_totalLc"];
+          totalFees += child["_totalFees"];
+          totalGuaCosts += child["_totalGuaCosts"];
+          totalGuaCounts += child["_totalGuaCounts"]
+          totalGuaPayFees += child["_totalGuaPayFees"];
+        }
+        item[Constants.PROP_NAME_COUNT] = count;
+        item["_totalLc"] = totalLc;
+        item["_totalFees"] = totalFees;
+        item["_totalGuaCosts"] = totalGuaCosts;
+        item["_totalGuaCounts"] = totalGuaCounts;
+        item["_totalGuaPayFees"] = totalGuaPayFees;
+      }
+    ]]>
+  </mx:Script>
+</mx:Canvas>
